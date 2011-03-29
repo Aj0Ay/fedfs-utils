@@ -1,0 +1,173 @@
+
+			Linux FedFs Implementation
+
+Author: Chuck Lever <chuck.lever@oracle.com>
+
+This package contains an implementation of the Federated Filesystem
+(FedFS) proposed standard for Linux.  For an introduction to FedFS,
+see RFC 5716, or read the fedfs(7) man page provided in the doc/man
+directory.
+
+This package is copyright 2010 and 2011, Oracle. It's use is covered
+by version 2 of the GNU General Public License.  See the COPYING file
+for details.  A few parts are also covered by the IETF's code license,
+which is a simplified BSD license that is compatible with GPLv2.
+
+
+Build instructions
+----- ------------
+
+If you are unfamiliar with FedFS, review RFC 5716 and fedfs(7).  Once
+you are satisfied that you understand what is being built, go to the
+top-level directory and type:
+
+  ./autogen.sh
+  ./configure
+
+You may need to install a few -devel packages here.
+
+  make all
+
+If you are interested in installing the FedFS executables, type:
+
+  sudo make install
+
+However, for testing, they should work when run directly from the
+build tree.
+
+
+Note well:
+
+The FedFS protocol draft specifies the FedFS schema in LDIF format,
+compliant to RFC 2489.  LDAP servers which are descended from the
+iPlanet Directory Server (such as 389-ds) accept schema files which
+strictly adhere to an older standard, RFC 2252.
+
+This package provides both versions of the FedFS schema.  Choose
+either 91fedfs.ldif (for OpenLDAP-derived LDAP servers) or
+91fedfs-2252.ldif (for iPlanet-derived servers), and copy that file to
+the schema repository your server uses.  For example, 389-ds uses
+/etc/dirsrv/schema to hold schema files that should be used when
+creating new slapd instances.
+
+The fedfs-utils/doc/ldap Makefile does not contain an install target
+for these schema files, since the install destination depends on which
+flavor of LDAP server is in use.  The LDAP server may even be on
+another host.
+
+
+Interesting top-level build targets
+----------- --------- ----- -------
+
+  all:		Build the fedfs-utils world
+
+  install:	Install client and server executables and man pages
+		on the local system
+
+  clean:	Clean up object files and generated source
+
+  distcheck:    Run a complete install to check that all is in order
+
+  dist:		Make a tarball for distribution
+
+  distclean:	Wipe everything built by ./configure
+
+
+Specific FedFS roles
+-------- ----- -----
+
+There are several different roles a host can play when participating
+in a FedFS domain:
+
+  NSDB			LDAP server that contains FedFS domain
+			information
+
+  FedFS file server	stores data accessible via a FedFS
+			domain name space
+
+  FedFS client		accesses data in FedFS domain name
+			spaces
+
+  FedFS admin client	manages FedFS domain information
+
+Any host can play any or all of these roles.  This section outlines
+what fedfs-utils components to install on a host playing each of these
+roles.
+
+
+NSDB
+
+  o Choose an LDAP server package and install it
+
+  o Install the FedFS schema in the LDAP servers' schema directory
+
+  o (Eventually LDAP server TLS configuration will go here)
+
+  o If this is a new FedFS domain, choose a FedFS domain name
+
+  o If this is a new LDAP server, create a slapd instance
+
+  o Set up a new root suffix as a fedfsNsdbContainerEntry (more detail
+    needed here, of course, but it is a totally different recipe for
+    each vendor's LDAP server)
+
+
+FedFS file server
+
+  o Install various distribution pre-requisites, such as libtirpc,
+    an LDAP client library, and libsqlite3
+
+  o Install kernel with patches to do export cache upcalls when
+    encountering a junction
+
+  o Install resolve-junction program
+
+  o Install mountd with patches to resolve junctions
+
+  o Set up a fedfs user ID and group ID
+
+  o Create /var/lib/fedfs and set its user and group to the fedfs
+    user and group ID
+
+  o Run "nsdbparams init" to create the NSDB connection parameter
+    database
+
+  o Add a "fedfs" entry to /etc/rpc (100418)
+
+  o (Eventually RPCGSS configuration will go here)
+
+  o (Eventually LDAP client TLS configuration will go here)
+
+  o Install fedfsd and a fedfsd init script
+
+
+FedFS client
+
+  o Install mount.fedfs
+
+  o Create a local /nfs4 directory, and subdirectories for the FedFS
+    domains you want to mount
+
+  o Add lines to /etc/fstab to mount the domains
+
+
+FedFS admin client
+
+  o Install various distribution pre-requisites, such as libtirpc,
+    an LDAP client library, and libsqlite3
+
+  o Set up a fedfs user ID and group ID
+
+  o Create /var/lib/fedfs and set its user and group to the fedfs
+    user and group ID
+
+  o Run "nsdbparams init" to create the NSDB connection parameter
+    database
+
+  o Add a "fedfs" entry to /etc/rpc (100418)
+
+  o (Eventually RPCGSS configuration will go here)
+
+  o (Eventually LDAP client TLS configuration will go here)
+
+  o Install the nsdbc and fedfsc clients

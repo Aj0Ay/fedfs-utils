@@ -1,0 +1,236 @@
+
+			Linux FedFs Implementation
+
+Author: Chuck Lever <chuck.lever@oracle.com>
+
+Release notes for fedfs-utils-0.6.0
+
+
+Release Quality Statement
+------- ------- ---------
+
+This is an ALPHA quality release.  The code in this release is not
+guaranteed to work.  Programming, administrative, and user interfaces
+may change significantly before the next release.  This release is
+for technology preview only.
+
+
+Package Synopsis
+------- --------
+
+This package contains an implementation of the Federated Filesystem
+(FedFS) proposed standard for Linux.  For an introduction to FedFS,
+see RFC 5716, or read the fedfs(7) man page provided in the doc/man
+directory.
+
+This package is copyright 2010 and 2011, Oracle. It's use is covered
+by version 2 of the GNU General Public License.  See the COPYING file
+for details.  A few parts are also covered by the IETF's code license,
+which is a simplified BSD license that is compatible with GPLv2.
+
+Packagers and distributors should review this entire README document
+to understand what is in this package, it's pre-requisites, and any
+security issues related to it.
+
+An attempt has been made to keep this package distribution-neutral.
+No init scripts are provided by this package.  It is a source code-
+only package that is distributed via tarball and git only.
+
+For support, see http://oss.oracle.com/projects/fedfs-utils .
+
+
+Overview
+--------
+
+The components in this package are used for managing file system
+referrals and for creating a global network file system namespace.
+See RFCs 3530 and 5661 for more details on NFSv4 referrals.  SMB
+referrals are described in other documents.  At this point in time,
+this package supports only NFSv4 referrals.  SMB referrals may be
+supported in a future release.
+
+File system referrals allow a file server to direct clients to other
+servers and shares when data has moved or replicated, or simply to
+organize the network file system namespace.  A federation of file
+servers can create a seamless global namespace using referrals.  No
+configuration changes on clients are required as the namespace is
+changed over time.
+
+
+Installable components include:
+
+   o  A mount command to mount the top of a FedFS domain namespace
+
+   o  An ONC RPC service daemon that runs on file servers enabling the
+      management by remote FedFS ADMIN clients of FedFS junctions
+
+   o  A privileged program run by mountd on the file server to resolve
+      FedFS junctions on local file systems
+
+   o  A set of command-line clients that can access fedfsd instances on
+      remote file servers
+
+   o  A set of command-line clients that can manage FedFS entries on an
+      LDAP server acting as a FedFS NSDB
+
+   o  A tool to manage NSDB connection parameters on the local host
+
+   o  An LDIF format schema to enable an LDAP server to support FedFS
+      objects
+
+   o  HTML Doxygen style documentation with built-in source browser
+
+
+The mount command is a subcommand invoked by mount(8) to handle the
+housekeeping needed to find and mount FedFS domains at the top of the
+client's FedFS namespace (usually /nfs4 for NFSv4 servers).
+
+The fedfsd program is an RPC server that allows remote administrators to
+create FedFS junctions in local file systems.  FedFS ADMIN requests that
+can mutate local file system state are authenticated via RPCSEC GSSAPI
+(not yet implemented).  Run this program on NFS file servers that
+participate in a FedFS federation to allow the management of FedFS junctions
+on that server.
+
+The resolve-junction program is a side-car program used by mountd to
+resolve junctions on local file systems.  The kernel NFS server passes a
+particular file system object to mountd.  If mountd discovers that this
+object is a FedFS junction, it will resolve the junction using the FedFS
+NSDB protocol, and pass the results back to the kernel.  This processing
+is in a separate executable and package from mountd in order to avoid
+adding additional build and run-time dependencies to nfs-utils.
+
+The command-line clients are used by FedFS adminstrators to manage the
+state of the local FedFS federation.  These are simple clients that
+expose the raw administrative operations of FedFS, much like the bottom-
+level git commands.  Eventually we plan to create high-level clients, much
+like git porcelain, to provide some degree of automation to FedFS
+administration.
+
+The INSTALL file in this distribution explains more about how to build
+these components, and which of these components to install on what
+systems.
+
+
+Package Version
+------- -------
+
+Standard releases:
+
+	<major>.<minor>[.<maint>[.<bugfix>]]
+
+Major releases introduce new features, and may not always be backwards
+compatible with earlier releases.  Minor releases may introduce new
+features, but will be backwards compatible with earlier minor releases
+with the same major version number.
+
+
+Operational pre-requisites
+----------- --------------
+
+To Do: review these operational requirements with an SELinux expert.
+
+A kernel version with an NFSD that supports NFS referrals and
+recognizes FedFS junctions must be installed.  (To do: provide
+specific version information)
+
+An entry for the FedFS ADMIN protocol should be added to /etc/rpc.
+This is program number 100418.  For now, we're using the service
+name "fedfs," and editing /etc/rpc by hand.
+
+The fedfsd program requires rpcbind and libtirpc.  In the future, it
+will also require correctly configured RPCSEC GSSAPI on the system
+where it is running.  For example, to support Kerberos authentication,
+Kerberos configuration files would have to be up to date, and a proper
+keytab must be established.
+
+Distributors should provide an appropriate init script (or equivalent)
+to ensure that fedfsd is started after a system boot.
+
+The resolve-junction program requires LDAP libraries, and support for
+TLS (usually openssl).  To be invoked properly, a version of mountd
+(from the nfs-utils package) that understands what to do when the
+kernel asks it about FedFS junctions must be installed.  (To do:
+provide specific version information)
+
+To store FedFS junctions, file systems that support extended attributes
+are required on file servers that run fedfsd and resolve-junction.
+libcap is required to permit the fedfsd and resolve-junction programs
+to access trusted extended attributes in each file system.
+
+The FedFS ADMIN clients require libtirpc.  In the future, they will
+also require correctly configured RPCSEC GSSAPI (usually Kerberos is
+the preferred authentication flavor).  The NSDB clients require LDAP
+libraries and support for TLS (openssl).
+
+NSDB connection parameter information is persistent.  The NSDB
+connection parameter database is located under /var/lib/fedfs.  The
+fedfsd program must have write access to this directory, and the
+resolve-junction program and the NSDB clients must have read access
+to this directory.  Usually a special user ID and group ID are created
+for this purpose.
+
+LDAP X.509 certificates are stored under /etc/pki/ .  fedfsd and
+nsdbparams must have write access to this directory.  The
+resolve-junction program and the NSDB clients must have read access
+to this directory.
+
+
+Security considerations
+-------- --------------
+
+To Do: review these considerations with an SELinux expert.
+
+The FedFS network protocols employ standard network security
+mechanisms to authenticate servers and administrators.  Therefore,
+packaged support for RPCSEC GSSAPI (in the future) and LDAP over TLS
+must be installed and configured correctly on the systems running
+these programs.  Further discussion of installation and configuration
+of these packages is beyond the scope of this document.
+
+FedFS ADMIN clients contact the FedFS ADMIN server with no
+authentication today, but in the future will use RPCGSS security.  The
+FedFS administrator will authenticate herself to the ADMIN server when
+performing operations that change the persistent state of the ADMIN
+and file server (eg. creating junctions or setting NSDB connection
+parameters).
+
+Before performing operations that change the persistent state of an
+NSDB server, NSDB clients should authenticate the server using the
+server's X.509 certificate.  Binding as an LDAP user with write
+authorization to the FedFS entries stored on this server is required
+for this class of operations.
+
+Operations on the NSDB or FedFS ADMIN service that do not change
+persistent state are usually done without authentication of any kind.
+A FedFS administrator can require server authentication via X.509 for
+NSDB operations of this kind, but binding to the directory is not
+required in this case.
+
+The FedFS ADMIN and NSDB clients provided in this package permit this
+type of authentication, but are not privileged applications and can be
+run by any local user.  In order to perform operations that change
+persistent FedFS state, of course, an appropriate user and password
+must be provided.
+
+The FedFS ADMIN server and the resolve-junction program both access
+FedFS junctions stored in local file systems.  These junctions are
+stored in trusted extended attributes (trusted xattrs).  The
+CAP_SYS_ADMIN capability is required for any program that accesses
+trusted xattrs.
+
+The fedfsd program is usually started by a parent process running as
+root.  Subsequently, fedfsd drops all privileges it does not require
+for normal steady state operation.  The fedfsd program is a long-
+running system service that listens on a network port and registers
+with the local rpcbind service.  Standard precautions should be taken.
+
+The resolve-junction side-car program does not assume that mountd is
+running as root.  Therefore it must be installed setuid root to regain
+the privileges it needs to read trusted xattrs.  It too drops all
+unneeded privileges before it starts to do real work.  Since it only
+reads junctions, this should normally be quite secure.  
+
+As a consequence of their privilege requirements, these two programs
+must be registered with local security auditing subsystems such as
+SELinux.

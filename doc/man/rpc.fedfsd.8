@@ -1,0 +1,135 @@
+.\"@(#)rpc.fedfsd.8"
+.\"
+.\" @file doc/man/rpc.fedfsd.8
+.\" @brief man page for FedFS Admin service daemon
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH RPC.FEDFSD 8 "15 Mar 2011"
+.SH NAME
+rpc.fedfsd \- FedFS administrative service daemon
+.SH SYNOPSIS
+.B rpc.fedfsd
+.RB [ \-?dF ]
+.RB [ \-u
+.IR uid ]
+.RB [ \-g
+.IR gid ]
+.RB [ \-o
+.IR port ]
+.SH DESCRIPTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+The
+.BR rpc.fedfsd (8)
+daemon runs on file servers participating in a FedFS domain.
+It enables secure remote administration of junctions on that file server.
+A remote FedFS administrative client can identify new NSDBs, update an
+NSDB's connection parameters (security information and DNS name), and
+create and delete FedFS junctions on that file server.
+.P
+Because
+.BR rpc.fedfsd (8)
+can operate on any object in an file server's local file systems,
+FedFS administrative clients communicate with
+.BR rpc.fedfsd (8)
+via secure RPC.
+RPCSEC GSSAPI and Kerberos must be configured and operating
+correctly to ensure proper security.
+.SS Command line arguments
+.IP "\fB\-?, \-\-help"
+Prints
+.BR rpc.fedfsd (8)
+version and usage message on
+.IR stderr ,
+then exits.
+.IP "\fB\-d, \-\-debug"
+Enables additional debugging messages to be produced during operation.
+.IP "\fB\-F, \-\-foreground"
+Keeps
+.BR rpc.fedfsd (8)
+attached to its controlling terminal so that operation
+can be monitored directly, or run under a debugger.
+.BR rpc.fedfsd (8)
+also writes log messages on
+.I stderr
+instead of to the system log.
+If this option is not specified,
+.BR rpc.fedfsd (8)
+backgrounds itself soon after it starts.
+.IP "\fB\-u, \-\-uid \fInum\fP"
+Specifies the numeric UID that
+.BR rpc.fedfsd (8)
+runs under after dropping root privileges.
+By default, the numeric UID for the user
+.I fedfs
+is used.
+.IP "\fB\-g, \-\-gid \fInum\fP"
+Specifies the numeric GID that
+.BR rpc.fedfsd (8)
+runs under after dropping root privileges.
+By default, the numeric GID for the group
+.I fedfs
+is used.
+.TP
+.IP "\fB\-o, \-\-port \fInum\fP"
+Specifies the port number used for RPC listener sockets.
+If this option is not specified,
+.BR rpc.fedfsd (8)
+chooses a random ephemeral port for each listener socket.
+.SH NOTES
+To create, resolve, or delete a junction, FedFS admin clients
+specify the pathname of that junction as an argument to the
+requested operation.
+The FedFS admin protocol supports at least two types of these
+pathnames:
+.IR ADMIN ,
+and
+.IR NFS .
+At this time the Linux
+.BR rpc.fedfs (8)
+daemon supports only FedFS ADMIN pathnames.
+This type of pathname represents a fully-qualified POSIX pathname
+relative to the file server's physical root directory.
+.SH FILES
+.TP
+.I /var/lib/fedfs/nsdbparam.sqlite3
+database of NSDB connection parameters
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR nfs (5)
+.sp
+RFC 3530 for the NFS version 4 specification
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project, and information about reporting bugs,
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>
