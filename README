@@ -135,8 +135,10 @@ recognizes FedFS junctions must be installed.  (To do: provide
 specific version information)
 
 An entry for the FedFS ADMIN protocol should be added to /etc/rpc.
-This is program number 100418.  For now, we're using the service
-name "fedfs," and editing /etc/rpc by hand.
+This is program number 100418.  Until /etc/rpc has been updated
+upstream, edit /etc/rpc by hand and add a line containing
+
+	fedfs_admin	100418
 
 The fedfsd program requires rpcbind and libtirpc.  In the future, it
 will also require correctly configured RPCSEC GSSAPI on the system

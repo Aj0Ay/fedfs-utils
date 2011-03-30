@@ -132,7 +132,7 @@ FedFS file server
   o Run "nsdbparams init" to create the NSDB connection parameter
     database
 
-  o Add a "fedfs" entry to /etc/rpc (100418)
+  o Add a line containing "fedfs_admin	100418" to /etc/rpc
 
   o (Eventually RPCGSS configuration will go here)
 
@@ -164,7 +164,7 @@ FedFS admin client
   o Run "nsdbparams init" to create the NSDB connection parameter
     database
 
-  o Add a "fedfs" entry to /etc/rpc (100418)
+  o Add a line containing "fedfs_admin	100418" to /etc/rpc
 
   o (Eventually RPCGSS configuration will go here)
 
