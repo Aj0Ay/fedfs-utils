@@ -38,6 +38,10 @@ nsdb-list
 nsdb-nces
 nsdb-resolve-fsn
 nsdb-update-fsl
+doc/rpcl/fedfs_admin.h
+doc/rpcl/fedfs_admin_clnt.c
+doc/rpcl/fedfs_admin_svc.c
+doc/rpcl/fedfs_admin_xdr.c
 Makefile
 Makefile.in
 autom4te.cache/
@@ -57,3 +61,4 @@ libtool
 stamp-h1
 depcomp
 .deps/
+.stgit*
