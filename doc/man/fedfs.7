@@ -24,7 +24,7 @@
 .\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 .\"
 .\"
-.TH FEDFS 7 "5 Mar 2011"
+.TH FEDFS 7 "31 Mar 2011"
 .SH NAME
 fedfs \- The Linux Federated File System implementation
 .SH DESCRIPTION
@@ -39,8 +39,10 @@ to another file system share,
 but it is not visible to applications.
 It behaves like an automounted directory where a new file system 
 mount is done when an application first accesses that directory.
-The arguments of the mount operation are controlled
+The arguments of such automatic mount operations are controlled
 by information returned by the file server.
+A file server can even return a list of several servers
+for a client to try to mount.
 .P
 Today, file system referral mechanisms exist
 in several network file system protocols.
@@ -72,14 +74,6 @@ Useful data is contained in other shares
 which clients discover by following FedFS junctions
 in the domain root directory.
 .P
-On FedFS-enabled Linux clients, the
-.BR mount.fedfs (8)
-command finds and mounts the root of a FedFS domain.
-The
-.BR mount.fedfs (8)
-command also ensures that the pathnames of all files
-in a FedFS domain look the same on all participating clients.
-.P
 Although FedFS junctions are stored on file servers,
 they are lightweight objects that contain little actual data.
 The bulk of FedFS junction information in a FedFS domain
@@ -107,7 +101,9 @@ A FedFS
 is a UUID and an NSDB domainname and port.
 A FedFS
 .I fileset location
-is an LDAP record that describes the location of a copy of a fileset's data.
+is an LDAP record that describes the location
+(the server where it resides, and its export path)
+of a copy of a fileset's data.
 .P
 A fileset, for example, can have multiple replicas.
 Such a fileset has one FedFS fileset name,
@@ -121,7 +117,7 @@ for that FedFS fileset name.
 The file server returns this location information to its clients
 via a file system referral.
 .P
-On Linux file servers,
+On Linux NFS file servers,
 .BR rpc.mountd (8)
 is the gateway through which the in-kernel NFS server performs
 FedFS junction resolution.
@@ -140,8 +136,7 @@ domain's namespace on all clients.
 Replicas of a domain's root are located by looking for
 DNS SRV records that advertise file servers exporting domain root replicas.
 .P
-By convention, the top of the global FedFS namespace on clients
-looks like this:
+By convention, the top of the global FedFS namespace looks like this:
 .RS
 .sp
 .RI / fstype / domainname
@@ -165,7 +160,35 @@ Note this means that the read-write replicas, and all parts of the
 file system below them,
 are visible at a different point in a client's name space
 than are read-only replicas.
+.SS Globally Useful Names
+On FedFS-enabled Linux clients, the
+.BR mount.fedfs (8)
+command finds and mounts the root of a FedFS domain.
 .P
+Typically, FedFS clients mount the FedFS namespace so that FedFS
+pathnames appear the same on all clients.
+Such pathnames are referred to as
+.IR "globally useful names" ,
+since a globally useful name refers to exactly the same file object
+on every client in a domain.
+For example, the FedFS globally useful name
+.I /nfs4/example.net
+would be mounted on a local directory on the client called
+.I /nfs4/example.net
+so that applications have the same view of the
+.I example.net
+domain namespace on all FedFS clients.
+.P
+Note that the Linux
+.BR mount.fedfs (8)
+command can attach anywhere in the client's local file namespace
+any directory in the FedFS namespace the client
+has permission to access.
+This can be useful to ensure local namespace compatibility in some cases,
+or hide parts of the FedFS namespace for security purposes.
+However, it breaks cross-platform application interoperability
+by presenting applications with multiple pathnames to the same file object.
+Therefore it should be avoided.
 .SS Mount option inheritance
 When encountering a file system referral, the Linux client
 treats it as a server-initiated mount request.

@@ -342,28 +342,30 @@ out:
  * @param text_options NUL-terminated C string containing user's mount options
  * @return an exit status code
  *
- * Parse the domainname, export path, and mounted-on dir, then choose the
- * file system protocol.
+ * Parse the pathname in "source."  It contains the file system protocol
+ * and FedFS domain name.  Then pass these arguments to the appropriate
+ * mount helper subcommand.
  */
 static int
 try_mount(const char *source, const char *target, const char *text_options)
 {
-	char *mounted_on_dir, *domainname, *topdir;
+	char *global_name, *topdir, *domainname, *remaining;
 	int result;
 
+	remaining = NULL;
 	result = EX_FAIL;
 
-	mounted_on_dir = strdup(target);
-	if (mounted_on_dir == NULL) {
-		fprintf(stderr, _("%s: Unable to parse mounted-on "
-				"directory\n"), progname);
+	global_name = strdup(source);
+	if (global_name == NULL) {
+		fprintf(stderr, _("%s: Unable to parse globally useful name\n"),
+				progname);
 		goto out;
 	}
 
-	topdir = strtok(mounted_on_dir, "/");
+	topdir = strtok(global_name, "/");
 	if (topdir == NULL) {
-		fprintf(stderr, _("%s: Bad mounted-on directory: %s\n"),
-			progname, target);
+		fprintf(stderr, _("%s: Invalid globally useful name: %s\n"),
+			progname, source);
 		goto out;
 	}
 	if (verbose)
@@ -372,32 +374,51 @@ try_mount(const char *source, const char *target, const char *text_options)
 
 	domainname = strtok(NULL, "/");
 	if (domainname == NULL) {
-		fprintf(stderr, _("%s: Missing domain name in mounted-on "
-				"directory: %s\n"), progname, target);
+		fprintf(stderr, _("%s: Missing domain name in globally "
+				"useful name: %s\n"), progname, source);
 		goto out;
 	}
 	if (verbose)
 		printf(_("%s: Domain name:          %s\n"),
 			progname, domainname);
 
-	if (strtok(NULL, "/") != NULL) {
-		fprintf(stderr, _("%s: Trailing mounted-on directories "
-				"not supported\n"), progname);
-		goto out;
+	remaining = strtok(NULL, "/");
+	if (remaining == NULL) {
+		remaining = strdup("/");
+		if (remaining == NULL) {
+			fprintf(stderr, _("%s: No memory\n"), progname);
+			goto out;
+		}
+	} else {
+		char *tmp;
+
+		tmp = malloc(strlen(remaining + 1));
+		if (tmp == NULL) {
+			fprintf(stderr, _("%s: No memory\n"), progname);
+			remaining = NULL;
+			goto out;
+		}
+		strcpy(tmp, "/");
+		strcat(tmp, remaining);
+		remaining = tmp;
 	}
+	if (verbose)
+		printf(_("%s: Export path:          %s\n"),
+			progname, remaining);
 
 	if (strcmp(topdir, FEDFS_NFS4_TLDIR) == 0)
-		result = nfs4_mount(domainname, source, target, text_options);
+		result = nfs4_mount(domainname, remaining, target, text_options);
 #if 0
 	/* example: SMB support plugs in here */
 	else if (strcmp(topdir, FEDFS_SMB_TLDIR) == 0)
-		result = smb_mount(domainname, source, target, text_options);
+		result = smb_mount(domainname, remaining, target, text_options);
 #endif
 	else
 		fprintf(stderr, _("%s: Unrecognized file system protocol\n"), progname);
 
 out:
-	free(mounted_on_dir);
+	free(global_name);
+	free(remaining);
 
 	return result;
 }
