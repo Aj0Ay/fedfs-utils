@@ -27,7 +27,7 @@
 #
 
 AC_PREREQ([2.65])
-AC_INIT([fedfs-utils], [0.6.0], [linux-nfs@vger.kernel.org])
+AC_INIT([fedfs-utils], [0.6.1], [linux-nfs@vger.kernel.org])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
