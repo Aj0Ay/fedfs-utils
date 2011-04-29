@@ -944,9 +944,9 @@ FedFsStatus
 nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		struct fedfs_fsl **fsls, unsigned int *ldap_err)
 {
-	char **contexts, *try;
+	char **contexts, **nce_list;
 	FedFsStatus retval;
-	int i;
+	int i, j;
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
@@ -958,26 +958,43 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 						fsn_uuid, fsls, ldap_err);
 
 	/*
-	 * Caller did not provide an nce.  Discover the server's NSDB
-	 * container entry.
+	 * Caller did not provide an nce.  Generate a list
+	 * of the server's NSDB container entries.
 	 */
 	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
 	if (retval != FEDFS_OK)
 		return retval;
 
-	for (i = 0; contexts[i] != NULL; i++) {
-		retval = nsdb_get_nceprefix_s(host, contexts[i], &try, ldap_err);
-		if (retval == FEDFS_OK) {
-			retval = nsdb_resolve_fsn_find_entry_s(host->fn_ldap, try,
-							fsn_uuid, fsls, ldap_err);
-			free(try);
-			if (retval == FEDFS_OK)
-				break;
-		} else if (retval != FEDFS_ERR_NSDB_NONCE)
+	for (i = 0; contexts[i] != NULL; i++);
+	nce_list = calloc(i + 1, sizeof(char *));
+	if (nce_list == NULL) {
+		retval = FEDFS_ERR_SVRFAULT;
+		goto out;
+	}
+
+	/*
+	 * Query only naming contexts that have an NCE prefix
+	 */
+	for (i = 0, j = 0; contexts[i] != NULL; i++) {
+		retval = nsdb_get_nceprefix_s(host, contexts[i],
+						&nce_list[j], ldap_err);
+		if (retval == FEDFS_OK)
+			j++;
+	}
+	if (j == 0)
+		goto out;
+
+	for (j = 0; nce_list[j] != NULL; j++) {
+		retval = nsdb_resolve_fsn_find_entry_s(host->fn_ldap,
+							nce_list[j], fsn_uuid,
+							fsls, ldap_err);
+		if (retval == FEDFS_OK)
 			break;
 	}
-	nsdb_free_string_array(contexts);
 
+out:
+	nsdb_free_string_array(nce_list);
+	nsdb_free_string_array(contexts);
 	return retval;
 }
 
@@ -1180,9 +1197,9 @@ out:
 FedFsStatus
 nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 {
-	char **contexts, *try;
+	char **contexts, **nce_list;
 	FedFsStatus retval;
-	int i;
+	int i, j;
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
@@ -1202,18 +1219,32 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 	if (retval != FEDFS_OK)
 		return retval;
 
-	for (i = 0; contexts[i] != NULL; i++) {
-		retval = nsdb_get_nceprefix_s(host, contexts[i], &try, ldap_err);
-		if (retval == FEDFS_OK) {
-			retval = nsdb_list_find_entries_s(host->fn_ldap, try, fsns,
-								ldap_err);
-			free(try);
-			if (retval == FEDFS_OK)
-				break;
-		} else if (retval != FEDFS_ERR_NSDB_NONCE)
-			break;
+	for (i = 0; contexts[i] != NULL; i++);
+	nce_list = calloc(i + 1, sizeof(char *));
+	if (nce_list == NULL) {
+		retval = FEDFS_ERR_SVRFAULT;
+		goto out;
 	}
-	nsdb_free_string_array(contexts);
 
+	/*
+	 * List only naming contexts that have an NCE prefix
+	 */
+	for (i = 0, j = 0; contexts[i] != NULL; i++) {
+		retval = nsdb_get_nceprefix_s(host, contexts[i],
+						&nce_list[j], ldap_err);
+		if (retval == FEDFS_OK)
+			j++;
+	}
+	if (j == 0)
+		goto out;
+
+	for (j = 0; nce_list[j] != NULL; j++)
+		nsdb_list_find_entries_s(host->fn_ldap, nce_list[j],
+						fsns, ldap_err);
+	retval = FEDFS_OK;
+
+out:
+	nsdb_free_string_array(nce_list);
+	nsdb_free_string_array(contexts);
 	return retval;
 }
