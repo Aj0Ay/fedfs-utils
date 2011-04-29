@@ -41,22 +41,14 @@
 #include <libgen.h>
 #include <errno.h>
 #include <getopt.h>
+#include <locale.h>
 #include <netdb.h>
+#include <langinfo.h>
 
 #include "nls.h"
 #include "getsrvinfo.h"
 #include "token.h"
 #include "gpl-boiler.h"
-
-/**
- * Reserved keyword replaced with constructed value of mounted-on directory
- */
-#define MNT_DEFAULT_TARGET		"default"
-
-/**
- * Mount option keyword for choosing r/w or r/o replica
- */
-#define FEDFS_REPLICA_OPTION		"fedfs_replica"
 
 /**
  * Top-level directory on client under which we mount NFSv4 domain roots
@@ -423,10 +415,24 @@ out:
 	return result;
 }
 
+/**
+ * Program entry point
+ *
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
+ */
 int main(int argc, char *argv[])
 {
 	char *source, *target, *text_options;
 	int c, mnt_err;
+
+	/* Ensure UTF-8 strings can be handled transparently */
+	if (setlocale(LC_CTYPE, "") == NULL ||
+	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
+		fprintf(stderr, _("Failed to set locale and langinfo\n"));
+		return 1;
+	}
 
 	progname = basename(argv[0]);
 
