@@ -81,22 +81,27 @@ instead of to the system log.
 If this option is not specified,
 .BR rpc.fedfsd (8)
 backgrounds itself soon after it starts.
-.IP "\fB\-u, \-\-uid \fInum\fP"
-Specifies the numeric UID that
+.IP "\fB\-u, \-\-uid=\fIid\fP"
+Specifies the numeric or text UID that
 .BR rpc.fedfsd (8)
 runs under after dropping root privileges.
-By default, the numeric UID for the user
+By default, the UID for the user
 .I fedfs
 is used.
-.IP "\fB\-g, \-\-gid \fInum\fP"
-Specifies the numeric GID that
+If that user doesn't exist, then the UID for
+.I nobody
+is used instead.
+.IP "\fB\-g, \-\-gid=\fIid\fP"
+Specifies the numeric or text GID that
 .BR rpc.fedfsd (8)
 runs under after dropping root privileges.
-By default, the numeric GID for the group
+By default, the GID for the group
 .I fedfs
 is used.
-.TP
-.IP "\fB\-o, \-\-port \fInum\fP"
+If that group doesn't exist, then the GID for
+.I nobody
+is used instead.
+.IP "\fB\-o, \-\-port=\fInum\fP"
 Specifies the port number used for RPC listener sockets.
 If this option is not specified,
 .BR rpc.fedfsd (8)
