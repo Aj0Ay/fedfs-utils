@@ -39,16 +39,19 @@ to another file system share,
 but it is not visible to applications.
 It behaves like an automounted directory where a new file system 
 mount is done when an application first accesses that directory.
-The arguments of such automatic mount operations are controlled
-by information returned by the file server.
-A file server can even return a list of several servers
-for a client to try to mount.
-.P
 Today, file system referral mechanisms exist
-in several network file system protocols.
+in several standard network file system protocols.
+.P
+Thus FedFS does not require any change
+to file system protocols or client implementations.
 FedFS provides its namespace features using referral mechanisms
-already built in to network file system protocols
-so that no change to file system protocols or clients is required.
+already built in to network file system protocols.
+.P
+As a result, FedFS provides network file system namespace configuration
+to file system clients via network file systems themselves,
+rather than via side-band protocols like NIS.
+Clients automatically share a common view of the network file system namespace
+with no need for individual configuration on each client.
 .P
 Currently, the Linux FedFS implementation supports only
 NFS version 4 referrals.
