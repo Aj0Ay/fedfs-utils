@@ -71,7 +71,7 @@ nsdb_nces_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] "
-			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ]\n\n",
+			"[ -l nsdbname ] [ -r nsdbport ]\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
@@ -211,18 +211,19 @@ main(int argc, char **argv)
 		goto out_close;
 	}
 
+	printf("NSDB: %s:%u\n", nsdbname, nsdbport);
 	for (i = 0; contexts[i] != NULL; i++) {
 		char *dn;
 
-		printf("namingContext: %s\n", contexts[i]);
 		retval = nsdb_get_nceprefix_s(host, contexts[i], &dn, &ldap_err);
+		printf("  namingContext '%s' ", contexts[i]);
 		if (retval == FEDFS_OK) {
-			printf("The namingContext '%s' is a FedFS NCE.  "
-				"The top-level entry of this FedFS DIT "
-				"is '%s'.\n\n", contexts[i], dn);
+			printf("is a FedFS NCE, DIT starts at '%s'.\n",
+				contexts[i], dn);
 			free(dn);
+			exit_status = EXIT_SUCCESS;
 		} else
-			printf("\n");
+			printf("is not a FedFS NCE.\n");
 	}
 
 	nsdb_free_string_array(contexts);
