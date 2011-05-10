@@ -79,7 +79,7 @@ fedfs_set_nsdb_params_usage(const char *progname)
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-f, --certfile	Name of file containing X.509 cert\n");
 	fprintf(stderr, "\t-?, --help           Print this help\n");
-	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'nettype')\n");
+	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname to set\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port to set\n");

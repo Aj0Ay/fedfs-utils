@@ -69,7 +69,7 @@ fedfs_null_usage(const char *progname)
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
-	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'nettype')\n");
+	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
 	fflush(stderr);
 
