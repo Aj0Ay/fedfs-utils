@@ -1,10 +1,6 @@
 /**
  * @file src/nsdbc/nsdb-describe.c
  * @brief Update the FedFsDescription attribute of a FedFS entry
- *
- * @todo
- *	The fedfsDescr attribute is multi-valued.  This client tool
- *	allows replacing or deleting only one value.
  */
 
 /*
@@ -80,7 +76,7 @@ nsdb_describe_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -b ] [ -D binddn ] [ -w passwd ] "
-			"[ -l nsdbname ] [ -r nsdbport ] [ -e entry ] "
+			"[ -l nsdbname ] [ -r nsdbport ] -e entry "
 			"[ -a description] [-y]\n\n",
 			progname);
 
@@ -243,8 +239,9 @@ main(int argc, char **argv)
 							description, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully %s description value for %s\n",
-			delete ? "removed" : "updated", entry);
+		printf("Successfully %s description value %s %s\n",
+			delete ? "removed" : "updated",
+			delete ? "from" : "for", entry);
 		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
