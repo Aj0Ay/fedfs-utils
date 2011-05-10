@@ -77,7 +77,7 @@ nsdb_create_nce_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
 			"[ -l nsdbname ] [ -r nsdbport ] "
-			"[ -e entry ] [ -p nceprefix ] [-a] [-q]\n\n",
+			"[ -e entry ] [ -x nceprefix ] [-a] [-q]\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
