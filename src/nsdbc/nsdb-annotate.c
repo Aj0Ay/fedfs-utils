@@ -78,7 +78,7 @@ nsdb_annotate_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
-			"[ -l nsdbname ] [ -r nsdbport ] [ -e entry ] "
+			"[ -l nsdbname ] [ -r nsdbport ] -e entry "
 			"[ -a annotation ] [ -k keyword ] [ -v value ] [ -y ]\n\n",
 			progname);
 
@@ -295,9 +295,9 @@ main(int argc, char **argv)
 	}
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully %s annotation \"%s\" = \"%s\"\n",
-			delete ? "removed" : "updated",
-			keyword, value);
+		printf("Successfully %s annotation \"%s\" = \"%s\" %s %s\n",
+			delete ? "removed" : "updated", keyword, value,
+			delete ? "from" : "for", entry);
 		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
