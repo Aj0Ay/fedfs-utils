@@ -99,7 +99,7 @@ static void
 nsdb_list_display_fsls(struct fedfs_fsl *fsls)
 {
 	for ( ; fsls != NULL; fsls = fsls->fl_next) {
-		printf("  FSL UUID: %s\n", fsls->fl_fsluuid);
+		printf("    FSL UUID: %s\n", fsls->fl_fsluuid);
 	}
 }
 
@@ -110,7 +110,7 @@ nsdb_list_resolve_and_display_fsn(nsdb_t host, const char *nce, const char *fsn_
 	unsigned int ldap_err;
 	FedFsStatus retval;
 
-	printf("FSN UUID: %s\n", fsn_uuid);
+	printf("  FSN UUID: %s\n", fsn_uuid);
 
 	retval = nsdb_resolve_fsn_s(host, nce, fsn_uuid, &fsls, &ldap_err);
 	switch (retval) {
@@ -119,14 +119,14 @@ nsdb_list_resolve_and_display_fsn(nsdb_t host, const char *nce, const char *fsn_
 		nsdb_free_fsls(fsls);
 		break;
 	case FEDFS_ERR_NSDB_NOFSL:
-		printf("  No FSL entries found\n");
+		printf("    No FSL entries found\n");
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		fprintf(stderr, "NSDB LDAP error: %s\n",
+		fprintf(stderr, "    NSDB LDAP error: %s\n",
 			ldap_err2string(ldap_err));
 		break;
 	default:
-		fprintf(stderr, "FedFsStatus code "
+		fprintf(stderr, "    FedFsStatus code "
 			"while resolving FSN UUID %s: %s\n",
 			fsn_uuid, nsdb_display_fedfsstatus(retval));
 	}
@@ -254,6 +254,7 @@ main(int argc, char **argv)
 	retval = nsdb_list_s(host, nce, &fsns, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
+		printf("NSDB: %s:%u, %s\n", nsdbname, nsdbport, nce);
 		for (i = 0; fsns[i] != NULL; i++)
 			nsdb_list_resolve_and_display_fsn(host, nce, fsns[i]);
 		nsdb_free_string_array(fsns);
