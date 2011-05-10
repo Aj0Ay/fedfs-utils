@@ -72,7 +72,7 @@ fedfs_get_limited_nsdb_params_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"-l nsdbname -r nsdbport\n\n", progname);
+			"[-l nsdbname] [-r nsdbport]\n\n", progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");

@@ -73,7 +73,7 @@ fedfs_set_nsdb_params_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"[-f certfile] -l nsdbname -r nsdbport\n\n",
+			"[-f certfile] [-l nsdbname] [-r nsdbport]\n\n",
 			progname);
 
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");

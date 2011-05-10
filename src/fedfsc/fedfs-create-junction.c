@@ -82,7 +82,7 @@ fedfs_create_junction_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"-p path -u fsn-uuid -l nsdbname [-r nsdbport]\n\n",
+			"-p path -u fsn-uuid [-l nsdbname] [-r nsdbport]\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
