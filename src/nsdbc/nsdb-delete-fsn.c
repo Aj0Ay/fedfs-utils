@@ -231,7 +231,8 @@ main(int argc, char **argv)
 	retval = nsdb_delete_fsn_s(host, nce, fsn_uuid, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("FSN successfully deleted.\n");
+		printf("Successfully deleted FSN record\n"
+			"  fedfsFsnUuid=%s,%s\n", fsn_uuid, nce);
 		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
