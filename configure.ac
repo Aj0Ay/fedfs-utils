@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright 2010 Oracle.  All rights reserved.
+# Copyright 2010, 2011 Oracle.  All rights reserved.
 #
 # This file is part of fedfs-utils.
 #
@@ -27,7 +27,7 @@
 #
 
 AC_PREREQ([2.65])
-AC_INIT([fedfs-utils], [0.6.1], [fedfs-utils-devel@oss.oracle.com])
+AC_INIT([fedfs-utils], [0.6.2], [fedfs-utils-devel@oss.oracle.com])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
