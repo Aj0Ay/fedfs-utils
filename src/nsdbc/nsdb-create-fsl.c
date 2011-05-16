@@ -83,7 +83,7 @@ nsdb_create_fsl_usage(const char *progname)
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
 			"-u fsn-uuid -x fsl-uuid -s servername "
-			"[ -t serverport ] [ -p serverpath ]\n\n",
+			"[ -o serverport ] -p serverpath\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
@@ -211,7 +211,7 @@ main(int argc, char **argv)
 		nsdb_create_fsl_usage(progname);
 	}
 	if (nce == NULL || fsn_uuid == NULL || fsl_uuid == NULL ||
-	    nsdbname == NULL || servername == NULL) {
+	    nsdbname == NULL || servername == NULL || serverpath == NULL) {
 		fprintf(stderr, "Missing required command line argument\n");
 		nsdb_create_fsl_usage(progname);
 	}
@@ -264,7 +264,9 @@ main(int argc, char **argv)
 					servername, serverport, serverpath, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully created FSL %s\n", fsl_uuid);
+		printf("Successfully created FSL record\n"
+			"  fedfsFslUuid=%s,fedfsFsnUuid=%s,%s\n",
+				fsl_uuid, fsn_uuid, nce);
 		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
