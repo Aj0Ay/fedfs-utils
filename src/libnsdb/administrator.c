@@ -789,6 +789,9 @@ nsdb_update_fsl_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
  * @return a FedFsStatus code
  *
  * If caller did not provide an NCE, discover one by querying the NSDB.
+ *
+ * This operation works only with single-value attributes.  If "value"
+ * is NULL, the attribute is removed.
  */
 FedFsStatus
 nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
@@ -801,7 +804,7 @@ nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 	}
 
 	if (nce == NULL || fsn_uuid == NULL || fsl_uuid == NULL ||
-	    attribute == NULL || value == NULL) {
+	    attribute == NULL) {
 		xlog(L_ERROR, "%s: Invalid parameter", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}

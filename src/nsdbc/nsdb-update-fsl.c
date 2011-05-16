@@ -84,7 +84,7 @@ nsdb_update_fsl_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
-			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] [ -z value ] "
+			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] [ -v value ] "
 			"-a attribute -u fsn-uuid -x fsl-uuid\n\n",
 			progname);
 
@@ -257,7 +257,9 @@ main(int argc, char **argv)
 					attribute, value, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully updated FSL %s\n", fsl_uuid);
+		printf("Successfully updated FSL record\n"
+			"  fedfsFslUuid=%s,fedfsFsnUuid=%s,%s\n",
+				fsl_uuid, fsn_uuid, nce);
 		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
