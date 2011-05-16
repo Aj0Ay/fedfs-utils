@@ -233,7 +233,8 @@ main(int argc, char **argv)
 					nsdbname, nsdbport, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully created FSN\n");
+		printf("Successfully created FSN record\n"
+			"  fedfsFsnUuid=%s,%s\n", fsn_uuid, nce);
 		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
