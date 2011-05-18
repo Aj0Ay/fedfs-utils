@@ -218,8 +218,7 @@ main(int argc, char **argv)
 		retval = nsdb_get_nceprefix_s(host, contexts[i], &dn, &ldap_err);
 		printf("  namingContext '%s' ", contexts[i]);
 		if (retval == FEDFS_OK) {
-			printf("is a FedFS NCE, DIT starts at '%s'.\n",
-				contexts[i], dn);
+			printf("is a FedFS NCE, DIT starts at '%s'.\n", dn);
 			free(dn);
 			exit_status = EXIT_SUCCESS;
 		} else
