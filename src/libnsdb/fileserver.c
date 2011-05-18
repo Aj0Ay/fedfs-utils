@@ -115,9 +115,8 @@ nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
 		ber_memvfree((void **)referrals);
 	}
 
-	/* XXX: This rather needs "REFERRAL NOT SUPPORTED" but that
-	 * draft isn't ready yet */
-	return FEDFS_ERR_NSDB_RESPONSE;
+	/* Haven't implemented LDAP referral support yet */
+	return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
 }
 
 /**
