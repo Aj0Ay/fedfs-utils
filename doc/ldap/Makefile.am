@@ -23,4 +23,4 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
-EXTRA_DIST	= 91fedfs-2252.ldif 91fedfs.ldif
+EXTRA_DIST	= fedfs.schema fedfs-schema.ldif

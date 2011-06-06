@@ -44,9 +44,9 @@ iPlanet Directory Server (such as 389-ds) accept schema files which
 strictly adhere to an older standard, RFC 2252.
 
 This package provides both versions of the FedFS schema.  Choose
-either 91fedfs.ldif (for OpenLDAP-derived LDAP servers) or
-91fedfs-2252.ldif (for iPlanet-derived servers), and copy that file to
-the schema repository your server uses.  For example, 389-ds uses
+either fedfs.schema (for OpenLDAP-derived LDAP servers) or
+fedfs-schema.ldif (for iPlanet-derived servers), and copy that file
+to the schema repository your server uses.  For example, 389-ds uses
 /etc/dirsrv/schema to hold schema files that should be used when
 creating new slapd instances.
 
