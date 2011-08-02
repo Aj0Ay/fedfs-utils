@@ -532,7 +532,7 @@ nsdb_new_certfile(const char *certdata, const unsigned int certlen,
 		goto out;
 	}
 
-	fd = open(pathbuf, O_WRONLY | O_SYNC | O_CREAT | O_EXCL);
+	fd = open(pathbuf, O_WRONLY | O_SYNC | O_CREAT | O_EXCL, 0666);
 	if (fd == -1) {
 		xlog(D_GENERAL, "%s: Failed to open %s: %m",
 			__func__, pathbuf);
