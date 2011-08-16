@@ -251,7 +251,7 @@ nsdb_parse_nceprefix_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 
 out_free:
 	ldap_value_free_len(values);
-	return FEDFS_OK;
+	return retval;
 }
 
 /**
