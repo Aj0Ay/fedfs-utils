@@ -411,6 +411,7 @@ main(int argc, char **argv)
 	unsigned int type = FEDFS_SEC_NONE;
 	unsigned long tmp;
 	struct passwd *pw;
+	struct group *grp;
 	uid_t uid;
 	gid_t gid;
 
@@ -472,16 +473,28 @@ main(int argc, char **argv)
 			certfile = optarg;
 			break;
 		case 'g':
-			errno = 0;
-			tmp = strtoul(optarg, &endptr, 10);
-			if (errno != 0 || *endptr != '\0' ||
-			    tmp > UINT32_MAX) {
-				fprintf(stderr, "Bad GID: %s\n",
-					optarg);
+			if (optarg == NULL || *optarg == '\0') {
+				fprintf(stderr, "Invalid gid specified");
 				nsdbparams_usage(progname);
 				goto out;
 			}
-			gid = (gid_t)tmp;
+
+			errno = 0;
+			tmp = strtoul(optarg, &endptr, 10);
+			if (errno != 0 || *endptr != '\0' || tmp > UINT_MAX) {
+				grp = getgrnam(optarg);
+				if (grp == NULL) {
+					fprintf(stderr, "Invalid gid specified");
+					goto out;
+				}
+			} else {
+				grp = getgrgid((gid_t)tmp);
+				if (grp == NULL) {
+					fprintf(stderr, "Invalid gid specified");
+					goto out;
+				}
+			}
+			gid = grp->gr_gid;
 			break;
 		case 'h':
 		case '?':
@@ -519,16 +532,29 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'u':
-			errno = 0;
-			tmp = strtoul(optarg, &endptr, 10);
-			if (errno != 0 || *endptr != '\0' ||
-			    tmp > UINT32_MAX) {
-				fprintf(stderr, "Bad UID: %s\n",
-					optarg);
+			if (optarg == NULL || *optarg == '\0') {
+				fprintf(stderr, "Invalid uid specified");
 				nsdbparams_usage(progname);
 				goto out;
 			}
-			uid = (uid_t)tmp;
+
+			errno = 0;
+			tmp = strtoul(optarg, &endptr, 10);
+			if (errno != 0 || *endptr != '\0' || tmp > UINT_MAX) {
+				pw = getpwnam(optarg);
+				if (pw == NULL) {
+					fprintf(stderr, "Invalid uid specified");
+					goto out;
+				}
+			} else {
+				pw = getpwuid((uid_t)tmp);
+				if (pw == NULL) {
+					fprintf(stderr, "Invalid uid specified");
+					goto out;
+				}
+			}
+			uid = pw->pw_uid;
+			gid = pw->pw_gid;
 			break;
 		default:
 			xlog(L_ERROR, "Invalid command line "
