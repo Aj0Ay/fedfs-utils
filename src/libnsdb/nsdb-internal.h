@@ -104,6 +104,9 @@ _Bool		 nsdb_compare_dn_string(LDAPDN dn1, const char *dn2_in,
 _Bool		 nsdb_compare_dn_strings(const char *dn1_in,
 				const char *dn2_in,
 				unsigned int *ldap_err);
+FedFsStatus	 nsdb_left_remove_rdn(LDAPDN *dn, unsigned int *ldap_err);
+FedFsStatus	 nsdb_right_append_rdn(LDAPDN *dn, LDAPRDN rdn,
+				unsigned int *ldap_err);
 
 
 /**

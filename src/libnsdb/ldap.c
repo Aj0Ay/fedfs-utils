@@ -950,3 +950,145 @@ out:
 	ldap_dnfree(dn1);
 	return result;
 }
+
+/**
+ * Strip an RDN from the left end of a DN
+ *
+ * @param dn IN/OUT: a structured LDAP distinguished name
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free returned "*dn" with ldap_dnfree(3).
+ *
+ * Convert "dn" to a string starting after the first RDN, then
+ * convert the resulting string back to an LDAPDN.
+ */
+FedFsStatus
+nsdb_left_remove_rdn(LDAPDN *dn, unsigned int *ldap_err)
+{
+	LDAPDN new, dn_in;
+	char *tmp = NULL;
+	int rc;
+
+	if (dn == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	dn_in = *dn;
+	dn_in++;
+
+	rc = ldap_dn2str(dn_in, &tmp, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to parse DN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	rc = ldap_str2dn(tmp, &new, LDAP_DN_FORMAT_LDAPV3);
+	free(tmp);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to unparse DN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	ldap_dnfree(*dn);
+	*dn = new;
+	return FEDFS_OK;
+}
+
+/**
+ * Append an RDN to the right end of a DN
+ *
+ * @param dn IN/OUT: a structured LDAP distinguished name
+ * @param rdn a structured LDAP relative distinguished name
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free returned "*dn" with ldap_dnfree(3).
+ *
+ * Convert both structured DNs to strings, concatenate them, then
+ * convert the resulting string back to an LDAPDN.
+ */
+FedFsStatus
+nsdb_right_append_rdn(LDAPDN *dn, LDAPRDN rdn, unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+	char *rstr = NULL;
+	char *tmp = NULL;
+	char *buf = NULL;
+	LDAPDN new;
+	size_t len;
+	int rc;
+
+	if (dn == NULL || rdn == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		retval = FEDFS_ERR_INVAL;
+		goto out;
+	}
+
+	rc = ldap_rdn2str(rdn, &rstr, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to parse RDN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		retval = FEDFS_ERR_NSDB_LDAP_VAL;
+		goto out;
+	}
+
+	if (*dn == NULL) {
+		rc = ldap_str2dn(rstr, &new, LDAP_DN_FORMAT_LDAPV3);
+		if (rc != LDAP_SUCCESS) {
+			xlog(D_GENERAL, "%s: Failed to unparse DN: %s",
+				__func__, ldap_err2string(rc));
+			*ldap_err = rc;
+			retval = FEDFS_ERR_NSDB_LDAP_VAL;
+			goto out;
+		}
+		goto out_success;
+	}
+
+	rc = ldap_dn2str(*dn, &tmp, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to parse DN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		retval = FEDFS_ERR_NSDB_LDAP_VAL;
+		goto out;
+	}
+
+	len = strlen(tmp) + strlen(",") + strlen(rstr) + 1;
+	buf = malloc(len);
+	if (buf == NULL) {
+		xlog(D_GENERAL, "%s: no memory", __func__);
+		retval = FEDFS_ERR_SVRFAULT;
+		goto out;
+	}
+
+	strcpy(buf, tmp);
+	strcat(buf, ",");
+	strcat(buf, rstr);
+
+	rc = ldap_str2dn(buf, &new, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to unparse DN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		retval = FEDFS_ERR_NSDB_LDAP_VAL;
+		goto out;
+	}
+
+out_success:
+	ldap_dnfree(*dn);
+	*dn = new;
+	retval = FEDFS_OK;
+
+out:
+	free(buf);
+	ldap_memfree(tmp);
+	free(rstr);
+	return retval;
+}
