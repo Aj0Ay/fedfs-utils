@@ -271,18 +271,11 @@ FedFsStatus	 nsdb_update_fsl_s(nsdb_t host, const char *nce,
  **/
 
 /**
- * Create an NCE
+ * Update or remove NSDB container information
  */
-FedFsStatus	 nsdb_create_nce_s(nsdb_t host, const _Bool aci,
+FedFsStatus	 nsdb_update_nci_s(nsdb_t host, const char *nce,
 				unsigned int *ldap_err);
-FedFsStatus	 nsdb_update_nce_s(nsdb_t host, const char *nce,
-				const char *nceprefix,
-				unsigned int *ldap_err);
-
-/**
- * Delete an NCE
- */
-FedFsStatus	 nsdb_delete_nce_s(nsdb_t host, const char *nce,
+FedFsStatus	 nsdb_remove_nci_s(nsdb_t host, const char *nce,
 				unsigned int *ldap_err);
 
 /**

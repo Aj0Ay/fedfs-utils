@@ -57,6 +57,9 @@ void		 nsdb_init_add_attribute(LDAPMod *mod,
 void		 nsdb_init_mod_attribute(LDAPMod *mod,
 				const char *attribute, char **bv,
 				const char *value);
+void		 nsdb_init_del_attribute(LDAPMod *mod,
+				const char *attribute, char **bv,
+				const char *value);
 
 FedFsStatus	 nsdb_parse_singlevalue_bool(char *attr,
 				struct berval **values, _Bool *result);

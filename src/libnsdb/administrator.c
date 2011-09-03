@@ -1159,147 +1159,10 @@ nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
 }
 
 /**
- * Verify that "nce" is present in a list of naming contexts
- *
- * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param contexts is a NULL-terminated array of NUL-terminated C strings containing naming contexts
- * @return true if "nce" is contained in the "contexts" list
- */
-static _Bool
-nsdb_create_nce_verify_naming_contexts(const char *nce, char **contexts)
-{
-	int i;
-
-	for (i = 0; contexts[i] != NULL; i++)
-		if (strcmp(nce, contexts[i]) == 0)
-			return true;
-	return false;
-}
-
-/**
- * Add a default top-level NSDB container entry to the target LDAP server.
+ * Update NSDB Container Info in a namingContext entry
  *
  * @param ld an initialized LDAP server descriptor
- * @param aci if true, then an ACI attribute is also added
- * @param ldap_err OUT: possibly an LDAP error code
- * @return a FedFsStatus code
- *
- * LDIF equivalent:
- *
- * @verbatim
-
-   dn: o=fedfs
-   changeType: add
-   objectClass: top
-   objectClass: organization
-   objectClass: fedfsNsdbContainerInfo
-   o: fedfs
-   fedfsNcePrefix:
-   description: FedFS NSDB Container
-   @endverbatim
- *
- */
-static FedFsStatus
-nsdb_create_nce_add_default_entry_s(LDAP *ld, const _Bool aci,
-		unsigned int *ldap_err)
-{
-	char *ocvals[3], *ovals[2], *prefixvals[2], *descvals[2], *acivals[2];
-	LDAPMod attr[6], *attrs[7];
-	int i, rc;
-
-	for (i = 0; i < 7; i++)
-		attrs[i] = &attr[i];
-	i = 0;
-
-	attr[i].mod_op = 0;
-	attr[i].mod_type = "objectClass";
-	attr[i].mod_values = ocvals;
-	ocvals[0] = "organization";
-	ocvals[1] = "fedfsNsdbContainerInfo";
-	ocvals[2] = NULL;
-	i++;
-
-	nsdb_init_add_attribute(attrs[i++],
-				"o", ovals, "fedfs");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNcePrefix", prefixvals, "");
-	nsdb_init_add_attribute(attrs[i++],
-				"description", descvals, "FedFS NSDB Container");
-
-	/* Some LDAP servers require a default ACI so the entry
-	 * is visible to everyone */
-	if (aci) {
-		nsdb_init_add_attribute(attrs[i++],
-			"aci", acivals,
-			"(targetattr = \"*\") "
-			"(version 3.0;acl \"Enable anonymous access\";"
-			"allow (read,search,compare)"
-			"(userdn = \"ldap:///anyone\");)");
-	}
-
-	attrs[i] = NULL;
-
-	rc = ldap_add_ext_s(ld, NSDB_DEFAULT_NCE, attrs, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to add new NCE: %s",
-			__func__, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-
-	xlog(D_CALL, "%s: Successfully added new NCE");
-	return FEDFS_OK;
-}
-
-/**
- * Add an NCE entry
- *
- * @param host an initialized and bound nsdb_t object
- * @param aci true if a world-readable ACI is also required on the new entry
- * @param ldap_err OUT: possibly an LDAP error code
- * @return a FedFsStatus code
- */
-FedFsStatus
-nsdb_create_nce_s(nsdb_t host, const _Bool aci, unsigned int *ldap_err)
-{
-	FedFsStatus retval;
-	char **contexts;
-
-	if (host->fn_ldap == NULL) {
-		xlog(L_ERROR, "%s: NSDB not open", __func__);
-		return FEDFS_ERR_INVAL;
-	}
-
-	if (ldap_err == NULL) {
-		xlog(L_ERROR, "%s: Invalid parameter", __func__);
-		return FEDFS_ERR_INVAL;
-	}
-
-	/*
-	 * Verify that o=fedfs is in the NSDB's namingContexts
-	 */
-	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
-	if (retval != FEDFS_OK)
-		return retval;
-
-	if (!nsdb_create_nce_verify_naming_contexts("o=fedfs", contexts)) {
-		xlog(D_GENERAL, "%s: o=fedfs is not a naming context "
-			"for this NSDB", __func__);
-		return FEDFS_ERR_NSDB_NONCE;
-	}
-
-	retval = nsdb_create_nce_add_default_entry_s(host->fn_ldap,
-							aci, ldap_err);
-
-	nsdb_free_string_array(contexts);
-	return retval;
-}
-
-/**
- * Turn an existing entry on the server into an NSDB container entry
- *
- * @param ld an initialized LDAP server descriptor
- * @param entry a NUL-terminated C string containing DN of entry to convert
+ * @param context a NUL-terminated C string containing DN of namingContext
  * @param nceprefix a NUL-terminated C string containing value of new FedFsNcePrefix attribute
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
@@ -1311,7 +1174,7 @@ nsdb_create_nce_s(nsdb_t host, const _Bool aci, unsigned int *ldap_err)
  *
  * @verbatim
 
-   dn: "entry"
+   dn: "context"
    changeType: modify
    objectClass: fedfsNsdbContainerInfo
    add: fedfsNcePrefix
@@ -1319,7 +1182,7 @@ nsdb_create_nce_s(nsdb_t host, const _Bool aci, unsigned int *ldap_err)
    @endverbatim
  */
 static FedFsStatus
-nsdb_create_nce_update_entry_s(LDAP *ld, const char *entry,
+nsdb_add_nci_attributes_s(LDAP *ld, const char *context,
 		const char *nceprefix, unsigned int *ldap_err)
 {
 	char *ocvals[2], *prefixvals[2];
@@ -1336,39 +1199,33 @@ nsdb_create_nce_update_entry_s(LDAP *ld, const char *entry,
 	nsdb_init_mod_attribute(mods[i++],
 				"fedfsNcePrefix", prefixvals,
 				nceprefix == NULL ? "" : nceprefix);
-
 	mods[i] = NULL;
 
-	rc = ldap_modify_ext_s(ld, entry, mods, NULL, NULL);
+	rc = ldap_modify_ext_s(ld, context, mods, NULL, NULL);
 	if (rc != LDAP_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to update %s: %s",
-			__func__, entry, ldap_err2string(rc));
+			__func__, context, ldap_err2string(rc));
 		*ldap_err = rc;
 		return FEDFS_ERR_NSDB_LDAP_VAL;
 	}
 
-	xlog(D_CALL, "%s: Successfully updated %s", __func__, entry);
+	xlog(D_CALL, "%s: Successfully updated %s", __func__, context);
 	return FEDFS_OK;
 }
 
 /**
- * Modify an entry to become an NCE entry
+ * Update NSDB container information
  *
  * @param host an initialized and bound nsdb_t object
- * @param nce a NUL-terminated C string containing DN of entry to convert
- * @param nceprefix a NUL-terminated C string containing value of new FedFsNcePrefix attribute
+ * @param nce a NUL-terminated C string containing DN of NSDB container entry
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
- *
- * If "nceprefix" is NULL, then assign an empty string value to the
- * FedFsNcePrefix attribute.
  */
 FedFsStatus
-nsdb_update_nce_s(nsdb_t host, const char *nce, const char *nceprefix,
-		unsigned int *ldap_err)
+nsdb_update_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 {
-	FedFsStatus retval = false;
-	char **contexts;
+	char *context, *prefix;
+	FedFsStatus retval;
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
@@ -1380,94 +1237,69 @@ nsdb_update_nce_s(nsdb_t host, const char *nce, const char *nceprefix,
 		return FEDFS_ERR_INVAL;
 	}
 
-	/*
-	 * Verify that @nce is in the NSDB's namingContexts
-	 */
-	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
+	retval = nsdb_split_nce_dn_s(host, nce, &context, &prefix, ldap_err);
 	if (retval != FEDFS_OK)
 		return retval;
 
-	if (!nsdb_create_nce_verify_naming_contexts(nce, contexts)) {
-		xlog(D_GENERAL, "%s: %s is not a naming context "
-			"for this NSDB", __func__, nce);
-		return FEDFS_ERR_NSDB_NONCE;
-	}
-
-	retval = nsdb_create_nce_update_entry_s(host->fn_ldap, nce,
-						nceprefix, ldap_err);
-
-	nsdb_free_string_array(contexts);
+	retval = nsdb_add_nci_attributes_s(host->fn_ldap, context, prefix,
+						ldap_err);
+	free(context);
+	free(prefix);
 	return retval;
 }
 
 /**
- * Check that "nce" is an actual FedFS NCE
+ * Remove NSDB Container Info from a namingContext object
  *
  * @param ld an initialized LDAP server descriptor
- * @param nce a NUL-terminated C string containing DN of NSDB container entry
+ * @param context a NUL-terminated C string containing DN of namingContext
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  *
- * ldapsearch equivalent:
+ * LDIF equivalent:
  *
  * @verbatim
- *
-   ldapsearch -b "nce" -s base objectClass=fedfsNsdbContainerInfo
+
+   dn: "context"
+   changeType: modify
+   delete: objectClass
+   objectClass: fedfsNsdbContainerInfo
+   delete: fedfsNcePrefix
    @endverbatim
  */
 static FedFsStatus
-nsdb_delete_nce_check_entry_s(LDAP *ld, const char *nce,
+nsdb_remove_nci_attributes_s(LDAP *ld, const char *context,
 		unsigned int *ldap_err)
 {
-	LDAPMessage *response;
-	FedFsStatus retval;
-	int rc;
+	LDAPMod *mods[3];
+	char *ocvals[2];
+	LDAPMod mod[2];
+	int i, rc;
 
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_BASE,
-				"objectClass=fedfsNsdbContainerInfo",
-				NULL, 0, NULL, NULL, NULL, LDAP_NO_LIMIT,
-				&response);
-	switch (rc) {
-	case LDAP_SUCCESS:
-		break;
-	case LDAP_NO_SUCH_OBJECT:
-		xlog(D_GENERAL, "%s: %s is not an NSDB container entry",
-			__func__, nce);
-		return FEDFS_ERR_NSDB_NONCE;
-	default:
-		xlog(D_GENERAL, "%s: Failed to retrieve NCE %s: %s",
-			__func__, nce, ldap_err2string(rc));
+	for (i = 0; i < 2; i++)
+		mods[i] = &mod[i];
+	i = 0;
+
+	nsdb_init_del_attribute(mods[i++],
+				"objectClass", ocvals, "fedfsNsdbContainerInfo");
+	nsdb_init_del_attribute(mods[i++],
+				"fedfsNcePrefix", NULL, NULL);
+	mods[i] = NULL;
+
+	rc = ldap_modify_ext_s(ld, context, mods, NULL, NULL);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to update %s: %s",
+			__func__, context, ldap_err2string(rc));
 		*ldap_err = rc;
 		return FEDFS_ERR_NSDB_LDAP_VAL;
 	}
-	if (response == NULL) {
-		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
-		return FEDFS_ERR_NSDB_RESPONSE;
-	}
 
-	retval = FEDFS_ERR_NSDB_NONCE;
-	rc = ldap_count_messages(ld, response);
-	switch (rc) {
-	case -1:
-		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
-		break;
-	case 1:
-		xlog(D_GENERAL, "%s: Entry %s is not an "
-			"NSDB Container Entry", __func__, nce);
-		break;
-	default:
-		xlog(D_CALL, "%s: Entry %s is an "
-			"NSDB Container Entry", __func__, nce);
-		retval = FEDFS_OK;
-		break;
-	}
-
-	ldap_msgfree(response);
-	return retval;
+	xlog(D_CALL, "%s: Successfully updated %s", __func__, context);
+	return FEDFS_OK;
 }
 
 /**
- * Delete a FedFS NCE
+ * Remove NSDB container information
  *
  * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
@@ -1475,10 +1307,10 @@ nsdb_delete_nce_check_entry_s(LDAP *ld, const char *nce,
  * @return a FedFsStatus code
  */
 FedFsStatus
-nsdb_delete_nce_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
+nsdb_remove_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 {
+	char *context, *prefix;
 	FedFsStatus retval;
-	int rc;
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
@@ -1490,27 +1322,15 @@ nsdb_delete_nce_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 		return FEDFS_ERR_INVAL;
 	}
 
-	retval = nsdb_delete_nce_check_entry_s(host->fn_ldap,
-						nce, ldap_err);
+	retval = nsdb_split_nce_dn_s(host, nce, &context, &prefix, ldap_err);
 	if (retval != FEDFS_OK)
 		return retval;
 
-	rc = ldap_delete_ext_s(host->fn_ldap, nce, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to delete NCE %s: %s",
-			__func__, nce, ldap_err2string(rc));
-		switch (rc) {
-		case LDAP_NO_SUCH_OBJECT:
-			return FEDFS_ERR_NSDB_NONCE;
-		default:
-			*ldap_err = rc;
-			return FEDFS_ERR_NSDB_LDAP_VAL;
-		}
-	}
+	retval = nsdb_remove_nci_attributes_s(host->fn_ldap, context, ldap_err);
 
-	xlog(D_GENERAL, "%s: Successfully deleted NCE %s",
-		__func__, nce);
-	return FEDFS_OK;
+	free(context);
+	free(prefix);
+	return retval;
 }
 
 /**

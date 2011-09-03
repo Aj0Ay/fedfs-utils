@@ -1,10 +1,10 @@
 /**
- * @file src/nsdbc/nsdb-delete-nce.c
- * @brief Delete a FedFS NCE from a target NSDB server
+ * @file src/nsdbc/nsdb-update-nci.c
+ * @brief Modify NSDB container info on a target NSDB server
  */
 
 /*
- * Copyright 2010 Oracle.  All rights reserved.
+ * Copyright 2011 Oracle.  All rights reserved.
  *
  * This file is part of fedfs-utils.
  *
@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -46,14 +47,15 @@
 /**
  * Short form command line options
  */
-static const char nsdb_delete_nce_opts[] = "?dD:e:l:r:w:";
+static const char nsdb_update_nci_opts[] = "?dD:e:l:qr:w:y";
 
 /**
  * Long form command line options
  */
-static const struct option nsdb_delete_nce_longopts[] = {
+static const struct option nsdb_update_nci_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
+	{ "delete", 0, NULL, 'y', },
 	{ "help", 0, NULL, '?', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
@@ -68,20 +70,22 @@ static const struct option nsdb_delete_nce_longopts[] = {
  * @param progname NUL-terminated C string containing name of program
  */
 static void
-nsdb_delete_nce_usage(const char *progname)
+nsdb_update_nci_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
-			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ]\n\n",
+			"[ -l nsdbname ] [ -r nsdbport ] "
+			"[ -e entry ] [-y]\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-D, --binddn         Bind DN\n");
-	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry to remove\n");
+	fprintf(stderr, "\t-e, --nce            Full DN of NCE\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-w, --password       Bind password\n");
+	fprintf(stderr, "\t-y, --delete         Delete NSDB container info\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -98,12 +102,12 @@ nsdb_delete_nce_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *passwd, *nsdbname;
+	char *progname, *binddn, *passwd, *nsdbname, *nce;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	FedFsStatus retval;
+	_Bool delete;
 	nsdb_t host;
-	char *nce;
 	int arg;
 
 	(void)umask(S_IRWXO);
@@ -130,8 +134,9 @@ main(int argc, char **argv)
 	if (nce == NULL)
 		nce = NSDB_DEFAULT_NCE;
 
-	while ((arg = getopt_long(argc, argv, nsdb_delete_nce_opts,
-			nsdb_delete_nce_longopts, NULL)) != -1) {
+	delete = false;
+	while ((arg = getopt_long(argc, argv, nsdb_update_nci_opts,
+			nsdb_update_nci_longopts, NULL)) != -1) {
 		switch (arg) {
 		case 'd':
 			xlog_config(D_ALL, 1);
@@ -149,26 +154,29 @@ main(int argc, char **argv)
 			if (!nsdb_parse_port_string(optarg, &nsdbport)) {
 				fprintf(stderr, "Bad port number: %s\n",
 					optarg);
-				nsdb_delete_nce_usage(progname);
+				nsdb_update_nci_usage(progname);
 			}
 			break;
 		case 'w':
 			passwd = optarg;
 			break;
+		case 'y':
+			delete = true;
+			break;
 		default:
 			fprintf(stderr, "Invalid command line "
 				"argument: %c\n", (char)arg);
 		case '?':
-			nsdb_delete_nce_usage(progname);
+			nsdb_update_nci_usage(progname);
 		}
 	}
 	if (optind != argc) {
 		fprintf(stderr, "Unrecognized command line argument\n");
-		nsdb_delete_nce_usage(progname);
+		nsdb_update_nci_usage(progname);
 	}
-	if (nsdbname == NULL) {
+	if (nsdbname == NULL || nce == NULL) {
 		fprintf(stderr, "Missing required command line argument\n");
-		nsdb_delete_nce_usage(progname);
+		nsdb_update_nci_usage(progname);
 	}
 
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
@@ -211,23 +219,34 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
-	if (nce == NULL)
+	if (nce == NULL) {
 		nce = (char *)nsdb_default_nce(host);
-	retval = nsdb_delete_nce_s(host, nce, &ldap_err);
+		if (nce == NULL) {
+			fprintf(stderr, "No NCE specified for %s:%u\n",
+				nsdbname, nsdbport);
+			goto out_free;
+		}
+	}
+
+	if (delete)
+		retval = nsdb_remove_nci_s(host, nce, &ldap_err);
+	else
+		retval = nsdb_update_nci_s(host, nce, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully deleted NSDB container %s\n", nce);
+		printf("Successfully updated NCI\n");
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
-		fprintf(stderr, "NCE %s does not exist\n", nce);
+		fprintf(stderr, "Entry %s is not a naming context "
+			"for this NSDB\n", nce);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		fprintf(stderr, "Failed to delete NCE %s: %s\n",
-			nce, ldap_err2string(ldap_err));
+		fprintf(stderr, "Failed to update NCI: %s\n",
+			ldap_err2string(ldap_err));
 		break;
 	default:
-		fprintf(stderr, "Failed to delete NCE %s: %s\n",
-			nce, nsdb_display_fedfsstatus(retval));
+		fprintf(stderr, "Failed to update NCI: %s\n",
+			nsdb_display_fedfsstatus(retval));
 	}
 
 	nsdb_close_nsdb(host);

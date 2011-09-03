@@ -24,7 +24,7 @@
 ##
 
 sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
-			  nsdb-create-nce nsdb-delete-nce nsdb-nces \
+			  nsdb-update-nci nsdb-remove-nci nsdb-nces \
 			  nsdb-create-fsn nsdb-delete-fsn nsdb-resolve-fsn \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl 
 LDADD			= -luuid -lldap -llber -lidn -lsqlite3 \

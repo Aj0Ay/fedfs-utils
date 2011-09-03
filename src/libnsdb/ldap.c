@@ -107,7 +107,7 @@ nsdb_init_add_attribute(LDAPMod *mod, const char *attribute,
 }
 
 /**
- * Set up LDAPMod structure for an LDAP MODIFY operation
+ * Set up LDAPMod structure for an LDAP MODIFY (add) operation
  *
  * @param mod pointer to struct to initialize
  * @param attribute NUL-terminated C string containing attribute name
@@ -122,6 +122,28 @@ nsdb_init_mod_attribute(LDAPMod *mod, const char *attribute,
 	bv[1] = NULL;
 
 	mod->mod_op = LDAP_MOD_ADD;
+	mod->mod_type = (char *)attribute;
+	mod->mod_values = bv;
+}
+
+/**
+ * Set up LDAPMod structure for an LDAP MODIFY (del) operation
+ *
+ * @param mod pointer to struct to initialize
+ * @param attribute NUL-terminated C string containing attribute name
+ * @param bv pointer to array of C strings used for BER value
+ * @param value NUL-terminated C string containing attribute value
+ */
+void
+nsdb_init_del_attribute(LDAPMod *mod, const char *attribute,
+		char **bv, const char *value)
+{
+	if (value != NULL) {
+		bv[0] = (char *)value;
+		bv[1] = NULL;
+	}
+
+	mod->mod_op = LDAP_MOD_DELETE;
 	mod->mod_type = (char *)attribute;
 	mod->mod_values = bv;
 }

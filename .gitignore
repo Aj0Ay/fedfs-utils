@@ -30,15 +30,15 @@ fedfs-set-nsdb-params
 nsdb-annotate
 nsdb-create-fsl
 nsdb-create-fsn
-nsdb-create-nce
 nsdb-delete-fsl
 nsdb-delete-fsn
-nsdb-delete-nce
 nsdb-describe
 nsdb-list
 nsdb-nces
 nsdb-resolve-fsn
 nsdb-update-fsl
+nsdb-update-nci
+nsdb-remove-nci
 doc/rpcl/fedfs_admin.h
 doc/rpcl/fedfs_admin_clnt.c
 doc/rpcl/fedfs_admin_svc.c
