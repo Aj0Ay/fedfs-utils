@@ -316,6 +316,16 @@ nsdb_get_nceprefix_s(nsdb_t host, const char *naming_context, char **dn,
 	FedFsStatus retval;
 	int rc;
 
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (dn == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
 	attrs[0] = "fedfsNcePrefix";
 	attrs[1] = NULL;
 	rc = ldap_search_ext_s(ld, naming_context, LDAP_SCOPE_BASE,
@@ -497,6 +507,16 @@ nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 	char *attrs[2], **tmp;
 	FedFsStatus retval;
 	int rc;
+
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (contexts == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
 
 	attrs[0] = "namingContexts";
 	attrs[1] = NULL;
@@ -859,7 +879,7 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 			"(&(objectClass=fedfsFsl)(fedfsFsnUuid=%s))", fsn_uuid);
 	if (len < 0 || (size_t)len > sizeof(filter)) {
 		xlog(D_GENERAL, "%s: filter is too long", __func__);
-		return FEDFS_ERR_SVRFAULT;
+		return FEDFS_ERR_INVAL;
 	}
 
 	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
@@ -955,7 +975,12 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
-		return FEDFS_ERR_SVRFAULT;
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (fsls == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
 	}
 
 	if (nce != NULL)
@@ -973,7 +998,7 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 	for (i = 0; contexts[i] != NULL; i++);
 	nce_list = calloc(i + 1, sizeof(char *));
 	if (nce_list == NULL) {
-		retval = FEDFS_ERR_SVRFAULT;
+		retval = FEDFS_ERR_INVAL;
 		goto out;
 	}
 
@@ -1208,7 +1233,12 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
-		return FEDFS_ERR_SVRFAULT;
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (fsns == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
 	}
 
 	if (nce != NULL)
@@ -1299,6 +1329,16 @@ nsdb_ping_nsdb_s(nsdb_t host, unsigned int *ldap_err)
 	FedFsStatus retval;
 	char **contexts = NULL;
 
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
 	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
 	if (retval != FEDFS_OK)
 		return retval;
@@ -1327,6 +1367,11 @@ nsdb_ping_s(const char *hostname, const unsigned short port,
 {
 	FedFsStatus retval;
 	nsdb_t host;
+
+	if (ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
 
 	retval = nsdb_new_nsdb(hostname, port, &host);
 	if (retval != FEDFS_OK)

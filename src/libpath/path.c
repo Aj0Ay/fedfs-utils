@@ -194,7 +194,7 @@ nsdb_posix_path_to_xdr(const char *pathname, struct berval *xdr_path)
 
 	if (pathname == NULL || xdr_path == NULL) {
 		xlog(L_ERROR, "%s: Invalid argument", __func__);
-		return FEDFS_ERR_SVRFAULT;
+		return FEDFS_ERR_INVAL;
 	}
 
 	if (!nsdb_pathname_is_utf8(pathname)) {
@@ -282,7 +282,7 @@ nsdb_xdr_to_posix_path(struct berval *xdr_path, char **pathname)
 
 	if (xdr_path == NULL || pathname == NULL) {
 		xlog(L_ERROR, "%s: Invalid argument", __func__);
-		return FEDFS_ERR_SVRFAULT;
+		return FEDFS_ERR_INVAL;
 	}
 
 	i = 1;		/* skip the count of array elements */

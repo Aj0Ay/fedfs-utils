@@ -88,6 +88,9 @@ fedfs_open_path(const char *pathname, int *fd)
 {
 	int tmp;
 
+	if (pathname == NULL || fd == NULL)
+		return FEDFS_ERR_INVAL;
+
 	tmp = open(pathname, O_DIRECTORY);
 	if (tmp == -1) {
 		switch (errno) {
@@ -391,6 +394,9 @@ fedfs_store_fsn(const char *pathname, const char *fsn_uuid, const nsdb_t host)
 	char buf[20];
 	int fd, len;
 
+	if (fsn_uuid == NULL || host == NULL)
+		return FEDFS_ERR_INVAL;
+
 	retval = fedfs_open_path(pathname, &fd);
 	if (retval != FEDFS_OK)
 		return retval;
@@ -445,6 +451,9 @@ fedfs_get_fsn(const char *pathname, char **fsn_uuid, nsdb_t *host)
 	FedFsStatus retval;
 	size_t len;
 	int fd;
+
+	if (fsn_uuid == NULL || host == NULL)
+		return FEDFS_ERR_INVAL;
 
 	retval = fedfs_open_path(pathname, &fd);
 	if (retval != FEDFS_OK)
