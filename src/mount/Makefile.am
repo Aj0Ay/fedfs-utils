@@ -29,6 +29,7 @@ fedfs_map_nfs4_SOURCES	= fedfs-map-nfs4.c
 fedfs_map_nfs4_LDADD	= -lresolv \
 			  $(top_builddir)/src/libsi/libsi.a
 mount_fedfs_SOURCES	= main.c
+# mount.fedfs must never link against libraries in /usr
 mount_fedfs_LDADD	= -lresolv \
 			  $(top_builddir)/src/libsi/libsi.a
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out

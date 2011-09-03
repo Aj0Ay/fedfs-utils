@@ -55,19 +55,40 @@ AC_C_INLINE
 AC_C_CONST
 
 # Checks for libraries (essentially, -devel packages)
-AC_CHECK_LIB([cap], [cap_set_proc], [],
+AC_CHECK_LIB([cap], [cap_set_proc],
+		[AC_SUBST([LIBCAP], ["-lcap"])
+		 AC_DEFINE([HAVE_LIBCAP], [1],
+			   [Define if you have libcap])],
 		[AC_MSG_ERROR([libcap not found.])])
-AC_CHECK_LIB([idn], [idna_to_ascii_8z], [],
+AC_CHECK_LIB([idn], [idna_to_ascii_8z],
+		[AC_SUBST([LIBIDN], ["-lidn"])
+		 AC_DEFINE([HAVE_LIBIDN], [1],
+			   [Define if you have libidn])],
 		[AC_MSG_ERROR([libidn not found.])])
-AC_CHECK_LIB([ldap], [ldap_initialize], [],
+AC_CHECK_LIB([ldap], [ldap_initialize],
+		[AC_SUBST([LIBLDAP], ["-lldap"])
+		 AC_DEFINE([HAVE_LIBLDAP], [1],
+			   [Define if you have libldap])],
 		[AC_MSG_ERROR([libldap not found.])])
-AC_CHECK_LIB([lber], [ber_memvfree], [],
+AC_CHECK_LIB([lber], [ber_memvfree],
+		[AC_SUBST([LIBLBER], ["-llber"])
+		 AC_DEFINE([HAVE_LIBLBER], [1],
+			   [Define if you have liblber])],
 		[AC_MSG_ERROR([liblber not found.])])
-AC_CHECK_LIB([sqlite3], [sqlite3_initialize], [],
+AC_CHECK_LIB([sqlite3], [sqlite3_initialize],
+		[AC_SUBST([LIBSQLITE3], ["-lsqlite3"])
+		 AC_DEFINE([HAVE_LIBSQLITE3], [1],
+			   [Define if you have libsqlite3])],
 		[AC_MSG_ERROR([libsqlite3 not found.])])
-AC_CHECK_LIB([tirpc], [svc_tli_create], [],
+AC_CHECK_LIB([tirpc], [svc_tli_create],
+		[AC_SUBST([LIBTIRPC], ["-ltirpc"])
+		 AC_DEFINE([HAVE_LIBTIRPC], [1],
+			   [Define if you have libtirpc])],
 		[AC_MSG_ERROR([libtirpc not found.])])
-AC_CHECK_LIB([uuid], [uuid_parse], [],
+AC_CHECK_LIB([uuid], [uuid_parse],
+		[AC_SUBST([LIBUUID], ["-luuid"])
+		 AC_DEFINE([HAVE_LIBUUID], [1],
+			   [Define if you have libuuid])],
 		[AC_MSG_ERROR([libuuid not found.])])
 
 # Checks for header files.
