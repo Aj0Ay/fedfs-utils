@@ -90,6 +90,11 @@ AC_CHECK_LIB([uuid], [uuid_parse],
 		 AC_DEFINE([HAVE_LIBUUID], [1],
 			   [Define if you have libuuid])],
 		[AC_MSG_ERROR([libuuid not found.])])
+AC_CHECK_LIB([resolv], [__res_querydomain],
+		[AC_SUBST([LIBRESOLV], ["-lresolv"])
+		 AC_DEFINE([HAVE_LIBRESOLV], [1],
+			   [Define if you have libresolv])],
+		[AC_MSG_ERROR([libresolv not found.])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h langinfo.h locale.h memory.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h syslog.h termios.h unistd.h wchar.h])
