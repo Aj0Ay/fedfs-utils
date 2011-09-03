@@ -780,3 +780,173 @@ nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
 	xlog(D_GENERAL, "%s: Search completed successfully", __func__);
 	return FEDFS_OK;
 }
+
+/**
+ * Compare two BER values
+ *
+ * @param bv1 an LDAP berval structure
+ * @param bv2 an LDAP berval structure
+ * @return if true, input BER values match
+ */
+static _Bool
+nsdb_compare_bval(struct berval *bv1, struct berval *bv2)
+{
+	if (bv1->bv_len != bv2->bv_len)
+		return false;
+	if (memcmp(bv1->bv_val, bv2->bv_val, bv1->bv_len) != 0)
+		return false;
+	return true;
+}
+
+/**
+ * Compare two LDAP AVAs
+ *
+ * @param ava1
+ * @param ava2
+ * @return if true, input AVAs match
+ */
+static _Bool
+nsdb_compare_avas(LDAPAVA *ava1, LDAPAVA *ava2)
+{
+	if (!nsdb_compare_bval(&ava1->la_attr, &ava2->la_attr))
+		return false;
+	if (!nsdb_compare_bval(&ava1->la_value, &ava2->la_value))
+		return false;
+	return true;
+}
+
+/**
+ * Compare two LDAP relative distinguished names
+ *
+ * @param rdn1 a structured LDAP relative distinguished name
+ * @param rdn2 a structured LDAP relative distinguished name
+ * @return if true, input RDNs match
+ */
+static _Bool
+nsdb_compare_rdns(LDAPRDN rdn1, LDAPRDN rdn2)
+{
+	int i;
+
+	for (i = 0; rdn1[i] != NULL && rdn2[i] != NULL; i++)
+		if (!nsdb_compare_avas(rdn1[i], rdn2[i]))
+			return false;
+	return true;
+}
+
+/**
+ * Compare two LDAP distinguished names
+ *
+ * @param dn1 a structured LDAP distinguished name
+ * @param dn2 a structured LDAP distinguished name
+ * @return if true, the DNs match
+ */
+_Bool
+nsdb_compare_dns(LDAPDN dn1, LDAPDN dn2)
+{
+	int count1, count2;
+
+	if (dn1 == NULL || dn2 == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return false;
+	}
+
+	for (count1 = 0; dn1[count1] != NULL; count1++);
+	for (count2 = 0; dn2[count2] != NULL; count2++);
+
+	if (count1 != count2)
+		return false;
+
+	for (count1 = 0; count1 != count2; count1++)
+		if (!nsdb_compare_rdns(dn1[count1], dn2[count1]))
+			return false;
+
+	return true;
+}
+
+/**
+ * Compare a structured LDAP distinguished name with a DN string
+ *
+ * @param dn1 a structured LDAP distinguished name
+ * @param dn2_in a NUL-terminated C string containing a distinguished name
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return if true, the DNs match
+ *
+ * On return, the return value is valid only if "ldap_err" is
+ * LDAP_SUCCESS.
+ */
+_Bool
+nsdb_compare_dn_string(LDAPDN dn1, const char *dn2_in,
+		unsigned int *ldap_err)
+{
+	LDAPDN dn2 = NULL;
+	_Bool result;
+	int rc;
+
+	result = false;
+
+	if (dn1 == NULL || dn2_in == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		goto out;
+	}
+
+	rc = ldap_str2dn(dn2_in, &dn2, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		*ldap_err = rc;
+		goto out;
+	}
+
+	*ldap_err = LDAP_SUCCESS;
+	result = nsdb_compare_dns(dn1, dn2);
+
+out:
+	ldap_dnfree(dn2);
+	return result;
+}
+
+/**
+ * Compare two LDAP distinguished name strings
+ *
+ * @param dn1_in a NUL-terminated C string containing a distinguished name
+ * @param dn2_in a NUL-terminated C string containing a distinguished name
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return if true, the DNs match
+ *
+ * On return, the return value is valid only if "ldap_err" is
+ * LDAP_SUCCESS.
+ */
+_Bool
+nsdb_compare_dn_strings(const char *dn1_in, const char *dn2_in,
+		unsigned int *ldap_err)
+{
+	LDAPDN dn1 = NULL;
+	LDAPDN dn2 = NULL;
+	_Bool result;
+	int rc;
+
+	result = false;
+
+	if (dn1_in == NULL || dn2_in == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		goto out;
+	}
+
+	rc = ldap_str2dn(dn1_in, &dn1, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		*ldap_err = rc;
+		goto out;
+	}
+
+	rc = ldap_str2dn(dn2_in, &dn2, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		*ldap_err = rc;
+		goto out;
+	}
+
+	*ldap_err = LDAP_SUCCESS;
+	result = nsdb_compare_dns(dn1, dn2);
+
+out:
+	ldap_dnfree(dn2);
+	ldap_dnfree(dn1);
+	return result;
+}
