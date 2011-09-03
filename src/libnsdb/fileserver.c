@@ -222,8 +222,8 @@ nsdb_parse_nceprefix_entry(LDAP *ld, LDAPMessage *entry, char **dn)
  * The full DN for the NSDB container is constructed and returned in "dn."
  * That is, if the requested naming context is "dc=example,dc=com" and
  * the fedfsNcePrefix attribute in the server's "dc=example,dc=com"
- * entry contains "o=fedfs", then the string that is returned in "dn"
- * is "dc=example,dc=com,o=fedfs".
+ * entry contains "ou=fedfs", then the string that is returned in "dn"
+ * is "ou=fedfs,dc=example,dc=com".
  */
 FedFsStatus
 nsdb_get_nceprefix_s(nsdb_t host, const char *naming_context, char **dn,
