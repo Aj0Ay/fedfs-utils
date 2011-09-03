@@ -68,9 +68,18 @@ daemon creates and removes FedFS junctions.
 .P
 An independently administered FedFS namespace is referred to as a
 .IR "FedFS domain" .
+FedFS domains are file namespaces only;
+they do not represent authentication or name-mapping realms, for example.
+.P
+Thus, FedFS-enabled file system clients and servers are not members
+of any FedFS domain and do not have
+.I "a priori"
+knowledge of what FedFS domains exist.
+FedFS-enabled clients assume their own DNS domain name is the local
+FedFS domain name.
+.P
 The top-level directory of a FedFS domain is referred to as its
 .IR "domain root" .
-.P
 Domain roots typically contain nothing but FedFS junctions
 and other directories.
 Useful data is contained in other shares
@@ -91,10 +100,13 @@ The Linux FedFS implementation is designed to work with NSDBs residing
 on any standard LDAP server that use the standard FedFS schema
 laid out in the FedFS NSDB draft.
 .P
-FedFS groups a set of directories in a file system namespace
+FedFS groups a set of directories in a server's physical file system namespace
 into a single administrative unit called a
 .IR fileset .
 For NFS, a whole share might be considered a fileset.
+A FedFS domain consists of nothing more than one or more filesets,
+a domain root,
+and junction information stored on an NSDB.
 .P
 To function as a FedFS fileset,
 a set of directories must have a name unique in a FedFS domain,
