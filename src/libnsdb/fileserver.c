@@ -80,50 +80,71 @@ nsdb_free_fsls(struct fedfs_fsl *fsls)
 }
 
 /**
- * Construct DN for an LDAP server's NSDB container
+ * Parse DN for an LDAP server's NSDB container info
  *
  * @param ld an initialized LDAP descriptor
  * @param message an LDAP_RES_SEARCH_ENTRY message
  * @param nceprefix a NUL-terminated C string containing an NCE prefix received from server
- * @param tmp OUT: pointer to a NUL-terminated C string containing resulting DN; caller must free with free(3)
+ * @param tmp OUT: pointer to a NUL-terminated C string containing resulting DN
  * @return true if successful
+ *
+ * Caller must free "tmp" with free(3)
  */
 static _Bool
-nsdb_construct_nce_dn(LDAP *ld, LDAPMessage *message,
+nsdb_parse_nce_dn(LDAP *ld, LDAPMessage *message,
 		const char *nceprefix, char **tmp)
 {
 	char *dn, *result;
 	size_t size;
-	int len;
+	int rc, len;
 
 	dn = ldap_get_dn(ld, message);
-	if (dn == NULL)
+	if (dn == NULL) {
+		ldap_get_option(ld, LDAP_OPT_RESULT_CODE, &rc);
+		xlog(D_GENERAL, "%s: Failed to parse DN: %s",
+			__func__, ldap_err2string(rc));
 		return false;
-
-	/* If the fedfsNcePrefix value is empty,
-	 * just return the entry's DN */
-	if (*nceprefix == '\0') {
-		*tmp = dn;
-		return true;
 	}
 
+	/*
+	 * If the fedfsNcePrefix value is empty,
+	 * the NCE DN is the namingContext.
+	 */
+	if (*nceprefix == '\0') {
+		result = strdup(dn);
+		if (result == NULL) {
+			xlog(D_GENERAL, "%s: No memory", __func__);
+			goto out_err;
+		}
+		goto out;
+	}
+
+	/*
+	 * Otherwise, the NCE DN is the concatenation
+	 * of the two strings
+	 */
 	size = strlen(nceprefix) + strlen(",") + strlen(dn) + 1;
 	result = malloc(size);
 	if (result == NULL) {
-		free(dn);
-		return false;
+		xlog(D_GENERAL, "%s: No memory", __func__);
+		goto out_err;
 	}
 
 	len = snprintf(result, size, "%s,%s", nceprefix, dn);
 	if (len < 0 || (size_t)len > size) {
-		free(dn);
+		xlog(D_GENERAL, "%s: Buffer overflow", __func__);
 		free(result);
-		return false;
+		goto out_err;
 	}
 
-	free(dn);
+out:
+	ldap_memfree(dn);
 	*tmp = result;
 	return true;
+
+out_err:
+	ldap_memfree(dn);
+	return false;
 }
 
 /**
@@ -134,6 +155,8 @@ nsdb_construct_nce_dn(LDAP *ld, LDAPMessage *message,
  * @param attr a NUL-terminated C string containing the name of an attribute
  * @param dn OUT: pointer to a NUL-terminated C string containing resulting DN
  * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with free(3)
  */
 static FedFsStatus
 nsdb_parse_nceprefix_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
@@ -160,7 +183,7 @@ nsdb_parse_nceprefix_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 		goto out_free;
 	}
 
-	if (!nsdb_construct_nce_dn(ld, entry, values[0]->bv_val, &tmp)) {
+	if (!nsdb_parse_nce_dn(ld, entry, values[0]->bv_val, &tmp)) {
 		retval = FEDFS_ERR_SVRFAULT;
 		goto out_free;
 	}
@@ -208,9 +231,11 @@ nsdb_parse_nceprefix_entry(LDAP *ld, LDAPMessage *entry, char **dn)
  *
  * @param host an initialized and bound nsdb_t object
  * @param naming_context NUL-terminated C string containing one naming context
- * @param dn OUT: pointer to a NUL-terminated C string containing full DN of NSDB container; caller must free with free(3)
+ * @param dn OUT: pointer to a NUL-terminated C string containing full DN of NSDB container
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with free(3)
  *
  * ldapsearch equivalent:
  *
