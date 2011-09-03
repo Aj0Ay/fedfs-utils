@@ -126,11 +126,10 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
 	if (nce == NULL)
 		nce = NSDB_DEFAULT_NCE;
 
-	passwd = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_delete_nce_opts,
 			nsdb_delete_nce_longopts, NULL)) != -1) {
 		switch (arg) {

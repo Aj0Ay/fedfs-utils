@@ -140,9 +140,9 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
 
-	passwd = fsn_uuid = fsl_uuid = NULL;
+	fsn_uuid = fsl_uuid = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_delete_fsl_opts,
 			nsdb_delete_fsl_longopts, NULL)) != -1) {
 		switch (arg) {

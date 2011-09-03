@@ -200,7 +200,7 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, NULL, NULL);
+	nsdb_env(&nsdbname, &nsdbport, NULL, NULL, NULL);
 
 	hostname = "localhost";
 	nettype = "netpath";

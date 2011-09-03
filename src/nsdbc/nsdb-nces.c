@@ -123,7 +123,7 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, NULL, NULL);
+	nsdb_env(&nsdbname, &nsdbport, NULL, NULL, NULL);
 
 	while ((arg = getopt_long(argc, argv, nsdb_nces_opts,
 			nsdb_nces_longopts, NULL)) != -1) {

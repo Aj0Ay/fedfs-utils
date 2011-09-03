@@ -134,10 +134,10 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &passwd);
 
 	delete = false;
-	passwd = entry = description = NULL;
+	entry = description = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_describe_opts,
 			nsdb_describe_longopts, NULL)) != -1) {
 		switch (arg) {

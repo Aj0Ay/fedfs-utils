@@ -215,7 +215,7 @@ _Bool		 nsdb_is_hostname_utf8(const char *hostname);
  * Look for "default" values in environment variables
  */
 void		 nsdb_env(char **nsdbname, unsigned short *nsdbport,
-				char **binddn, char **nce);
+				char **binddn, char **nce, char **passwd);
 
 
 /**
