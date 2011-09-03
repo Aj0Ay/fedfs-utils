@@ -171,3 +171,8 @@ FedFS admin client
   o (Eventually LDAP client TLS configuration will go here)
 
   o Install the nsdbc and fedfsc clients
+
+
+In addition to these tasks, you should choose one of the FedFS-enabled
+file servers on which to host the domain root directory, and set up a
+DNS SRV record to allow FedFS file system clients to find it.
