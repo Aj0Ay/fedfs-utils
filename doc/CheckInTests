@@ -21,8 +21,33 @@ version 2.0 along with fedfs-utils.  If not, see:
 	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 
+Introduction
+------------
+
+This document outlines basic policy guidelines for participating in the
+fedfs-utils development effort.
+
+
 Submitting patches
 ------------------
+
+I'm a stickler for good patch descriptions.  Often the description is
+the only documentation we have when looking back at what was done a
+year ago or longer.  Some tips:
+
+ o  Make the description clear and painfully obvious
+ o  Provide root cause analysis
+ o  Provide links to bug reports
+ o  Don't be afraid to list lessons learned
+ o  For bug fixes, list the commit that introduced the problem
+ o  Indicate whether behavior changes, or if the patch is only clean-up
+ o  List possible security implications
+ o  Mention testing that has been done, or that can be done in the future
+ o  Spell out rationale for any exceptions to guidelines in this document
+ o  Always justify complexity or changes to APIs and ABIs
+
+In other words, don't assume ANY context from previous e-mail or personal
+conversations that occurred while a patch was being constructed.
 
 fedfs-utils adopts much precedent set by Linux kernel developers:
 
@@ -34,10 +59,20 @@ Especially:
  o  Carefully describe why the change is needed
  o  Separate logical changes
  o  No MIME, no links, no compression or attachments.  Just plain text e-mail
- o  Include "[PATCH]: " in the subject
  o  Sign your work -- sections 12, 13, and 14 -- these are key
 
 See also Documentation/CodingStyle in the Linux kernel source tree.
+
+
+Review
+------
+
+This is an open source project, so design and code review are a key part
+of the development process.  Patches are posted for review on
+<fedfs-utils-devel@oss.oracle.com>.
+
+Before commits become a permanent part of the source control history,
+time-limited review is performed on the mailing list.
 
 
 Per-commit acceptance tests
@@ -51,25 +86,52 @@ bisecting to be useful.
  3.  "make doxy" must complete with no errors or warnings
  4.  "make distcheck" must complete without error
  5.  "git status" must produce no output on a clean tree
+ 6.  "git log -p" shows no new white space damage
 
-Note that to preserve bisectability, the tree must build after each
+Note that to preserve bisectability, the tree MUST build after each
 commit.
 
-At some point:
- 1.  Automated checking of C code style and white space must pass
- 2.  fortify, sparse, or splint testing must pass
- 3.  Automated unit tests must pass
+At some point, we'd like:
+ 1.  Automated checking of coding style and white space
+ 2.  fortify, sparse, or splint testing
+ 3.  Automated unit tests
 
 
 Per-release
 -----------
 
- 1.  All acceptance tests must pass
- 2.  Update README and/or release notes
- 3.  Update package version in configure.ac
- 4.  Update sonumber of shared libraries (as needed)
- 5.  Create a commit for the release
- 6.  Create a tag for the release commit
- 7.  gc the git database and push the release
- 8.  "make dist" and publish the tarball
+ Release numbering:
+
+        <major>.<minor>[.<maint>[.<bugfix>]]
+
+ Major releases introduce new features, and may not always be backwards
+ compatible with earlier releases.  Minor releases may introduce new
+ features, but will be backwards compatible with earlier minor releases
+ with the same major version number.
+
+ While we are in alpha, that last rule may be bent somewhat.
+
+ Release candidate:
+
+ One or more release candidates will be provided before each minor and
+ major release.
+
+ Acceptance:
+
+  1. All per-commit acceptance tests must pass
+  2. Integration testing (run everything with simple use cases)
+  3. Comment period:
+	* Major release candiate: three weeks
+	* Minor release candidate: two weeks
+	* Maintenance release candidate: three to five days
+
+ Push:
+
+  1. Update README and/or release notes
+  2. Update package version in configure.ac
+  3. Update sonumber of shared libraries (as needed)
+  4. Create a commit for the release
+  5. Create a tag for the release commit
+  6. gc the git database and push the release
+  7. "make dist" and publish the tarball
 
