@@ -120,10 +120,22 @@ At this time the Linux
 daemon supports only FedFS ADMIN pathnames.
 This type of pathname represents a fully-qualified POSIX pathname
 relative to the file server's physical root directory.
+.P
+During each start-up,
+.BR rpc.fedfsd (8)
+verifies that the local NSDB connection parameter database exists
+and is accessible.
+If it does not exist,
+.BR rpc.fedfsd (8)
+attempts to create such a database.
+If it cannot, the daemon fails to start.
 .SH FILES
 .TP
 .I /var/lib/fedfs/nsdbparam.sqlite3
 database of NSDB connection parameters
+.TP
+.I /var/lib/fedfs/tls/certs
+local directory that stores X.509 certificates for NSDBs
 .SH "SEE ALSO"
 .BR fedfs (7),
 .BR nfs (5)
