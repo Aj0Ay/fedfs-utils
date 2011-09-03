@@ -256,7 +256,6 @@ getsrvinfo(const char *srvname, const char *domainname, struct srvinfo **si)
 
 	results = NULL;
 	for (i = 0; i < count; i++) {
-		struct rechdr *header;
 		struct srvinfo *new;
 		struct srv *record;
 		int l;
@@ -269,7 +268,6 @@ getsrvinfo(const char *srvname, const char *domainname, struct srvinfo **si)
 
 		comp_dn += l;
 
-		header = (struct rechdr *)&comp_dn[0];
 		record = (struct srv *)&comp_dn[10];
 
 		l = dn_expand(msg, msg + len, comp_dn + 16, exp_dn, NS_MAXDNAME);
