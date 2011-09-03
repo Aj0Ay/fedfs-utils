@@ -369,7 +369,7 @@ nsdbparams_show(const char *progname, const char *nsdbname,
 		printf("\tconnection security: %s\n",
 			nsdb_display_fedfsconnectionsec(secdata.type));
 		printf("\tfollow referrals: %s\n",
-			nsdb_follow_referrals(host) ? "true" : "false");
+			nsdb_follow_referrals(host) ? "yes" : "no");
 		tmp = (char *)nsdb_default_binddn(host);
 		if (tmp != NULL)
 			printf("\tdefault bind DN: %s\n", tmp);
