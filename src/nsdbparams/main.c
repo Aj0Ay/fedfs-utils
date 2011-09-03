@@ -255,6 +255,8 @@ nsdbparams_update(const char *progname, const char *nsdbname,
 	struct fedfs_secdata secdata = {
 		.type		= type,
 	};
+	unsigned int ldap_err;
+	FedFsStatus retval;
 	int rc;
 
 	rc = EXIT_FAILURE;
@@ -263,6 +265,20 @@ nsdbparams_update(const char *progname, const char *nsdbname,
 		xlog(L_ERROR, "Missing required command line argument\n");
 		nsdbparams_usage(progname);
 		goto out;
+	}
+
+	retval = nsdb_ping_s(nsdbname, nsdbport, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		xlog(D_GENERAL, "%s:%u passed ping test", nsdbname, nsdbport);
+		break;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		xlog(D_GENERAL, "Failed to ping NSDB %s:%u: %s\n",
+			nsdbname, nsdbport, ldap_err2string(ldap_err));
+		break;
+	default:
+		xlog(L_ERROR, "Warning: %s:%u is not an NSDB: %s",
+			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
 	}
 
 	if (type != FEDFS_SEC_NONE) {
