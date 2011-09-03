@@ -39,6 +39,7 @@ nsdb-resolve-fsn
 nsdb-update-fsl
 nsdb-update-nci
 nsdb-remove-nci
+nsdb-delete-nsdb
 doc/rpcl/fedfs_admin.h
 doc/rpcl/fedfs_admin_clnt.c
 doc/rpcl/fedfs_admin_svc.c

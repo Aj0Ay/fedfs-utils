@@ -279,6 +279,12 @@ FedFsStatus	 nsdb_remove_nci_s(nsdb_t host, const char *nce,
 				unsigned int *ldap_err);
 
 /**
+ * Remove all FedFS entries on an NSDB
+ */
+FedFsStatus	 nsdb_delete_nsdb_s(nsdb_t host, const char *nce,
+				unsigned int *ldap_err);
+
+/**
  * Display or alter an object's fedfsDescription attribute
  */
 FedFsStatus	 nsdb_description_add_s(nsdb_t host, const char *dn,

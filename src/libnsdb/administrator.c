@@ -1334,6 +1334,150 @@ nsdb_remove_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 }
 
 /**
+ * Delete one FSN child
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param entry an LDAP_RES_SEARCH_ENTRY message
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_parse_delete_nsdb_fsns_entry_s(LDAP *ld, LDAPMessage *entry,
+		unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+	char *dn;
+	int rc;
+
+	dn = ldap_get_dn(ld, entry);
+	if (dn == NULL) {
+		ldap_get_option(ld, LDAP_OPT_RESULT_CODE, &rc);
+		xlog(D_GENERAL, "%s: Failed to parse entry: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	retval = nsdb_delete_fsn_fsls_s(ld, dn, ldap_err);
+	if (retval != FEDFS_OK)
+		goto out;
+
+	retval = nsdb_delete_fsn_entry_s(ld, dn, ldap_err);
+
+out:
+	ber_memfree(dn);
+	return retval;
+}
+
+/**
+ * Remove all FSN records from an NSDB
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param nce a NUL-terminated C string containing DN of NSDB container entry
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_delete_nsdb_fsns_s(LDAP *ld, const char *nce, unsigned int *ldap_err)
+{
+	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
+	LDAPMessage *message, *response;
+	FedFsStatus retval;
+	int entries, rc;
+
+	xlog(D_CALL, "%s: searching for children of %s", __func__, nce);
+
+again:
+	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_ONELEVEL, NULL, attrs, 0,
+				NULL, NULL, NULL, LDAP_NO_LIMIT, &response);
+	switch (rc) {
+	case LDAP_SUCCESS:
+	case LDAP_SIZELIMIT_EXCEEDED:
+		break;
+	case LDAP_NO_SUCH_OBJECT:
+		xlog(D_GENERAL, "%s: NCE %s has no children",
+			__func__, nce);
+		return FEDFS_OK;
+	default:
+		xlog(D_GENERAL, "%s: Failed to retrieve entries for %s: %s",
+			__func__, nce, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+	if (response == NULL) {
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		return FEDFS_ERR_NSDB_RESPONSE;
+	}
+
+	entries = ldap_count_messages(ld, response);
+	if (entries == -1) {
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		retval = FEDFS_ERR_NSDB_RESPONSE;
+		goto out;
+	}
+
+	xlog(D_CALL, "%s: received %d messages", __func__, entries);
+
+	retval = FEDFS_OK;
+	for (message = ldap_first_message(ld, response);
+	     message != NULL && retval == FEDFS_OK;
+	     message = ldap_next_message(ld, message)) {
+		switch (ldap_msgtype(message)) {
+		case LDAP_RES_SEARCH_ENTRY:
+			retval = nsdb_parse_delete_nsdb_fsns_entry_s(ld, message,
+								ldap_err);
+			break;
+		case LDAP_RES_SEARCH_REFERENCE:
+			retval = nsdb_parse_reference(ld, message, ldap_err);
+			break;
+		case LDAP_RES_SEARCH_RESULT:
+			retval = nsdb_parse_result(ld, message, ldap_err);
+			break;
+		default:
+			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
+				__func__);
+			retval = FEDFS_ERR_NSDB_RESPONSE;
+		}
+	}
+
+out:
+	ldap_msgfree(response);
+	if (rc == LDAP_SIZELIMIT_EXCEEDED && retval == FEDFS_OK)
+		goto again;
+	return retval;
+}
+
+/**
+ * Remove all FedFS records from an NSDB
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param nce a NUL-terminated C string containing DN of NSDB container entry
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ */
+FedFsStatus
+nsdb_delete_nsdb_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (nce == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	retval = nsdb_remove_nci_s(host, nce, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	return nsdb_delete_nsdb_fsns_s(host->fn_ldap, nce, ldap_err);
+}
+
+/**
  * Add or replace an value from an attribute
  *
  * @param host an initialized and bound nsdb_t object
