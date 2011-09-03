@@ -297,7 +297,7 @@ nsdb_parse_nceprefix_entry(LDAP *ld, LDAPMessage *entry, char **dn)
  *
  * @verbatim
 
-   ldapsearch -b "naming_context" -s base objectClass=* fedfsNcePrefix
+   ldapsearch -b "naming_context" -s base (objectClass=*) fedfsNcePrefix
    @endverbatim
  *
  * The full DN for the NSDB container is constructed and returned in "dn."
@@ -319,7 +319,7 @@ nsdb_get_nceprefix_s(nsdb_t host, const char *naming_context, char **dn,
 	attrs[0] = "fedfsNcePrefix";
 	attrs[1] = NULL;
 	rc = ldap_search_ext_s(ld, naming_context, LDAP_SCOPE_BASE,
-				"objectClass=*", attrs, 0, NULL,
+				"(objectClass=*)", attrs, 0, NULL,
 				NULL, &nsdb_ldap_timeout,
 				LDAP_NO_LIMIT, &response);
 	switch (rc) {
@@ -479,11 +479,13 @@ nsdb_parse_naming_contexts_entry(LDAP *ld, LDAPMessage *entry,
  *
  * Caller must free "contexts" with nsdb_free_string_array()
  *
- * ldapsearch equivalent:
+ * Search parameters are specified by RFC 4512 section 5.1.  The
+ * namingContext attribute of the root DSE is described in RFC 4512
+ * section 5.1.2.  ldapsearch equivalent:
  *
  * @verbatim
 
-   ldapsearch -b "" -s base objectClass=* namingContexts
+   ldapsearch -b "" -s base (objectClass=*) namingContexts
    @endverbatim
  */
 FedFsStatus
@@ -499,7 +501,7 @@ nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 	attrs[0] = "namingContexts";
 	attrs[1] = NULL;
 	rc = ldap_search_ext_s(ld, "", LDAP_SCOPE_BASE,
-				"objectClass=*", attrs, 0, NULL,
+				"(objectClass=*)", attrs, 0, NULL,
 				NULL, &nsdb_ldap_timeout,
 				LDAP_NO_LIMIT, &response);
 	switch (rc) {
@@ -838,7 +840,8 @@ nsdb_resolve_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
  *
  * @verbatim
 
-   ldapsearch -b fedfsFsnUuid="fsn_uuid","nce" -s one objectClass=fedfsFsl
+   ldapsearch -b "nce" -s sub
+		(&(objectClass=fedfsFsl)(fedfsFsnUuid="fsn_uuid"))
    @endverbatim
  */
 static FedFsStatus
@@ -846,19 +849,22 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		struct fedfs_fsl **fsls, unsigned int *ldap_err)
 {
 	LDAPMessage *response, *message;
-	FedFsStatus retval;
 	struct fedfs_fsl *tmp;
-	char *dn;
-	int rc;
+	FedFsStatus retval;
+	char filter[128];
+	int len, rc;
 
-	dn = nsdb_construct_fsn_dn(nce, fsn_uuid);
-	if (dn == NULL)
+	/* watch out for buffer overflow */
+	len = snprintf(filter, sizeof(filter),
+			"(&(objectClass=fedfsFsl)(fedfsFsnUuid=%s))", fsn_uuid);
+	if (len < 0 || (size_t)len > sizeof(filter)) {
+		xlog(D_GENERAL, "%s: filter is too long", __func__);
 		return FEDFS_ERR_SVRFAULT;
+	}
 
-	rc = ldap_search_ext_s(ld, dn, LDAP_SCOPE_ONELEVEL,
-				"objectClass=fedfsFsl", NULL, 0, NULL, NULL,
+	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
+				filter, NULL, 0, NULL, NULL,
 				NULL, LDAP_NO_LIMIT, &response);
-	free(dn);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -1092,7 +1098,7 @@ nsdb_parse_fsn_entry(LDAP *ld, LDAPMessage *entry, char ***fsns)
  *
  * @verbatim
 
-   ldapsearch -b "nce" objectClass=fedfsFsn
+   ldapsearch -b "nce" (objectClass=fedfsFsn)
    @endverbatim
  */
 static FedFsStatus
@@ -1105,7 +1111,7 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 	int rc;
 
 	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
-				"objectClass=fedfsFsn", NULL, 0, NULL,
+				"(objectClass=fedfsFsn)", NULL, 0, NULL,
 				NULL, NULL, LDAP_NO_LIMIT, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
