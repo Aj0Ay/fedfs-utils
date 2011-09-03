@@ -50,7 +50,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_delete_fsn_opts[] = "?dD:e:l:r:w:u:";
+static const char nsdb_delete_fsn_opts[] = "?dD:e:l:r:w:u:y";
 
 /**
  * Long form command line options
@@ -60,6 +60,7 @@ static const struct option nsdb_delete_fsn_longopts[] = {
 	{ "debug", 0, NULL, 'd', },
 	{ "fsnuuid", 1, NULL, 'u', },
 	{ "help", 0, NULL, '?', },
+	{ "leavefsn", 0, NULL, 'y', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
@@ -78,7 +79,7 @@ nsdb_delete_fsn_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
-			"-u fsn-uuid\n\n", progname);
+			"[-y] -u fsn-uuid\n\n", progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
@@ -88,6 +89,7 @@ nsdb_delete_fsn_usage(const char *progname)
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-w, --password       Bind password\n");
 	fprintf(stderr, "\t-u, --fsnuuid        FSN UUID to remove\n");
+	fprintf(stderr, "\t-y, --leavefsn       Delete FSLs but leave FSN\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -109,6 +111,7 @@ main(int argc, char **argv)
 	unsigned int ldap_err;
 	char *nce, *fsn_uuid;
 	FedFsStatus retval;
+	_Bool leave_fsn;
 	nsdb_t host;
 	uuid_t uu;
 	int arg;
@@ -135,6 +138,7 @@ main(int argc, char **argv)
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
 
+	leave_fsn = false;
 	fsn_uuid = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_delete_fsn_opts,
 			nsdb_delete_fsn_longopts, NULL)) != -1) {
@@ -167,6 +171,9 @@ main(int argc, char **argv)
 				nsdb_delete_fsn_usage(progname);
 			}
 			fsn_uuid = optarg;
+			break;
+		case 'y':
+			leave_fsn = true;
 			break;
 		default:
 			fprintf(stderr, "Invalid command line "
@@ -226,11 +233,15 @@ main(int argc, char **argv)
 
 	if (nce == NULL)
 		nce = (char *)nsdb_default_nce(host);
-	retval = nsdb_delete_fsn_s(host, nce, fsn_uuid, &ldap_err);
+	retval = nsdb_delete_fsn_s(host, nce, fsn_uuid, leave_fsn, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully deleted FSN record %s under %s\n",
-			fsn_uuid, nce);
+		if (leave_fsn)
+			printf("Successfully deleted FSL records for FSN %s under %s\n",
+				fsn_uuid, nce);
+		else
+			printf("Successfully deleted FSN record %s under %s\n",
+				fsn_uuid, nce);
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)

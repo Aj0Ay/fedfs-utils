@@ -235,7 +235,7 @@ FedFsStatus	 nsdb_create_fsn_s(nsdb_t host, const char *nce,
  * Delete an FSN (5.1.2)
  */
 FedFsStatus	 nsdb_delete_fsn_s(nsdb_t host, const char *nce,
-				const char *fsn_uuid,
+				const char *fsn_uuid, _Bool leave_fsn,
 				unsigned int *ldap_err);
 
 /**
