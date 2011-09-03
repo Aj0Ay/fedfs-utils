@@ -27,7 +27,7 @@ noinst_HEADERS		= privilege.h
 
 sbin_PROGRAMS		= resolve-junction
 resolve_junction_SOURCES = main.c privilege.c privilege.h
-LDADD			= -ltirpc -luuid -lcap -lsqlite3 -lldap -lidn -llber \
+LDADD			= -luuid -lcap -lsqlite3 -lldap -lidn -llber \
 			  $(top_builddir)/src/libadmin/libadmin.a \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libjunction/libjunction.a \

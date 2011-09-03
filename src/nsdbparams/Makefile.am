@@ -25,7 +25,7 @@
 
 sbin_PROGRAMS		= nsdbparams
 nsdbparams_SOURCES	= main.c
-LDADD			= -ltirpc -luuid -lcap -lsqlite3 -lldap -lidn -llber \
+LDADD			= -luuid -lsqlite3 -lldap -lidn -llber \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libjunction/libjunction.a \
 			  $(top_builddir)/src/libpath/libpath.a \
