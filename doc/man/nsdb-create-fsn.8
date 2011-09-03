@@ -1,0 +1,342 @@
+.\"@(#)nsdb-create-fsn.8"
+.\"
+.\" @file doc/man/nsdb-create-fsn.8
+.\" @brief man page for nsdb-create-fsn client command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH NSDB-CREATE-FSN 8 "15 May 2011"
+.SH NAME
+nsdb-create-fsn \- create a fileset name (FSN) record on an NSDB
+.SH SYNOPSIS
+.B nsdb-create-fsn
+.RB [ \-?d ]
+.RB [ \-D
+.IR binddn ]
+.RB [ \-e
+.IR nce ]
+.RB [ \-l
+.IR nsdbname ]
+.RB [ \-r
+.IR nsdbport ]
+.RB [ \-w
+.IR passwd ]
+.B \-u
+.I fsn-uuid
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+The bulk of FedFS junction information in a FedFS domain is stored
+on one or more LDAP servers.
+These servers are known as
+.IR "namespace databases" ,
+or NSDBs, for short.
+.P
+FedFS-enabled file servers and clients access the information stored
+on NSDBs via standard LDAP queries.
+FedFS-enabled file servers use these queries to resolve FedFS junctions.
+FedFS administrators use them to manage information
+about file sets contained in a FedFS domain name space.
+.SH DESCRIPTION
+The
+.BR nsdb-create-fsn (8)
+command is part of a collection of low-level single-use programs that are
+intended for testing the NSDB protocol or for use in scripts.
+This command creates a FedFS
+.I fileset name
+(FSN) record on an NSDB.
+.P
+A fileset name, or FSN, uniquely identifies a fileset in FedFS.
+An FSN consists of a UUID and the hostname and port of an NSDB.
+This pair is intended to be unique across all of FedFS.
+The meaning of these items is described in more detail in
+.BR fedfs (7).
+.P
+A FedFS junction contains an FSN.
+There can be multiple junctions that contain a particular FSN.
+There is exactly one FSN record stored on an NSDB that corresponds to this FSN.
+The FSN record can have zero or more FSL records as children.
+Replicas of these records can exist on more than one LDAP server.
+.P
+The
+.BR nsdb-create-fsn (8)
+command creates an FSN record on the named NSDB
+in preparation for use in FedFS junctions.
+It does not create FedFS junctions; to create a junction, use
+.BR fedfs-create-junction (8).
+It does not create any FSL children records; to create an FSL record, use
+.BR nsdb-create-fsl (8).
+.SH OPTIONS
+.IP "\fB\-d, \-\-debug"
+Specifies that debugging messages be produced during operation.
+.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
+Specifies the FSN UUID to insert into the new FSN record.
+If the
+.B -u
+option is not specified, the
+.BR nsdb-create-fsn (8)
+command fails.
+.IP "\fB\-?, \-\-help"
+Prints an
+.BR nsdb-create-fsn (8)
+version and usage message on
+.IR stderr ,
+then exits.
+.IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
+Specifies a distinguished name of an entity used to bind to this LDAP server.
+If the
+.B -D
+option is not specified,
+the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
+If this variable is not set,
+the NSDB connection parameter database is searched for this DN.
+If none of these is specified, or
+if this entity does not have permission to modify this area
+of the server's DIT, the
+.BR nsdb-create-fsn (8)
+command fails.
+.IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
+Specifies the distinguished name of the NSDB container entry
+under which this FSN record is to be created.
+If the
+.B -e
+option is not specified,
+the value of the FEDFS_NSDB_NCE environment variable is consulted.
+If this variable is not set,
+then the NSDB connection parameter database is searched for this DN.
+If none of these is specified, the
+.BR nsdb-create-fsn (8)
+command fails.
+.IP "\fB\-l, \-\-nsdbname=\fINSDB-host-name\fP"
+Specifies the hostname of the NSDB where the new FSN record should reside.
+If the
+.B -l
+option is not specified,
+the value of the FEDFS_NSDB_HOST environment variable is consulted.
+If the variable is not set and the
+.B -l
+option is not specified, the
+.BR nsdb-create-fsn (8)
+command fails.
+.IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
+Specifies the IP port of the NSDB where the new FSN record should reside.
+If the
+.B -r
+option is not specified,
+the value of the FEDFS_NSDB_PORT environment variable is consulted.
+The default value if the variable is not set is 389.
+.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+Specifies the password used for simple authentication to this LDAP server.
+If the
+.B -w
+option is not specified,
+the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
+If the variable is not set and the
+.B -w
+option is not specified, the
+.BR nsdb-create-fsn (8)
+command asks for a password on
+.IR stdin .
+Standard password blanking techniques are used
+to obscure the password on the user's terminal.
+.SH EXIT CODES
+The NSDB returns a value that reflects the success of the requested operation.
+.TP
+.B FEDFS_OK
+The LDAP modify request succeeded.
+.TP
+.B FEDFS_ERR_ACCESS
+The bound entity does not have permission to perform the requested operation.
+.TP
+.B FEDFS_ERR_INVAL
+One of the arguments was not valid.
+.TP
+.B FEDFS_ERR_SVRFAULT
+An unanticipated non-protocol error occurred.
+.TP
+.B FEDFS_ERR_NSDB_ROUTE
+The
+.BR nsdb-create-fsn (8)
+command was unable to find a route to the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_DOWN
+The
+.BR nsdb-create-fsn (8)
+command determined that the specified NSDB was down.
+.TP
+.B FEDFS_ERR_NSDB_CONN
+The
+.BR nsdb-create-fsn (8)
+command was unable to establish a connection with the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_AUTH
+The
+.BR nsdb-create-fsn (8)
+command was unable to authenticate
+and establish a secure connection with the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP
+A non-specific LDAP error occurred on the connection between the
+.BR nsdb-create-fsn (8)
+command and specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_VAL
+An LDAP error occurred on the connection between the
+.BR nsdb-create-fsn (8)
+command and specified NSDB.
+The specific error may be displayed on the command line.
+.TP
+.B FEDFS_ERR_NSDB_NONCE
+The
+.BR nsdb-create-fsn (8)
+command was unable to locate the NCE on the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_NOFSN
+The
+.BR nsdb-create-fsn (8)
+command was unable to locate the specified FSN on the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_RESPONSE
+The
+.BR nsdb-create-fsn (8)
+command received a malformed response from the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_FAULT
+An unanticipated error related to the specified NSDB occurred.
+.TP
+.B FEDFS_ERR_NSDB_PARAMS
+The local NSDB connection parameter database
+does not have any connection parameters on record for the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL
+The
+.BR nsdb-create-fsn (8)
+command received an LDAP referral that it was unable to follow.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL_VAL
+The
+.BR nsdb-create-fsn (8)
+command received an LDAP referral that it was unable to follow.
+A specific error may be displayed on the command line.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED
+The
+.BR nsdb-create-fsn (8)
+command received an LDAP referral that it chose not to follow,
+either because the local implementation does not support
+following LDAP referrals or LDAP referral following is disabled.
+.TP
+.B FEDFS_ERR_NSDB_PARAMS_LDAP_REFERRAL
+The
+.BR nsdb-create-fsn (8)
+command received an LDAP referral that it chose not to follow
+because the local NSDB connection parameter database had no
+connection parameters for the NSDB targeted by the LDAP referral.
+.SH EXAMPLES
+Suppose you are the FedFS administrator of the
+.I example.net
+FedFS domain and that you have created a new FSN for some fileset.
+The new FSN might look like:
+.RS
+.sp
+	FSN UUID: 8e246ddc-7b46-11e0-8252-000c297fd679
+.br
+	NSDB: ldap.example.net:389
+.sp
+.RE
+Further suppose the NSDB
+.I ldap.example.net:389
+has an NSDB container entry whose distinguished name is
+.IR o=fedfs .
+To create a corresponding FSN record, you might use:
+.RS
+.sp
+$ nsdb-create-fsn -D cn=Manager -e o=fedfs \\
+.br
+	-u 8e246ddc-7b46-11e0-8252-000c297fd679
+.br
+	-l ldap.example.net
+.br
+Enter NSDB password:
+.br
+Successfully created FSN record
+  fedfsFsnUuid=8e246ddc-7b46-11e0-8252-000c297fd679,o=fedfs
+.sp
+.RE
+The new FSN is specified using the
+.B -l
+and the
+.B -u
+(and optionally, the
+.BR -r )
+options.
+A new FSN record is created on
+.I ldap.example.net:389
+with a distinguished name of
+.RS
+.sp
+.IR fedfsFsnUuid=8e246ddc-7b46-11e0-8252-000c297fd679,o=fedfs .
+.sp
+.RE
+To see the new FSN record, use
+.BR nsdb-list (8)
+or
+.BR nsdb-resolve-fsn (8).
+.SH SECURITY
+Modify access to the LDAP's DIT is required to create a new FSN record.
+The
+.BR nsdb-create-fsn (8)
+command must bind as an entity permitted to modify the DIT
+to perform this operation.
+.P
+The target LDAP server must be registered in the local NSDB connection
+parameter database.
+The connection security mode listed
+in the NSDB connection parameter database
+for the target LDAP server is used during this operation.
+See
+.BR nsdbparams (8)
+for details on how to register an NSDB
+in the local NSDB connection parameter database.
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR fedfs-create-junction (8),
+.BR nsdb-create-fsl (8),
+.BR nsdb-resolve-fsn (8),
+.BR nsdb-list (8),
+.BR nsdbparams (8)
+.sp
+RFC 5716 for FedFS requirements and overview
+.sp
+RFC 4510 for an introduction to LDAP
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

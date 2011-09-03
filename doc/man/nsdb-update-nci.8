@@ -1,0 +1,333 @@
+.\"@(#)nsdb-update-nci.8"
+.\"
+.\" @file doc/man/nsdb-update-nci.8
+.\" @brief man page for nsdb-update-nci client command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH NSDB-UPDATE-NCI 8 "15 August 2011"
+.SH NAME
+nsdb-update-nci \- update NSDB container information on an LDAP server
+.SH SYNOPSIS
+.B nsdb-update-nci
+.RB [ \-?dy ]
+.RB [ \-D
+.IR binddn ]
+.RB [ \-e
+.IR nce ]
+.RB [ \-l
+.IR nsdbname ]
+.RB [ \-r
+.IR nsdbport ]
+.RB [ \-w
+.IR passwd ]
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+The bulk of FedFS junction information in a FedFS domain is stored
+on one or more LDAP servers.
+These servers are known as
+.IR "namespace databases" ,
+or NSDBs, for short.
+.P
+FedFS-enabled file servers and clients access the information stored
+on NSDBs via standard LDAP queries.
+FedFS-enabled file servers use these queries to resolve FedFS junctions.
+FedFS administrators use them to manage information
+about file sets contained in a FedFS domain name space.
+.SH DESCRIPTION
+The
+.BR nsdb-update-nci (8)
+command is part of a collection of low-level single-use programs that are
+intended for testing the NSDB protocol or for use in scripts.
+This command is an easy way to turn a standard LDAP server into an NSDB
+by adding NSDB container information to the server's
+.I Directory Information Tree
+(or DIT, for short).
+.P
+The top of the DIT on an LDAP server has one or more
+.IR "naming contexts" .
+Some LDAP server implementations call these contexts
+.IR "root suffixes" .
+An LDAP server's naming contexts are easy for clients to locate
+with a well-known search query.
+All LDAP entries on that server are contained under naming contexts.
+.P
+The root LDAP object under which FedFS-related entries reside
+is known as the
+.I NSDB Container Entry
+(or NCE).
+The NCE can be a naming context object,
+or it can be located somewhere below the naming context.
+Both the naming context and the NCE must be world-readable
+for FedFS-enabled clients and servers to access the NSDB.
+.P
+The
+.BR nsdb-update-nci (8)
+command inserts a pointer to an NCE
+into one of an LDAP server's naming contexts.
+This is the step that turns an LDAP server into an NSDB.
+The target NCE object and the naming context object
+.I must
+exist before this operation can complete successfully.
+.SH OPTIONS
+.IP "\fB\-d, \-\-debug"
+Specifies that debugging messages be produced during operation.
+.IP "\fB\-?, \-\-help"
+Prints an
+.BR nsdb-update-nci (8)
+version and usage message on
+.IR stderr ,
+then exits.
+.IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
+Specifies a distinguished name of an entity used to bind to this LDAP server.
+If the
+.B -D
+option is not specified,
+the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
+If this variable is not set,
+the NSDB connection parameter database is searched for this DN.
+If none of these is specified, or
+if this entity does not have permission to modify this area
+of the server's DIT, the
+.BR nsdb-update-nci (8)
+command fails.
+.IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
+Specifies the distinguished name of the new NSDB container entry.
+If the
+.B -e
+option is not specified,
+the value of the FEDFS_NSDB_NCE environment variable is consulted.
+If this variable is not set,
+then the NSDB connection parameter database is searched for this DN.
+If none of these is specified, the
+.BR nsdb-update-nci (8)
+command fails.
+.IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
+Specifies the hostname of the NSDB where the new NCE should reside.
+If the
+.B -l
+option is not specified,
+the value of the FEDFS_NSDB_HOST environment variable is consulted.
+If the variable is not set and the
+.B -l
+option is not specified, the
+.BR nsdb-update-nci (8)
+command fails.
+.IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
+Specifies the IP port of the NSDB where the new NCE should reside.
+If the
+.B -r
+option is not specified,
+the value of the FEDFS_NSDB_PORT environment variable is consulted.
+The default value if the variable is not set is 389.
+.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+Specifies the password used for simple authentication to this LDAP server.
+If the
+.B -w
+option is not specified,
+the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
+If the variable is not set and the
+.B -w
+option is not specified, the
+.BR nsdb-update-nci (8)
+command asks for a password on
+.IR stdin .
+Standard password blanking techniques are used
+to obscure the password on the user's terminal.
+.IP "\fB\-y, \-\-delete\fP"
+Specifies that NSDB Container Information for this NCE
+should be removed from this LDAP server.
+This operation cannot be undone.
+.SH EXIT CODES
+The NSDB returns a value that reflects the success of the requested operation.
+.TP
+.B FEDFS_OK
+The LDAP modify request succeeded.
+.TP
+.B FEDFS_ERR_ACCESS
+The bound entity does not have permission to perform the requested operation.
+.TP
+.B FEDFS_ERR_INVAL
+One of the arguments was not valid.
+.TP
+.B FEDFS_ERR_SVRFAULT
+An unanticipated non-protocol error occurred.
+.TP
+.B FEDFS_ERR_NSDB_ROUTE
+The
+.BR nsdb-update-nci (8)
+command was unable to find a route to the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_DOWN
+The
+.BR nsdb-update-nci (8)
+command determined that the specified NSDB was down.
+.TP
+.B FEDFS_ERR_NSDB_CONN
+The
+.BR nsdb-update-nci (8)
+command was unable to establish a connection with the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_AUTH
+The
+.BR nsdb-update-nci (8)
+command was unable to authenticate
+and establish a secure connection with the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP
+A non-specific LDAP error occurred on the connection between the
+.BR nsdb-update-nci (8)
+command and specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_VAL
+An LDAP error occurred on the connection between the
+.BR nsdb-update-nci (8)
+command and specified NSDB.
+The specific error may be displayed on the command line.
+.TP
+.B FEDFS_ERR_NSDB_RESPONSE
+The
+.BR nsdb-update-nci (8)
+command received a malformed response from the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_FAULT
+An unanticipated error related to the specified NSDB occurred.
+.TP
+.B FEDFS_ERR_NSDB_PARAMS
+The local NSDB connection parameter database
+does not have any connection parameters on record for the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL
+The
+.BR nsdb-update-nci (8)
+command received an LDAP referral that it was unable to follow.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL_VAL
+The
+.BR nsdb-update-nci (8)
+command received an LDAP referral that it was unable to follow.
+A specific error may be displayed on the command line.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED
+The
+.BR nsdb-update-nci (8)
+command received an LDAP referral that it chose not to follow,
+either because the local implementation does not support
+following LDAP referrals or LDAP referral following is disabled.
+.TP
+.B FEDFS_ERR_NSDB_PARAMS_LDAP_REFERRAL
+The
+.BR nsdb-update-nci (8)
+command received an LDAP referral that it chose not to follow
+because the local NSDB connection parameter database had no
+connection parameters for the NSDB targeted by the LDAP referral.
+.SH EXAMPLES
+Suppose you are the FedFS administrator of the
+.I example.net
+FedFS domain and that you want to make the LDAP server
+.IR ldap.example.net
+into an NSDB.
+After creating a naming context and root suffix object
+with a distinguished name of
+.I o=fedfs
+on the LDAP server, you might use:
+.RS
+.sp
+$ nsdb-update-nci -l ldap.example.net -D cn=Manager -e o=fedfs
+.br
+Enter NSDB password:
+.br
+Successfully updated NCI
+.sp
+.RE
+NSDB container information is inserted into
+.IR o=fedfs ,
+and this entry is changed to an NSDB Container Entry.
+.P
+To see the new container information, use
+.BR nsdb-nces (8).
+.P
+.I o=fedfs
+is a typical NCE for FedFS information on an LDAP server.
+However, suppose that instead of creating a typical NCE,
+you would prefer the entry
+.I ou=fedfs,dc=example,dc=net
+to contain FedFS information.
+Assuming your server set-up script has already created the
+.I dc=example,dc=net
+naming context and root object,
+and after creating an object with the distinguished name
+.IR ou=fedfs,dc=example,dc=net ,
+you might use:
+.RS
+.sp
+$ nsdb-update-nci -e "ou=fedfs,dc=example,dc=net" -D cn=Manager
+.br
+Enter NSDB password:
+.br
+Successfully updated NCI
+.sp
+.RE
+NSDB container information is inserted into
+.IR dc=example,dc=net ,
+and the entry at
+.I ou=fedfs,dc=example,dc=net
+is changed to an NCE.
+.P
+To see the new NCE, use
+.BR nsdb-nces (8).
+.SH SECURITY
+LDAP naming contexts are typically writable only by administrative entities.
+The
+.BR nsdb-update-nci (8)
+command must bind as an administrative entity to perform this operation.
+.P
+The target LDAP server must be registered in the local NSDB connection
+parameter database.
+The connection security mode listed
+in the NSDB connection parameter database
+for the target LDAP server is used during this operation.
+See
+.BR nsdbparams (8)
+for details on how to register an NSDB
+in the local NSDB connection parameter database.
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR nsdb-nces (8),
+.BR nsdbparams (8)
+.sp
+RFC 5716 for FedFS requirements and overview
+.sp
+RFC 4510 for an introduction to LDAP
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

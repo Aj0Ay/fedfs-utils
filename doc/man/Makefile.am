@@ -28,9 +28,16 @@ FEDFS_CLIENT_CMDS	= fedfs-create-junction.8 fedfs-create-replication.8 \
 			  fedfs-lookup-junction.8 fedfs-lookup-replication.8 \
 			  fedfs-get-nsdb-params.8 fedfs-set-nsdb-params.8 \
 			  fedfs-get-limited-nsdb-params.8 fedfs-null.8
+NSDB_CLIENT_CMDS	= nsdb-create-fsl.8 nsdb-create-fsn.8 \
+			  nsdb-delete-fsl.8 nsdb-delete-fsn.8 \
+			  nsdb-resolve-fsn.8 nsdb-update-fsl.8 \
+			  nsdb-annotate.8 nsdb-describe.8 \
+			  nsdb-list.8 nsdb-nces.8 \
+			  nsdb-update-nci.8 nsdb-remove-nci.8 \
+			  nsdb-delete-nsdb.8
 
 dist_man7_MANS		= fedfs.7
 dist_man8_MANS		= rpc.fedfsd.8 mount.fedfs.8 fedfs-map-nfs4.8 \
-			  nsdbparams.8 $(FEDFS_CLIENT_CMDS)
+			  nsdbparams.8 $(FEDFS_CLIENT_CMDS) $(NSDB_CLIENT_CMDS)
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out
 DISTCLEANFILES		= Makefile.in
