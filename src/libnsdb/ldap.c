@@ -480,39 +480,6 @@ out_ldap_err:
 }
 
 /**
- * Construct the DN of an FSN entry
- *
- * @param nce NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid NUL-terminated C string containing FSN UUID
- * @return NUL-terminated C string containing DN of an FSN entry
- *
- * Caller must free returned dn with free(3)
- */
-char *
-nsdb_construct_fsn_dn(const char *nce, const char *fsn_uuid)
-{
-	size_t dn_len;
-	char *dn;
-	int len;
-
-	dn_len = strlen("fedfsFsnUuid=") + strlen(fsn_uuid) +
-				strlen(",") + strlen(nce) + 1;
-	dn = malloc(dn_len);
-	if (dn == NULL) {
-		xlog(D_GENERAL, "%s: No memory for DN", __func__);
-		return NULL;
-	}
-	len = snprintf(dn, dn_len, "fedfsFsnUuid=%s,%s", fsn_uuid, nce);
-	if (len < 0 || (size_t)len > dn_len) {
-		xlog(D_GENERAL, "%s: DN is too long", __func__);
-		return NULL;
-	}
-
-	xlog(D_CALL, "%s: Constructed dn %s", __func__, dn);
-	return dn;
-}
-
-/**
  * Construct the DN of an FSL entry
  *
  * @param nce NUL-terminated C string containing DN of NSDB container entry

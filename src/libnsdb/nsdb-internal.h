@@ -79,8 +79,6 @@ FedFsStatus	 nsdb_bind(LDAP *ld, const char *binddn,
 FedFsStatus	 nsdb_start_tls(LDAP *ld, const char *certfile,
 				unsigned int *ldap_err);
 
-char		*nsdb_construct_fsn_dn(const char *nce,
-				const char *fsn_uuid);
 char		*nsdb_construct_fsl_dn(const char *nce,
 				const char *fsn_uuid,
 				const char *fsl_uuid);

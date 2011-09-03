@@ -48,6 +48,39 @@
 #include "xlog.h"
 
 /**
+ * Construct the DN of an FSN entry
+ *
+ * @param nce NUL-terminated C string containing DN of NSDB container entry
+ * @param fsn_uuid NUL-terminated C string containing FSN UUID
+ * @return NUL-terminated C string containing DN of an FSN entry
+ *
+ * Caller must free returned dn with ber_memfree(3)
+ */
+static char *
+nsdb_construct_fsn_dn(const char *nce, const char *fsn_uuid)
+{
+	size_t dn_len;
+	char *dn;
+	int len;
+
+	dn_len = strlen("fedfsFsnUuid=") + strlen(fsn_uuid) +
+				strlen(",") + strlen(nce) + 1;
+	dn = ber_memalloc(dn_len);
+	if (dn == NULL) {
+		xlog(D_GENERAL, "%s: No memory for DN", __func__);
+		return NULL;
+	}
+	len = snprintf(dn, dn_len, "fedfsFsnUuid=%s,%s", fsn_uuid, nce);
+	if (len < 0 || (size_t)len > dn_len) {
+		xlog(D_GENERAL, "%s: DN is too long", __func__);
+		return NULL;
+	}
+
+	xlog(D_CALL, "%s: Constructed dn %s", __func__, dn);
+	return dn;
+}
+
+/**
  * Add a new FSN entry under "nce"
  *
  * @param ld an initialized LDAP server descriptor
@@ -102,7 +135,7 @@ nsdb_create_fsn_add_entry(LDAP *ld, const char *nce,
 		return FEDFS_ERR_SVRFAULT;
 
 	rc = ldap_add_ext_s(ld, dn, attrs, NULL, NULL);
-	free(dn);
+	ber_memfree(dn);
 	if (rc != LDAP_SUCCESS) {
 		xlog(L_ERROR, "Failed to add new FSN entry: %s",
 				ldap_err2string(rc));
@@ -145,11 +178,93 @@ nsdb_create_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 }
 
 /**
- * Delete an existing FSN entry under "nce"
+ * Discover the DN for an FSN record
  *
  * @param ld an initialized LDAP server descriptor
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
+ * @param fsn_uuid a NUL-terminated C string containing FSL UUID
+ * @param dn OUT: a NUL-terminated C string containing DN of FSL record
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with ber_memfree(3).
+ */
+static FedFsStatus
+nsdb_search_fsn_dn_s(LDAP *ld, const char *nce, const char *fsn_uuid,
+		char **dn, unsigned int *ldap_err)
+{
+	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
+	LDAPMessage *response;
+	FedFsStatus retval;
+	char filter[128];
+	int len, rc;
+
+	/* watch out for buffer overflow */
+	len = snprintf(filter, sizeof(filter),
+			"(&(objectClass=fedfsFsn)(fedfsFsnUuid=%s))", fsn_uuid);
+	if (len < 0 || (size_t)len > sizeof(filter)) {
+		xlog(D_GENERAL, "%s: filter is too long", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_ONELEVEL,
+				filter, attrs, 0, NULL, NULL,
+				NULL, LDAP_NO_LIMIT, &response);
+	switch (rc) {
+	case LDAP_SUCCESS:
+		break;
+	case LDAP_NO_SUCH_OBJECT:
+		xlog(D_GENERAL, "%s: No entry for FSN UUID %s exists",
+			__func__, fsn_uuid);
+		return FEDFS_ERR_NSDB_NOFSN;
+	default:
+		xlog(D_GENERAL, "%s: LDAP search failed: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+	if (response == NULL) {
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		return FEDFS_ERR_NSDB_FAULT;
+	}
+
+	rc = ldap_count_messages(ld, response);
+	switch (rc) {
+	case -1:
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		retval = FEDFS_ERR_NSDB_RESPONSE;
+		goto out;
+	case 1:
+		xlog(D_GENERAL, "%s: No entry for FSN UUID %s exists",
+			__func__, fsn_uuid);
+		retval = FEDFS_ERR_NSDB_NOFSN;
+		goto out;
+	default:
+		xlog(D_CALL, "%s: received %d messages", __func__, rc);
+	}
+
+	*dn = ldap_get_dn(ld, response);
+	if (*dn == NULL) {
+		ldap_get_option(ld, LDAP_OPT_RESULT_CODE, &rc);
+		xlog(D_GENERAL, "%s: Failed to parse DN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		retval = FEDFS_ERR_NSDB_LDAP_VAL;
+		goto out;
+	}
+	retval = FEDFS_OK;
+	xlog(D_CALL, "%s: Found '%s'", __func__, *dn);
+
+out:
+	ldap_msgfree(response);
+	return retval;
+}
+
+/**
+ * Delete an existing FSN entry under "nce"
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param dn a NUL-terminated C string containing DN of entry to remove
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  *
@@ -157,26 +272,19 @@ nsdb_create_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
  *
  * @verbatim
 
-   dn: fedfsFsnUuid="fsn_uuid","nce"
+   dn: "dn"
    changeType: delete
    @endverbatim
  */
 static FedFsStatus
-nsdb_delete_fsn_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
-		unsigned int *ldap_err)
+nsdb_delete_fsn_entry_s(LDAP *ld, const char *dn, unsigned int *ldap_err)
 {
-	char *dn;
 	int rc;
 
-	dn = nsdb_construct_fsn_dn(nce, fsn_uuid);
-	if (dn == NULL)
-		return FEDFS_ERR_SVRFAULT;
-
 	rc = ldap_delete_ext_s(ld, dn, NULL, NULL);
-	free(dn);
 	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to delete FSN entry for %s: %s",
-			__func__, fsn_uuid, ldap_err2string(rc));
+		xlog(D_GENERAL, "%s: Failed to delete FSN entry %s: %s",
+			__func__, dn, ldap_err2string(rc));
 		switch (rc) {
 		case LDAP_NO_SUCH_OBJECT:
 			return FEDFS_ERR_NSDB_NOFSN;
@@ -190,8 +298,8 @@ nsdb_delete_fsn_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		}
 	}
 
-	xlog(D_GENERAL, "%s: Successfully deleted FSN entry for %s",
-		__func__, fsn_uuid);
+	xlog(D_GENERAL, "%s: Successfully deleted FSN entry %s",
+		__func__, dn);
 	return FEDFS_OK;
 }
 
@@ -208,6 +316,9 @@ FedFsStatus
 nsdb_delete_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		unsigned int *ldap_err)
 {
+	FedFsStatus retval;
+	char *dn;
+
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
 		return FEDFS_ERR_SVRFAULT;
@@ -218,8 +329,14 @@ nsdb_delete_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		return FEDFS_ERR_SVRFAULT;
 	}
 
-	return nsdb_delete_fsn_entry_s(host->fn_ldap, nce,
-						fsn_uuid, ldap_err);
+	retval = nsdb_search_fsn_dn_s(host->fn_ldap, nce, fsn_uuid,
+						&dn, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = nsdb_delete_fsn_entry_s(host->fn_ldap, dn, ldap_err);
+	ber_memfree(dn);
+	return retval;
 }
 
 /**
