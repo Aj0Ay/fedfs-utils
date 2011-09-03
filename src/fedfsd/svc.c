@@ -864,6 +864,7 @@ fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 	struct fedfs_secdata secdata;
 	FedFsSetNsdbParamsArgs args;
 	char *hostname = NULL;
+	unsigned int ldap_err;
 	unsigned short port;
 	FedFsStatus result;
 
@@ -877,6 +878,20 @@ fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 	result = fedfsd_nsdbname(args.nsdbName, &hostname, &port);
 	if (result != FEDFS_OK)
 		goto out;
+
+	result = nsdb_ping_s(hostname, port, &ldap_err);
+	switch (result) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		xlog(L_ERROR, "Failed to ping NSDB %s:%u: %s\n",
+			hostname, port, ldap_err2string(ldap_err));
+		goto out;
+	default:
+		xlog(L_ERROR, "Warning: %s:%u is not an NSDB: %s",
+			hostname, port, nsdb_display_fedfsstatus(result));
+		goto out;
+	}
 
 	switch (args.params.secType) {
 	case FEDFS_SEC_NONE:
