@@ -26,11 +26,11 @@
 noinst_HEADERS		= nls.h
 sbin_PROGRAMS		= mount.fedfs fedfs-map-nfs4
 fedfs_map_nfs4_SOURCES	= fedfs-map-nfs4.c
-fedfs_map_nfs4_LDADD	= -lresolv \
+fedfs_map_nfs4_LDADD	= $(LIBRESOLV) \
 			  $(top_builddir)/src/libsi/libsi.a
 mount_fedfs_SOURCES	= main.c
 # mount.fedfs must never link against libraries in /usr
-mount_fedfs_LDADD	= -lresolv \
+mount_fedfs_LDADD	= $(LIBRESOLV) \
 			  $(top_builddir)/src/libsi/libsi.a
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out
 DISTCLEANFILES		= Makefile.in

@@ -27,7 +27,8 @@ noinst_HEADERS		= fedfsd.h
 RPCPREFIX		= rpc.
 sbin_PROGRAMS		= fedfsd
 fedfsd_SOURCES		= listen.c main.c privilege.c svc.c
-fedfsd_LDADD		= -ltirpc -luuid -lcap -lsqlite3 -lldap -lidn -llber \
+fedfsd_LDADD		= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
 			  $(top_builddir)/src/libadmin/libadmin.a \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libjunction/libjunction.a \

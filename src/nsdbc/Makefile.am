@@ -28,7 +28,8 @@ sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
 			  nsdb-delete-nsdb \
 			  nsdb-create-fsn nsdb-delete-fsn nsdb-resolve-fsn \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl
-LDADD			= -luuid -lldap -llber -lidn -lsqlite3 \
+LDADD			= $(LIBLDAP) $(LIBLBER) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libxlog/libxlog.a \
 			  $(top_builddir)/src/libjunction/libjunction.a \
