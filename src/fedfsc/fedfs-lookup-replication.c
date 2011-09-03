@@ -84,7 +84,7 @@ fedfs_lookup_replication_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
 static _Bool
@@ -222,27 +222,25 @@ fedfs_lookup_replication_call(const char *hostname, const char *nettype,
 	FedFsLookupRes result;
 	FedFsLookupArgs arg;
 	enum clnt_stat status;
-	int exit_status;
 	CLIENT *client;
 
 	memset(&arg, 0, sizeof(arg));
 
 	if (!fedfs_lookup_replication_get_resolvetype(resolvetype, &arg.resolve))
-		return EXIT_FAILURE;
+		return FEDFS_ERR_INVAL;
 	arg.path.type = FEDFS_PATH_SYS;
 	result.status = nsdb_posix_to_fedfspathname(path,
 						&arg.path.FedFsPath_u.adminPath);
 	if (result.status != FEDFS_OK) {
 		fprintf(stderr, "Failed to encode pathname: %s",
 			nsdb_display_fedfsstatus(result.status));
-		return EXIT_FAILURE;
+		return result.status;
 	}
 
-	exit_status = EXIT_SUCCESS;
 	client = clnt_create(hostname, FEDFS_PROG, FEDFS_V1, nettype);
 	if (client == NULL) {
 		clnt_pcreateerror("Failed to create FEDFS client");
-		exit_status = EXIT_FAILURE;
+		result.status = FEDFS_ERR_SVRFAULT;
 		goto out;
 	}
 
@@ -253,21 +251,21 @@ fedfs_lookup_replication_call(const char *hostname, const char *nettype,
 				fedfs_lookup_replication_timeout);
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_LOOKUP_REPLICATION call failed");
-		exit_status = EXIT_FAILURE;
+		result.status = FEDFS_ERR_SVRFAULT;
 	} else
 		fedfs_lookup_replication_print_result(result);
 	(void)clnt_destroy(client);
 
 out:
 	nsdb_free_fedfspathname(&arg.path.FedFsPath_u.adminPath);
-	exit(exit_status);
+	return result.status;
 }
 
 int
 main(int argc, char **argv)
 {
 	char *progname, *hostname, *nettype, *path, *resolvetype;
-	int arg, exit_status;
+	int arg;
 
 	(void)setlocale(LC_ALL, "");
 	(void)umask(S_IRWXO);
@@ -319,8 +317,6 @@ main(int argc, char **argv)
 		fedfs_lookup_replication_usage(progname);
 	}
 
-	exit_status = fedfs_lookup_replication_call(hostname, nettype,
-						path, resolvetype);
-
-	exit(exit_status);
+	exit((int)fedfs_lookup_replication_call(hostname, nettype,
+						path, resolvetype));
 }

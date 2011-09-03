@@ -96,7 +96,7 @@ fedfs_create_junction_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
 /**
@@ -110,24 +110,24 @@ fedfs_create_junction_usage(const char *progname)
  * @param nsdbport port number of NSDB service for this junction
  * @return an exit status value
  */
-static int
+static FedFsStatus
 fedfs_create_junction_call(const char *hostname, const char *nettype,
 		const char *path, const char *uuid, char *nsdbname,
 		const uint16_t nsdbport)
 {
 	enum clnt_stat status;
-	int res, exit_status;
 	FedFsCreateArgs arg;
 	FedFsStatus result;
 	CLIENT *client;
 	uuid_t uu;
+	int res;
 
 	memset(&arg, 0, sizeof(arg));
 
 	res = uuid_parse(uuid, uu);
 	if (res != 0) {
 		fprintf(stderr, "Failed to parse UUID %s\n", uuid);
-		return EXIT_FAILURE;
+		return FEDFS_ERR_INVAL;
 	}
 	memcpy(arg.fsn.fsnUuid, uu, sizeof(FedFsUuid));
 
@@ -141,15 +141,13 @@ fedfs_create_junction_call(const char *hostname, const char *nettype,
 	if (result != FEDFS_OK) {
 		fprintf(stderr, "Failed to encode pathname: %s",
 			nsdb_display_fedfsstatus(result));
-		return EXIT_FAILURE;
+		return result;
 	}
-
-	exit_status = EXIT_SUCCESS;
 
 	client = clnt_create(hostname, FEDFS_PROG, FEDFS_V1, nettype);
 	if (client == NULL) {
 		clnt_pcreateerror("Failed to create FEDFS client");
-		exit_status = EXIT_FAILURE;
+		result = FEDFS_ERR_SVRFAULT;
 		goto out;
 	}
 
@@ -161,14 +159,14 @@ fedfs_create_junction_call(const char *hostname, const char *nettype,
 				fedfs_create_junction_timeout);
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_CREATE_JUNCTION call failed");
-		exit_status = EXIT_FAILURE;
+		result = FEDFS_ERR_SVRFAULT;
 	} else
 		nsdb_print_fedfsstatus(result);
 	(void)clnt_destroy(client);
 
 out:
 	nsdb_free_fedfspathname(&arg.path.FedFsPath_u.adminPath);
-	return exit_status;
+	return result;
 }
 
 /**
@@ -184,7 +182,7 @@ main(int argc, char **argv)
 	char *progname, *hostname, *nettype;
 	char *fsn_uuid, *path, *nsdbname;
 	unsigned short nsdbport;
-	int arg, exit_status;
+	int arg;
 
 	(void)setlocale(LC_ALL, "");
 	(void)umask(S_IRWXO);
@@ -254,8 +252,6 @@ main(int argc, char **argv)
 		fedfs_create_junction_usage(progname);
 	}
 
-	exit_status = fedfs_create_junction_call(hostname, nettype, path,
-						fsn_uuid, nsdbname, nsdbport);
-
-	exit(exit_status);
+	exit((int)fedfs_create_junction_call(hostname, nettype, path,
+						fsn_uuid, nsdbname, nsdbport));
 }

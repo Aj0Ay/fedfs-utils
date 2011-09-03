@@ -86,7 +86,7 @@ fedfs_set_nsdb_params_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
 static _Bool
@@ -140,7 +140,7 @@ fedfs_set_nsdb_params_get_params(const char *certfile, FedFsNsdbParams *params)
 	return true;
 }
 
-static int
+static FedFsStatus
 fedfs_set_nsdb_params_call(const char *hostname, const char *nettype,
 		char *nsdbname, const unsigned short nsdbport,
 		const char *certfile)
@@ -148,23 +148,21 @@ fedfs_set_nsdb_params_call(const char *hostname, const char *nettype,
 	FedFsSetNsdbParamsArgs arg;
 	enum clnt_stat status;
 	FedFsStatus result;
-	int exit_status;
 	CLIENT *client;
 
 	memset(&arg, 0, sizeof(arg));
 
 	if (!fedfs_set_nsdb_params_get_params(certfile, &arg.params))
-		return EXIT_FAILURE;
+		return FEDFS_ERR_INVAL;
 
 	arg.nsdbName.hostname.utf8string_len = strlen(nsdbname);
 	arg.nsdbName.hostname.utf8string_val = nsdbname;
 	arg.nsdbName.port = nsdbport;
 
-	exit_status = EXIT_SUCCESS;
 	client = clnt_create(hostname, FEDFS_PROG, FEDFS_V1, nettype);
 	if (client == NULL) {
 		clnt_pcreateerror("Failed to create FEDFS client");
-		exit_status = EXIT_FAILURE;
+		result = FEDFS_ERR_SVRFAULT;
 		goto out;
 	}
 
@@ -175,14 +173,14 @@ fedfs_set_nsdb_params_call(const char *hostname, const char *nettype,
 				fedfs_set_nsdb_params_timeout);
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_SET_NSDB_PARAMS call failed");
-		exit_status = EXIT_FAILURE;
+		result = FEDFS_ERR_SVRFAULT;
 	} else
 		nsdb_print_fedfsstatus(result);
 	(void)clnt_destroy(client);
 
 out:
 	free(arg.params.FedFsNsdbParams_u.secData.secData_val);
-	return exit_status;
+	return result;
 }
 
 int
@@ -191,7 +189,7 @@ main(int argc, char **argv)
 	char *progname, *hostname, *nettype;
 	char *nsdbname, *certfile;
 	unsigned short nsdbport;
-	int arg, exit_status;
+	int arg;
 
 	(void)setlocale(LC_ALL, "");
 	(void)umask(S_IRWXO);
@@ -256,9 +254,6 @@ main(int argc, char **argv)
 		fedfs_set_nsdb_params_usage(progname);
 	}
 
-	exit_status = fedfs_set_nsdb_params_call(hostname, nettype,
-							nsdbname, nsdbport,
-							certfile);
-
-	exit(exit_status);
+	exit((int)fedfs_set_nsdb_params_call(hostname, nettype,
+						nsdbname, nsdbport, certfile));
 }

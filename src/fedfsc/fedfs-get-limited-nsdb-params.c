@@ -83,7 +83,7 @@ fedfs_get_limited_nsdb_params_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
 static void
@@ -108,14 +108,13 @@ fedfs_get_limited_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
 	}
 }
 
-static int
+static FedFsStatus
 fedfs_get_limited_nsdb_params_call(const char *hostname, const char *nettype,
 		char *nsdbname, const unsigned short nsdbport)
 {
 	FedFsGetNsdbParamsRes result;
 	enum clnt_stat status;
 	FedFsNsdbName arg;
-	int exit_status;
 	CLIENT *client;
 
 	memset(&arg, 0, sizeof(arg));
@@ -124,11 +123,10 @@ fedfs_get_limited_nsdb_params_call(const char *hostname, const char *nettype,
 	arg.hostname.utf8string_val = nsdbname;
 	arg.port = nsdbport;
 
-	exit_status = EXIT_SUCCESS;
 	client = clnt_create(hostname, FEDFS_PROG, FEDFS_V1, nettype);
 	if (client == NULL) {
 		clnt_pcreateerror("Failed to create FEDFS client");
-		exit_status = EXIT_FAILURE;
+		result.status = FEDFS_ERR_SVRFAULT;
 		goto out;
 	}
 
@@ -139,13 +137,13 @@ fedfs_get_limited_nsdb_params_call(const char *hostname, const char *nettype,
 				fedfs_get_limited_nsdb_params_timeout);
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_GET_LIMITED_NSDB_PARAMS call failed");
-		exit_status = EXIT_FAILURE;
+		result.status = FEDFS_ERR_SVRFAULT;
 	} else
 		fedfs_get_limited_nsdb_params_print_result(result);
 	(void)clnt_destroy(client);
 
 out:
-	exit(exit_status);
+	return result.status;
 }
 
 int
@@ -153,7 +151,7 @@ main(int argc, char **argv)
 {
 	char *progname, *hostname, *nettype, *nsdbname;
 	unsigned short nsdbport;
-	int arg, exit_status;
+	int arg;
 
 	(void)setlocale(LC_ALL, "");
 	(void)umask(S_IRWXO);
@@ -214,8 +212,6 @@ main(int argc, char **argv)
 		fedfs_get_limited_nsdb_params_usage(progname);
 	}
 
-	exit_status = fedfs_get_limited_nsdb_params_call(hostname, nettype,
-							nsdbname, nsdbport);
-
-	exit(exit_status);
+	exit((int)fedfs_get_limited_nsdb_params_call(hostname, nettype,
+							nsdbname, nsdbport));
 }

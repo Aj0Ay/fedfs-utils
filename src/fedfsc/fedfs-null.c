@@ -75,24 +75,24 @@ fedfs_null_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
-static int
+static FedFsStatus
 fedfs_null_call(const char *hostname, const char *nettype)
 {
+	FedFsStatus exit_status;
 	enum clnt_stat status;
-	int exit_status;
 	CLIENT *client;
 	char result;
 
 	client = clnt_create(hostname, FEDFS_PROG, FEDFS_V1, nettype);
 	if (client == NULL) {
 		clnt_pcreateerror("Failed to create FEDFS client");
-		return EXIT_FAILURE;
+		return -1;
 	}
 
-	exit_status = EXIT_SUCCESS;
+	exit_status = FEDFS_OK;
 	memset((char *)&result, 0, sizeof(result));
 	status = clnt_call(client, FEDFS_NULL,
 				(xdrproc_t)xdr_void, (caddr_t)NULL,
@@ -100,7 +100,7 @@ fedfs_null_call(const char *hostname, const char *nettype)
 				fedfs_null_timeout);
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_NULL call failed");
-		exit_status = EXIT_FAILURE;
+		exit_status = FEDFS_ERR_SVRFAULT;
 	} else
 		printf("Call completed successfully\n");
 
@@ -112,7 +112,7 @@ int
 main(int argc, char **argv)
 {
 	char *progname, *hostname, *nettype;
-	int exit_status, arg;
+	int arg;
 
 	(void)setlocale(LC_ALL, "");
 	(void)umask(S_IRWXO);
@@ -150,7 +150,5 @@ main(int argc, char **argv)
 	if (optind != argc)
 		fedfs_null_usage(progname);
 
-	exit_status = fedfs_null_call(hostname, nettype);
-
-	exit(exit_status);
+	exit((int)fedfs_null_call(hostname, nettype));
 }
