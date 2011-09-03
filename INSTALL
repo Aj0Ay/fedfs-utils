@@ -90,9 +90,9 @@ in a FedFS domain:
 
   FedFS admin client	manages FedFS domain information
 
-Any host can play any or all of these roles.  This section outlines
-what fedfs-utils components to install on a host playing each of these
-roles.
+Any host can play any or all of these roles.  This section provides
+a rough description of how hosts playing each of these roles might be
+configured.
 
 
 NSDB
@@ -101,15 +101,16 @@ NSDB
 
   o Install the FedFS schema in the LDAP servers' schema directory
 
-  o (Eventually LDAP server TLS configuration will go here)
-
-  o If this is a new FedFS domain, choose a FedFS domain name
-
   o If this is a new LDAP server, create a slapd instance
 
-  o Set up a new root suffix as a fedfsNsdbContainerEntry (more detail
-    needed here, of course, but it is a totally different recipe for
-    each vendor's LDAP server)
+  o Optionally create an X.509 certificate for the LDAP server and
+    install it on the server
+
+  o Use nsdbparams to add connection parameters for the new NSDB on
+    your NSDB admin client host; optionally install the certificate you
+    created
+
+  o Set up an NCE
 
 
 FedFS file server
@@ -129,14 +130,12 @@ FedFS file server
   o Create /var/lib/fedfs and set its user and group to the fedfs
     user and group ID
 
-  o Run "nsdbparams init" to create the NSDB connection parameter
-    database
-
   o Add a line containing "fedfs_admin	100418" to /etc/rpc
 
   o (Eventually RPCGSS configuration will go here)
 
-  o (Eventually LDAP client TLS configuration will go here)
+  o Use nsdbparams to add connection parameters and X.509 certificates
+    for NSDBs to the local NSDB connection parameter database
 
   o Install fedfsd and a fedfsd init script
 
@@ -163,14 +162,12 @@ FedFS admin client
   o Create /var/lib/fedfs and set its user and group to the fedfs
     user and group ID
 
-  o Run "nsdbparams init" to create the NSDB connection parameter
-    database
-
   o Add a line containing "fedfs_admin	100418" to /etc/rpc
 
   o (Eventually RPCGSS configuration will go here)
 
-  o (Eventually LDAP client TLS configuration will go here)
+  o Use nsdbparams to add connection parameters and X.509 certificates
+    for NSDBs to the local NSDB connection parameter database
 
   o Install the nsdbc and fedfsc clients
 

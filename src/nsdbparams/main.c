@@ -88,7 +88,6 @@ nsdbparams_usage(const char *progname)
 
 	fprintf(stderr, "COMMAND is one of:\n");
 	fprintf(stderr, "\tdelete     Delete connection parameters\n");
-	fprintf(stderr, "\tinit       Initialize the store\n");
 	fprintf(stderr, "\tlist       Enumerate the store\n");
 	fprintf(stderr, "\tupdate     Update connection parameters\n");
 	fprintf(stderr, "\tshow       Show connection parameters for one NSDB\n");
@@ -200,23 +199,6 @@ nsdbparams_delete(const char *progname, const char *nsdbname,
 
 	printf("%s: %s:%u deleted successfully\n",
 		progname, nsdbname, nsdbport);
-	return EXIT_SUCCESS;
-}
-
-/**
- * Initialize (create) our NSDB connection parameter database
- *
- * @param progname NUL-terminated UTF-8 string containing name of this program
- * @return a program exit code
- */
-static int
-nsdbparams_init(const char *progname)
-{
-	if (!nsdb_init_database())
-		return EXIT_FAILURE;
-
-	printf("%s: NSDB certificate store initialized\n",
-		progname);
 	return EXIT_SUCCESS;
 }
 
@@ -570,10 +552,11 @@ main(int argc, char **argv)
 	if (!nsdbparams_drop_privileges(uid, gid))
 		goto out;
 
+	if (!nsdb_init_database())
+		goto out;
+
 	if (strcasecmp(command, "delete") == 0)
 		exit_status = nsdbparams_delete(progname, nsdbname, nsdbport);
-	else if (strcasecmp(command, "init") == 0)
-		exit_status = nsdbparams_init(progname);
 	else if (strcasecmp(command, "list") == 0)
 		exit_status = nsdbparams_list();
 	else if (strcasecmp(command, "update") == 0)
