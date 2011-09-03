@@ -189,6 +189,8 @@ main(int argc, char **argv)
 	char *progname, *hostname, *nettype;
 	char *nsdbname, *certfile;
 	unsigned short nsdbport;
+	unsigned int seconds;
+	FedFsStatus status;
 	int arg;
 
 	(void)setlocale(LC_ALL, "");
@@ -254,6 +256,15 @@ main(int argc, char **argv)
 		fedfs_set_nsdb_params_usage(progname);
 	}
 
-	exit((int)fedfs_set_nsdb_params_call(hostname, nettype,
-						nsdbname, nsdbport, certfile));
+	for (seconds = FEDFS_DELAY_MIN_SECS;; seconds = fedfs_delay(seconds)) {
+		status = fedfs_set_nsdb_params_call(hostname, nettype,
+						nsdbname, nsdbport, certfile);
+		if (status != FEDFS_ERR_DELAY)
+			break;
+
+		xlog(D_GENERAL, "Delaying %u seconds...", seconds);
+		if (sleep(seconds) != 0)
+			break;
+	}
+	return (int)status;
 }

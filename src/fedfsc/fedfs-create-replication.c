@@ -156,6 +156,8 @@ main(int argc, char **argv)
 	char *progname, *hostname, *nettype;
 	char *uuid, *path, *nsdbname;
 	unsigned short nsdbport;
+	unsigned int seconds;
+	FedFsStatus status;
 	int arg;
 
 	(void)setlocale(LC_ALL, "");
@@ -226,6 +228,15 @@ main(int argc, char **argv)
 		fedfs_create_replication_usage(progname);
 	}
 
-	exit((int)fedfs_create_replication_call(hostname, nettype, path,
-						uuid, nsdbname, nsdbport));
+	for (seconds = FEDFS_DELAY_MIN_SECS;; seconds = fedfs_delay(seconds)) {
+		status = fedfs_create_replication_call(hostname, nettype, path,
+						uuid, nsdbname, nsdbport);
+		if (status != FEDFS_ERR_DELAY)
+			break;
+
+		xlog(D_GENERAL, "Delaying %u seconds...", seconds);
+		if (sleep(seconds) != 0)
+			break;
+	}
+	return (int)status;
 }

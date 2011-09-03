@@ -112,6 +112,8 @@ int
 main(int argc, char **argv)
 {
 	char *progname, *hostname, *nettype;
+	unsigned int seconds;
+	FedFsStatus status;
 	int arg;
 
 	(void)setlocale(LC_ALL, "");
@@ -150,5 +152,14 @@ main(int argc, char **argv)
 	if (optind != argc)
 		fedfs_null_usage(progname);
 
-	exit((int)fedfs_null_call(hostname, nettype));
+	for (seconds = FEDFS_DELAY_MIN_SECS;; seconds = fedfs_delay(seconds)) {
+		status = fedfs_null_call(hostname, nettype);
+		if (status != FEDFS_ERR_DELAY)
+			break;
+
+		xlog(D_GENERAL, "Delaying %u seconds...", seconds);
+		if (sleep(seconds) != 0)
+			break;
+	}
+	return (int)status;
 }

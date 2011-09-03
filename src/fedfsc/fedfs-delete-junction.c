@@ -130,6 +130,8 @@ int
 main(int argc, char **argv)
 {
 	char *progname, *hostname, *nettype, *path;
+	unsigned int seconds;
+	FedFsStatus status;
 	int arg;
 
 	(void)setlocale(LC_ALL, "");
@@ -175,5 +177,14 @@ main(int argc, char **argv)
 		fedfs_delete_junction_usage(progname);
 	}
 
-	exit((int)fedfs_delete_junction_call(hostname, nettype, path));
+	for (seconds = FEDFS_DELAY_MIN_SECS;; seconds = fedfs_delay(seconds)) {
+		status = fedfs_delete_junction_call(hostname, nettype, path);
+		if (status != FEDFS_ERR_DELAY)
+			break;
+
+		xlog(D_GENERAL, "Delaying %u seconds...", seconds);
+		if (sleep(seconds) != 0)
+			break;
+	}
+	return (int)status;
 }

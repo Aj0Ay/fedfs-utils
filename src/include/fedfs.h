@@ -61,4 +61,23 @@
 #define FEDFS_USER	"fedfs"
 #endif	/* FEDFS_USER */
 
+/**
+ * Initial number of seconds to wait after receiving FEDFS_ERR_DELAY
+ */
+#define FEDFS_DELAY_MIN_SECS	2
+
+/**
+ * Maximum number of seconds to wait after receiving FEDFS_ERR_DELAY
+ */
+#define FEDFS_DELAY_MAX_SECS	(FEDFS_DELAY_MIN_SECS << 4)
+
+/**
+ * Compute seconds to wait after receiving FEDFS_ERR_DELAY
+ */
+static inline unsigned int fedfs_delay(unsigned int seconds)
+{
+	return seconds < FEDFS_DELAY_MAX_SECS ?
+				seconds << 1 : FEDFS_DELAY_MAX_SECS;
+}
+
 #endif	/* !_FEDFS_H_ */
