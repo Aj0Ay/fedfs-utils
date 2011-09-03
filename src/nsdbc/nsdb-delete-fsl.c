@@ -241,7 +241,7 @@ main(int argc, char **argv)
 
 	if (nce == NULL)
 		nce = (char *)nsdb_default_nce(host);
-	retval = nsdb_delete_fsl_s(host, nce, fsn_uuid, fsl_uuid, &ldap_err);
+	retval = nsdb_delete_fsl_s(host, nce, fsl_uuid, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		printf("Successfully deleted FSL record\n"

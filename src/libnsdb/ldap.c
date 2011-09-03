@@ -480,43 +480,6 @@ out_ldap_err:
 }
 
 /**
- * Construct the DN of an FSL entry
- *
- * @param nce NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid NUL-terminated C string containing FSN UUID
- * @param fsl_uuid NUL-terminated C string containing FSL UUID
- * @return NUL-terminated C string containing DN of an FSL entry
- *
- * Caller must free returned dn with free(3)
- */
-char *
-nsdb_construct_fsl_dn(const char *nce, const char *fsn_uuid, const char *fsl_uuid)
-{
-	size_t dn_len;
-	char *dn;
-	int len;
-
-	dn_len = strlen("fedfsFslUuid=") + strlen(fsl_uuid) + strlen(",") +
-		 strlen("fedfsFsnUuid=") + strlen(fsn_uuid) + strlen(",") +
-		 strlen(nce) + 1;
-	dn = malloc(dn_len);
-	if (dn == NULL) {
-		xlog(D_GENERAL, "%s: No memory for FSL DN", __func__);
-		return NULL;
-	}
-	len = snprintf(dn, dn_len, "fedfsFslUuid=%s,fedfsFsnUuid=%s,%s",
-				fsl_uuid, fsn_uuid, nce);
-	if (len < 0 || (size_t)len > dn_len) {
-		xlog(D_GENERAL, "%s: DN is too long", __func__);
-		free(dn);
-		return NULL;
-	}
-
-	xlog(D_CALL, "%s: Constructed dn %s", __func__, dn);
-	return dn;
-}
-
-/**
  * Add a new FedFS-related attribute to "dn"
  *
  * @param ld an initialized LDAP server descriptor

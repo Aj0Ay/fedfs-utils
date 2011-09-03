@@ -251,8 +251,8 @@ main(int argc, char **argv)
 
 	if (nce == NULL)
 		nce = (char *)nsdb_default_nce(host);
-	retval = nsdb_update_fsl_s(host, nce, fsn_uuid, fsl_uuid,
-					attribute, value, &ldap_err);
+	retval = nsdb_update_fsl_s(host, nce, fsl_uuid, attribute,
+							value, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		printf("Successfully updated FSL record\n"

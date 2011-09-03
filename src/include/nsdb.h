@@ -254,7 +254,6 @@ FedFsStatus	 nsdb_create_fsl_s(nsdb_t host, const char *nce,
  * Delete an FSL (5.1.4)
  */
 FedFsStatus	 nsdb_delete_fsl_s(nsdb_t host, const char *nce,
-				const char *fsn_uuid,
 				const char *fsl_uuid,
 				unsigned int *ldap_err);
 
@@ -262,7 +261,6 @@ FedFsStatus	 nsdb_delete_fsl_s(nsdb_t host, const char *nce,
  * Update an FSL (5.1.5)
  */
 FedFsStatus	 nsdb_update_fsl_s(nsdb_t host, const char *nce,
-				const char *fsn_uuid,
 				const char *fsl_uuid,
 				const char *attribute,
 				const char *value,

@@ -340,6 +340,42 @@ nsdb_delete_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 }
 
 /**
+ * Construct the DN of an FSL entry
+ *
+ * @param nce NUL-terminated C string containing DN of NSDB container entry
+ * @param fsn_uuid NUL-terminated C string containing FSN UUID
+ * @param fsl_uuid NUL-terminated C string containing FSL UUID
+ * @return NUL-terminated C string containing DN of an FSL entry
+ *
+ * Caller must free returned dn with ber_memfree(3)
+ */
+static char *
+nsdb_construct_fsl_dn(const char *nce, const char *fsn_uuid, const char *fsl_uuid)
+{
+	size_t dn_len;
+	char *dn;
+	int len;
+	dn_len = strlen("fedfsFslUuid=") + strlen(fsl_uuid) + strlen(",") +
+		strlen("fedfsFsnUuid=") + strlen(fsn_uuid) + strlen(",") +
+		strlen(nce) + 1;
+	dn = ber_memalloc(dn_len);
+	if (dn == NULL) {
+		xlog(D_GENERAL, "%s: No memory for FSL DN", __func__);
+		return NULL;
+	}
+	len = snprintf(dn, dn_len, "fedfsFslUuid=%s,fedfsFsnUuid=%s,%s",
+				fsl_uuid, fsn_uuid, nce);
+	if (len < 0 || (size_t)len > dn_len) {
+		xlog(D_GENERAL, "%s: DN is too long", __func__);
+		free(dn);
+		return NULL;
+	}
+
+	xlog(D_CALL, "%s: Constructed dn %s", __func__, dn);
+	return dn;
+}
+
+/**
  * Add a new FSL entry under "nce"
  *
  * @param ld an initialized LDAP server descriptor
@@ -419,7 +455,7 @@ nsdb_create_fsl_add_entry_s(LDAP *ld, const char *nce,
 		return FEDFS_ERR_SVRFAULT;
 
 	rc = ldap_add_ext_s(ld, dn, attrs, NULL, NULL);
-	free(dn);
+	ber_memfree(dn);
 	if (rc != LDAP_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to add new FSL entry: %s",
 			__func__, ldap_err2string(rc));
@@ -591,7 +627,7 @@ nsdb_create_fsl_add_nfs_entry_s(LDAP *ld, const char *nce,
 		return FEDFS_ERR_SVRFAULT;
 
 	rc = ldap_add_ext_s(ld, dn, attrs, NULL, NULL);
-	free(dn);
+	ber_memfree(dn);
 	if (rc != LDAP_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to add new FSL entry: %s\n",
 			__func__, ldap_err2string(rc));
@@ -693,12 +729,93 @@ nsdb_create_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 }
 
 /**
- * Delete an existing FSL entry under "nce" (Chapter 5, section 1.4)
+ * Discover the DN for an FSL record
  *
  * @param ld an initialized LDAP server descriptor
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
  * @param fsl_uuid a NUL-terminated C string containing FSL UUID
+ * @param dn OUT: a NUL-terminated C string containing DN of FSL record
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with ber_memfree(3).
+ */
+static FedFsStatus
+nsdb_search_fsl_dn_s(LDAP *ld, const char *nce, const char *fsl_uuid,
+		char **dn, unsigned int *ldap_err)
+{
+	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
+	LDAPMessage *response;
+	FedFsStatus retval;
+	char filter[128];
+	int len, rc;
+
+	/* watch out for buffer overflow */
+	len = snprintf(filter, sizeof(filter),
+			"(&(objectClass=fedfsFsl)(fedfsFslUuid=%s))", fsl_uuid);
+	if (len < 0 || (size_t)len > sizeof(filter)) {
+		xlog(D_GENERAL, "%s: filter is too long", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
+				filter, attrs, 0, NULL, NULL,
+				NULL, LDAP_NO_LIMIT, &response);
+	switch (rc) {
+	case LDAP_SUCCESS:
+		break;
+	case LDAP_NO_SUCH_OBJECT:
+		xlog(D_GENERAL, "%s: No entry for FSL UUID %s exists",
+			__func__, fsl_uuid);
+		return FEDFS_ERR_NSDB_NOFSL;
+	default:
+		xlog(D_GENERAL, "%s: LDAP search failed: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+	if (response == NULL) {
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		return FEDFS_ERR_NSDB_FAULT;
+	}
+
+	rc = ldap_count_messages(ld, response);
+	switch (rc) {
+	case -1:
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		retval = FEDFS_ERR_NSDB_RESPONSE;
+		goto out;
+	case 1:
+		xlog(D_GENERAL, "%s: No entry for FSN UUID %s exists",
+			__func__, fsl_uuid);
+		retval = FEDFS_ERR_NSDB_NOFSL;
+		goto out;
+	default:
+		xlog(D_CALL, "%s: received %d messages", __func__, rc);
+	}
+
+	*dn = ldap_get_dn(ld, response);
+	if (*dn == NULL) {
+		ldap_get_option(ld, LDAP_OPT_RESULT_CODE, &rc);
+		xlog(D_GENERAL, "%s: Failed to parse DN: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		retval = FEDFS_ERR_NSDB_LDAP_VAL;
+		goto out;
+	}
+	xlog(D_CALL, "%s: Found %s", __func__, *dn);
+	retval = FEDFS_OK;
+
+out:
+	ldap_msgfree(response);
+	return retval;
+}
+
+/**
+ * Delete an existing FSL entry
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param dn a NUL-terminated C string containing DN of FSL record to delete
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  *
@@ -706,27 +823,19 @@ nsdb_create_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
  *
  * @verbatim
 
-   dn: fedfsFslUuid="fsl_uuid",fedfsFsnUuid="fsn_uuid","nce"
+   dn: "dn"
    changeType: delete
    @endverbatim
  */
 static FedFsStatus
-nsdb_delete_fsl_entry_s(LDAP *ld, const char *nce,
-		const char *fsn_uuid, const char *fsl_uuid,
-		unsigned int *ldap_err)
+nsdb_delete_fsl_entry_s(LDAP *ld, const char *dn, unsigned int *ldap_err)
 {
-	char *dn;
 	int rc;
 
-	dn = nsdb_construct_fsl_dn(nce, fsn_uuid, fsl_uuid);
-	if (dn == NULL)
-		return FEDFS_ERR_SVRFAULT;
-
 	rc = ldap_delete_ext_s(ld, dn, NULL, NULL);
-	free(dn);
 	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to delete FSL entry for %s: %s",
-			__func__, fsl_uuid, ldap_err2string(rc));
+		xlog(D_GENERAL, "%s: Failed to delete FSL entry %s: %s",
+			__func__, dn, ldap_err2string(rc));
 		switch (rc) {
 		case LDAP_NO_SUCH_OBJECT:
 			return FEDFS_ERR_NSDB_NOFSL;
@@ -736,37 +845,45 @@ nsdb_delete_fsl_entry_s(LDAP *ld, const char *nce,
 		}
 	}
 
-	xlog(D_GENERAL, "%s: Successfully deleted FSL entry for %s",
-		__func__, fsl_uuid);
+	xlog(D_GENERAL, "%s: Successfully deleted FSL entry %s",
+		__func__, dn);
 	return FEDFS_OK;
 }
 
 /**
- * Delete an existing FSL entry under "nce"
+ * Delete an existing FSL entry under "nce" (Chapter 5, section 1.4)
  *
  * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
  * @param fsl_uuid a NUL-terminated C string containing FSL UUID
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  */
 FedFsStatus
-nsdb_delete_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
-		const char *fsl_uuid, unsigned int *ldap_err)
+nsdb_delete_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
+		unsigned int *ldap_err)
 {
+	FedFsStatus retval;
+	char *dn;
+
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
 
-	if (nce == NULL || fsn_uuid == NULL || fsl_uuid == NULL) {
+	if (nce == NULL || fsl_uuid == NULL) {
 		xlog(L_ERROR, "%s: Invalid parameter", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
 
-	return nsdb_delete_fsl_entry_s(host->fn_ldap, nce, fsn_uuid,
-						fsl_uuid, ldap_err);
+	retval = nsdb_search_fsl_dn_s(host->fn_ldap, nce, fsl_uuid,
+							&dn, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = nsdb_delete_fsl_entry_s(host->fn_ldap, dn, ldap_err);
+	ber_memfree(dn);
+	return retval;
 }
 
 /**
@@ -858,47 +975,10 @@ nsdb_update_fsl_update_attribute_s(LDAP *ld, const char *dn,
 }
 
 /**
- * Update an FSL entry under "nce"
- *
- * @param ld an initialized LDAP server descriptor
- * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param fsl_uuid a NUL-terminated C string containing FSL UUID
- * @param attribute a NUL-terminated C string containing the name of an attribute to modify
- * @param value a NUL-terminated C string containing the new value
- * @param ldap_err OUT: possibly an LDAP error code
- * @return a FedFsStatus code
- */
-static FedFsStatus
-nsdb_update_fsl_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
-		const char *fsl_uuid, const char *attribute,
-		const char *value, unsigned int *ldap_err)
-{
-	FedFsStatus retval;
-	char *dn;
-
-	dn = nsdb_construct_fsl_dn(nce, fsn_uuid, fsl_uuid);
-	if (dn == NULL)
-		return FEDFS_ERR_SVRFAULT;
-
-	if (value == NULL)
-		retval = nsdb_update_fsl_remove_attribute_s(ld, dn,
-							attribute, ldap_err);
-	else
-		retval = nsdb_update_fsl_update_attribute_s(ld, dn,
-							attribute,
-							value, ldap_err);
-
-	free(dn);
-	return retval;
-}
-
-/**
  * Update an FSL entry under "nce" (Chapter 5, section 1.5)
  *
  * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
  * @param fsl_uuid a NUL-terminated C string containing FSL UUID
  * @param attribute a NUL-terminated C string containing the name of an attribute to modify
  * @param value a NUL-terminated C string containing the new value
@@ -911,24 +991,38 @@ nsdb_update_fsl_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
  * is NULL, the attribute is removed.
  */
 FedFsStatus
-nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
-		const char *fsl_uuid, const char *attribute,
-		const char *value, unsigned int *ldap_err)
+nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
+		const char *attribute, const char *value,
+		unsigned int *ldap_err)
 {
+	FedFsStatus retval;
+	char *dn;
+
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
 
-	if (nce == NULL || fsn_uuid == NULL || fsl_uuid == NULL ||
+	if (nce == NULL || fsl_uuid == NULL ||
 	    attribute == NULL) {
 		xlog(L_ERROR, "%s: Invalid parameter", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
 
-	return nsdb_update_fsl_entry_s(host->fn_ldap, nce, fsn_uuid,
-						fsl_uuid, attribute, value,
-						ldap_err);
+	retval = nsdb_search_fsl_dn_s(host->fn_ldap, nce, fsl_uuid,
+							&dn, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	if (value == NULL)
+		retval = nsdb_update_fsl_remove_attribute_s(host->fn_ldap,
+							dn, attribute, ldap_err);
+	else
+		retval = nsdb_update_fsl_update_attribute_s(host->fn_ldap,
+							dn, attribute,
+							value, ldap_err);
+	ber_memfree(dn);
+	return retval;
 }
 
 /**
