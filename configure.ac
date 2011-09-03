@@ -115,6 +115,15 @@ AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([atexit memset nl_langinfo pathconf setlocale socket strcasecmp strchr strdup strerror strndup strrchr strtoul])
 
+# Check whether exec_prefix=/usr:
+root_sbindir="${sbindir}"
+case $exec_prefix:$prefix in
+NONE:NONE | NONE:/usr | /usr:*)
+	root_sbindir="/sbin"
+esac
+
+AC_SUBST([root_sbindir])
+
 AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  doc/ldap/Makefile

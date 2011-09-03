@@ -24,7 +24,8 @@
 ##
 
 noinst_HEADERS		= nls.h
-sbin_PROGRAMS		= mount.fedfs fedfs-map-nfs4
+root_sbin_PROGRAMS	= mount.fedfs
+sbin_PROGRAMS		= fedfs-map-nfs4
 fedfs_map_nfs4_SOURCES	= fedfs-map-nfs4.c
 fedfs_map_nfs4_LDADD	= $(LIBRESOLV) \
 			  $(top_builddir)/src/libsi/libsi.a
