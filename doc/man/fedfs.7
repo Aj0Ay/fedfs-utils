@@ -179,7 +179,8 @@ file system below them,
 are visible at a different point in a client's name space
 than are read-only replicas.
 .SS Globally Useful Names
-On FedFS-enabled Linux clients, the
+On FedFS-enabled Linux clients,
+either the automounter, with a special program map, or the
 .BR mount.fedfs (8)
 command finds and mounts the root of a FedFS domain.
 .P
@@ -324,6 +325,7 @@ when administering junctions and filesets,
 junctions are created on file servers and
 registered with the domain's NSDB in two separate steps.
 .SH SEE ALSO
+.BR fedfs-map-nfs4 (8),
 .BR mount.fedfs (8),
 .BR rpc.fedfsd (8),
 .BR rpc.mountd (8),

@@ -143,12 +143,14 @@ FedFS file server
 
 FedFS client
 
-  o Install mount.fedfs
+  o Install /usr/sbin/fedfs-map-nfs4
 
-  o Create a local /nfs4 directory, and subdirectories for the FedFS
-    domains you want to mount
+  o Create a local /nfs4 directory
 
-  o Add lines to /etc/fstab to mount the domains
+  o Install and configure autofs
+
+  o Add an entry to the master map (usually /etc/auto.master) for
+    the /nfs4 directory and restart autofs
 
 
 FedFS admin client

@@ -1,0 +1,154 @@
+.\"@(#)fedfs-map-nfs4.8"
+.\"
+.\" @file doc/man/fedfs-map-nfs4.8
+.\" @brief man page for fedfs-map-nfs4 command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH FEDFS-MAP-NFS4 8 "30 Apr 2011"
+.SH NAME
+fedfs-map-nfs4 \- generate automounter program map entries for FedFS
+.SH SYNOPSIS
+.B fedfs-map-nfs4
+.I domainname
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.SH DESCRIPTION
+The
+.BR fedfs-map-nfs4 (8)
+command provides a FedFS program map for the local system's automounter.
+Although it is typically intended to be invoked by the automounter,
+it is also safe to invoke directly for scripting or debugging purposes.
+See
+.BR autofs (5)
+for information about how program maps work.
+.SS Operation
+The
+.BR fedfs-map-nfs4 (8)
+command locates FedFS domains by looking for DNS SRV records
+that advertise file servers exporting domain root replicas.
+The
+.I domainname
+argument determines what FedFS domain is to be mounted.
+.P
+It retrieves and sorts the domain root replica records
+according to SRV record sorting rules outlined in RFC 2782.
+It then generates a sun format map entry on
+.I stdout
+representing the set of servers contained in the SRV record,
+a standard export path to the domain root,
+and appropriate NFS mount options.
+Error messages are output on
+.IR stderr .
+.SS Globally useful names
+Across all FedFS-enabled file system clients,
+a unique file object in a FedFS domain is always accessed
+via the same pathname.
+Such pathnames are referred to as
+.IR "globally useful names" .
+See
+.BR fedfs (7)
+for a full discussion.
+.P
+The top-level directory of a globally useful name is always
+the networked file system type (NFS version 4, CIFS, and so on).
+A
+.BR fedfs-map-nfs4 (8)
+program map entry is used with the NFS version 4 top-level directory
+to provide globally useful names via the NFS version 4 protocol.
+.SH EXAMPLES
+Typically, a
+.BR fedfs-map-nfs4 (8)
+entry in
+.I /etc/auto.master
+looks like this:
+.P
+.NF
+.TA 2.5i +0.7i +0.7i
+	/nfs4	/usr/sbin/fedfs-map-nfs4
+.FI
+.P
+Under the /nfs4 directory on the local system, the automounter uses
+.BR fedfs-map-nfs4 (8)
+to convert a FedFS domain name to a set of servers and an export path,
+which are then passed to
+.BR mount.nfs (8).
+.P
+The automounter mounts this FedFS domain on the directory
+.IR /nfs4/domainname .
+Note that this also works for dot-prefixed domain names, in order to
+support mounting read-write domain root replicas.
+.P
+After configuring and restarting
+.BR autofs ,
+to access files in the
+.I example.net
+FedFS domain, for instance, you can start with:
+.RS
+.sp
+cd /nfs4/example.net
+.sp
+.RE
+The automounter uses the
+.BR fedfs-map-nfs4 (8)
+command to look up the file servers that provide the domain root for the
+.I example.net
+domain.  It then mounts one of these servers on
+.IR /nfs4/example.net .
+.P
+If the
+.BR fedfs-map-nfs4 (8)
+command cannot find the requested domain, no local directory is created
+and no mount operation is performed.  Applications receive an ENOENT
+error in this case.
+.P
+While these mounted domains remain active on the local system,
+the mounted-on directories remain visible.
+After a period of inactivity, the automounter automatically unmounts
+a FedFS domain.
+Local applications browsing the top-level directory
+do not see all available FedFS domains.  They see only the ones that
+are mounted and active.
+.SH FILES
+.TP 18n
+.I /etc/auto.master
+master automounter map
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR nfs (5),
+.BR autofs (5),
+.sp
+RFC 2782 for a discussion of DNS SRV records
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

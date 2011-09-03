@@ -59,7 +59,10 @@ changed over time.
 
 Installable components include:
 
-   o  A mount command to mount the top of a FedFS domain namespace
+   o  An automounter program map to manage the FedFS domain namespace
+      on FedFS-enabled clients
+
+   o  A mount command to mount parts of a FedFS domain namespace
 
    o  An ONC RPC service daemon that runs on file servers enabling the
       management by remote FedFS ADMIN clients of FedFS junctions
@@ -81,9 +84,14 @@ Installable components include:
    o  HTML Doxygen style documentation with built-in source browser
 
 
+The automounter program map is a subcommand invoked by the automounter
+to locate FedFS domains and construct appropriate mount options for
+mounting domain roots.  It is used in conjunction with the Linux
+autofs facility.
+
 The mount command is a subcommand invoked by mount(8) to handle the
-housekeeping needed to find and mount FedFS domains at the top of the
-client's FedFS namespace (usually /nfs4 for NFSv4 servers).
+housekeeping needed to find and mount part or all of FedFS domain
+name spaces.
 
 The fedfsd program is an RPC server that allows remote administrators to
 create FedFS junctions in local file systems.  FedFS ADMIN requests that

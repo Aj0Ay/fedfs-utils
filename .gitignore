@@ -9,6 +9,7 @@ src/fedfsd/fedfsd
 src/resolve-junction/resolve-junction
 src/nsdbparams/nsdbparams
 src/mount/mount.fedfs
+src/mount/fedfs-map-nfs4
 libadmin.a
 libjunction.a
 libnsdb.a
