@@ -141,16 +141,19 @@ As with other FedFS filesets,
 copies of a domain root can exist on multiple file servers.
 These copies are known as
 .IR "domain root replicas" .
+.P
 Two types of domain root replicas are available in a FedFS domain:
 read-only and read-write.
+By default,
+FedFS-enabled file system clients mount read-only replicas.
 .P
-Clients by default use read-only replicas,
-which are mounted in a standard place on all clients.
-Files residing in a FedFS domain appear at the same location in the
-domain's namespace on all clients.
-Replicas of a domain's root are located by looking for
+Rather than using junctions and information in an NSDB,
+clients locate replicas of a domain's root by looking for
 DNS SRV records that advertise file servers exporting domain root replicas.
 .P
+Clients typically mount FedFS domain roots in a standard place so that
+files residing in a FedFS domain appear at the same location in the
+file namespace on all clients.
 By convention, the top of the global FedFS namespace looks like this:
 .RS
 .sp
@@ -171,10 +174,12 @@ If
 begins with a dot (period),
 the pathname refers to a read-write replica of the domain's root.
 Otherwise, it refers to a read-only replica.
-Note this means that the read-write replicas, and all parts of the
-file system below them,
-are visible at a different point in a client's name space
-than are read-only replicas.
+.P
+Because the mount point is different,
+a read-write replica and all parts of the
+file system below it is therefore visible at a different point
+in a client's name space than the read-only replica
+for the same FedFS domain.
 .SS Globally Useful Names
 On FedFS-enabled Linux clients, the
 .BR mount.fedfs (8)
@@ -186,6 +191,7 @@ Such pathnames are referred to as
 .IR "globally useful names" ,
 since a globally useful name refers to exactly the same file object
 on every client in a domain.
+.P
 For example, the FedFS globally useful name
 .I /nfs4/example.net
 would be mounted on a local directory on the client called
@@ -194,13 +200,14 @@ so that applications have the same view of the
 .I example.net
 domain namespace on all FedFS clients.
 .P
-Note that the Linux
+The Linux
 .BR mount.fedfs (8)
 command can attach anywhere in the client's local file namespace
 any directory in the FedFS namespace the client
 has permission to access.
 This can be useful to ensure local namespace compatibility in some cases,
 or hide parts of the FedFS namespace for security purposes.
+.P
 However, it breaks cross-platform application interoperability
 by presenting applications with multiple pathnames to the same file object.
 Therefore it should be avoided.
