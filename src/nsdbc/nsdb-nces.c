@@ -81,7 +81,7 @@ nsdb_nces_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
 /**
@@ -97,11 +97,10 @@ main(int argc, char **argv)
 	char *progname, *nsdbname;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
-	int arg, exit_status;
 	FedFsStatus retval;
 	char **contexts;
 	nsdb_t host;
-	int i;
+	int arg, i;
 
 	(void)umask(S_IRWXO);
 
@@ -109,7 +108,7 @@ main(int argc, char **argv)
 	if (setlocale(LC_CTYPE, "") == NULL ||
 	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
 		fprintf(stderr, "Failed to set locale and langinfo\n");
-		exit(EXIT_FAILURE);
+		exit((int)FEDFS_ERR_INVAL);
 	}
 
 	/* Set the basename */
@@ -156,8 +155,6 @@ main(int argc, char **argv)
 		fprintf(stderr, "Missing required command line argument\n");
 		nsdb_nces_usage(progname);
 	}
-
-	exit_status = EXIT_FAILURE;
 
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (retval) {
@@ -211,6 +208,7 @@ main(int argc, char **argv)
 		goto out_close;
 	}
 
+	retval = FEDFS_ERR_NSDB_NONCE;
 	printf("NSDB: %s:%u\n", nsdbname, nsdbport);
 	for (i = 0; contexts[i] != NULL; i++) {
 		char *dn;
@@ -220,7 +218,7 @@ main(int argc, char **argv)
 		if (retval == FEDFS_OK) {
 			printf("is a FedFS NCE, DIT starts at '%s'.\n", dn);
 			free(dn);
-			exit_status = EXIT_SUCCESS;
+			retval = FEDFS_OK;
 		} else
 			printf("is not a FedFS NCE.\n");
 	}
@@ -234,5 +232,5 @@ out_free:
 	nsdb_free_nsdb(host);
 
 out:
-	exit(exit_status);
+	exit((int)retval);
 }

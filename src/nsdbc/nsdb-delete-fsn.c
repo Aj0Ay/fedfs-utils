@@ -91,7 +91,7 @@ nsdb_delete_fsn_usage(const char *progname)
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
-	exit(EXIT_FAILURE);
+	exit((int)FEDFS_ERR_INVAL);
 }
 
 /**
@@ -107,11 +107,11 @@ main(int argc, char **argv)
 	char *progname, *binddn, *passwd, *nsdbname;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
-	int arg, exit_status;
 	char *nce, *fsn_uuid;
 	FedFsStatus retval;
 	nsdb_t host;
 	uuid_t uu;
+	int arg;
 
 	(void)umask(S_IRWXO);
 
@@ -119,7 +119,7 @@ main(int argc, char **argv)
 	if (setlocale(LC_CTYPE, "") == NULL ||
 	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
 		fprintf(stderr, "Failed to set locale and langinfo\n");
-		exit(EXIT_FAILURE);
+		exit((int)FEDFS_ERR_INVAL);
 	}
 
 	/* Set the basename */
@@ -184,8 +184,6 @@ main(int argc, char **argv)
 		nsdb_delete_fsn_usage(progname);
 	}
 
-	exit_status = EXIT_FAILURE;
-
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (retval) {
 	case FEDFS_OK:
@@ -233,7 +231,6 @@ main(int argc, char **argv)
 	case FEDFS_OK:
 		printf("Successfully deleted FSN record\n"
 			"  fedfsFsnUuid=%s,%s\n", fsn_uuid, nce);
-		exit_status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)
@@ -266,5 +263,5 @@ out_free:
 	nsdb_free_nsdb(host);
 
 out:
-	exit(exit_status);
+	exit((int)retval);
 }
