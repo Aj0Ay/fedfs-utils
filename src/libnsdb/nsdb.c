@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pwd.h>
 #include <grp.h>
 #include <idna.h>
 #include <uuid/uuid.h>
@@ -80,6 +81,11 @@
  */
 char fedfs_base_dirname[PATH_MAX + 1] =
 			FEDFS_DEFAULT_STATEDIR;
+
+/**
+ * Permission mode to use when creating fedfs_base_dirname
+ */
+#define FEDFS_BASE_DIRMODE	(S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)
 
 /**
  * Stores pathname of directory containing NSDB x509v3 certs
@@ -149,6 +155,50 @@ nsdb_set_parentdir(const char *parentdir)
 	strncpy(fedfs_base_dirname, parentdir, sizeof(fedfs_base_dirname));
 
 	return true;
+}
+
+/**
+ * Create parent directory
+ *
+ * @return true if fedfsd directory exists
+ *
+ * Warning: this function must be called as root, and is usually
+ * invoked before the process has set its umask.
+ */
+_Bool
+nsdb_create_basedir(void)
+{
+	struct passwd *pw;
+	_Bool retval;
+
+	retval = false;
+	if (mkdir(fedfs_base_dirname, FEDFS_BASE_DIRMODE) == -1) {
+		if (errno == EEXIST) {
+			xlog(D_CALL, "FedFS base directory exists");
+			retval = true;
+			goto out;
+		}
+		xlog(L_ERROR, "Failed to create base dir: %m");
+		goto out;
+	}
+
+	pw = getpwnam(FEDFS_USER);
+	if (pw == NULL) {
+		xlog(L_ERROR, "Failed to find %s", FEDFS_USER);
+		rmdir(fedfs_base_dirname);
+		goto out;
+	}
+
+	if (chown(fedfs_base_dirname, pw->pw_uid, pw->pw_gid) == -1) {
+		xlog(L_ERROR, "Failed to chown base dir: %m");
+		rmdir(fedfs_base_dirname);
+		goto out;
+	}
+
+	retval = true;
+
+out:
+	return retval;
 }
 
 /**

@@ -212,6 +212,9 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (!nsdb_create_basedir())
+		exit(EXIT_FAILURE);
+
 	if (!fedfsd_drop_privileges(uid, gid))
 		exit(EXIT_FAILURE);
 

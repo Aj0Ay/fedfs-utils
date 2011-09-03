@@ -564,6 +564,9 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (!nsdb_create_basedir())
+		goto out;
+
 	if (!nsdbparams_drop_privileges(uid, gid))
 		goto out;
 
