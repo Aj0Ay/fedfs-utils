@@ -1247,3 +1247,94 @@ out:
 	nsdb_free_string_array(contexts);
 	return retval;
 }
+
+/**
+ * Look for a namingContext that has an NCE prefix
+ *
+ * @param host an initialized, bound, and open nsdb_t object
+ * @param contexts an array of NUL-terminated UTF-8 strings
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Returns FEDFS_OK if "host" has at least one namingContext that
+ * lists an NCE prefix.  Otherwise a FEDFS_ERR status code is returned.
+ */
+static FedFsStatus
+nsdb_ping_contexts_s(nsdb_t host, char **contexts, unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+	char *dn;
+	int i;
+
+	for (i = 0; contexts[i] != NULL; i++) {
+		retval = nsdb_get_nceprefix_s(host, contexts[i], &dn, ldap_err);
+		if (retval == FEDFS_OK) {
+			free(dn);
+			break;
+		} else
+			retval = FEDFS_ERR_NSDB_NONCE;
+	}
+	return retval;
+}
+
+/**
+ * Ping an NSDB
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Returns FEDFS_OK if "host" is up and has at least one namingContext
+ * that lists an NCE prefix.  Otherwise a FEDFS_ERR status code is returned.
+ */
+FedFsStatus
+nsdb_ping_nsdb_s(nsdb_t host, unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+	char **contexts = NULL;
+
+	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = nsdb_ping_contexts_s(host, contexts, ldap_err);
+	nsdb_free_string_array(contexts);
+
+	return retval;
+}
+
+/**
+ * Ping an LDAP server to see if it's an NSDB
+ *
+ * @param hostname NUL-terminated UTF-8 string containing NSDB hostname
+ * @param port integer port number of NSDB
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Returns FEDFS_OK if the specified host is up, is an LDAP server, and
+ * has at least one namingContext that lists an NCE prefix.  Otherwise
+ * a FEDFS_ERR status code is returned.
+ */
+FedFsStatus
+nsdb_ping_s(const char *hostname, const unsigned short port,
+		unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+	nsdb_t host;
+
+	retval = nsdb_new_nsdb(hostname, port, &host);
+	if (retval != FEDFS_OK)
+		return retval;
+	host->fn_sectype = FEDFS_SEC_NONE;
+
+	retval = nsdb_open_nsdb(host, NULL, NULL, ldap_err);
+	if (retval != FEDFS_OK)
+		goto out_free;
+
+	retval = nsdb_ping_nsdb_s(host, ldap_err);
+	nsdb_close_nsdb(host);
+
+out_free:
+	nsdb_free_nsdb(host);
+	return retval;
+}

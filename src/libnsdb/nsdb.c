@@ -450,7 +450,7 @@ nsdb_env(char **nsdbname, unsigned short *nsdbport, char **binddn,
  * @param host OUT: an initialized nsdb_t; caller must free it with nsdb_free_nsdb()
  * @return a FedFsStatus code
  */
-static FedFsStatus
+FedFsStatus
 nsdb_new_nsdb(const char *hostname, const unsigned long port, nsdb_t *host)
 {
 	char *hostname_tmp;

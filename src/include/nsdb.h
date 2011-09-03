@@ -131,6 +131,12 @@ FedFsStatus	 nsdb_read_certfile(const char *pathname,
 FedFsStatus	 nsdb_enumerate_nsdbs(char ***nsdblist);
 
 /**
+ * Construct a new nsdb_t object
+ */
+FedFsStatus	 nsdb_new_nsdb(const char *hostname, const unsigned long port,
+				nsdb_t *host);
+
+/**
  * Instantiate an nsdb_t object based on stored connection parameters
  */
 FedFsStatus	 nsdb_lookup_nsdb(const char *hostname,
@@ -326,6 +332,17 @@ void		 nsdb_free_fsls(struct fedfs_fsl *fsls);
  * Enumerate FSNs
  */
 FedFsStatus	 nsdb_list_s(nsdb_t host, const char *nce, char ***fsns,
+				unsigned int *ldap_err);
+
+/**
+ * Ping an NSDB host
+ */
+FedFsStatus	 nsdb_ping_nsdb_s(nsdb_t host, unsigned int *ldap_err);
+
+/**
+ * Ping an LDAP server
+ */
+FedFsStatus	 nsdb_ping_s(const char *hostname, const unsigned short port,
 				unsigned int *ldap_err);
 
 /**
