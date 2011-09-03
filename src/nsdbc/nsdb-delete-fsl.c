@@ -54,7 +54,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_delete_fsl_opts[] = "?dD:e:l:r:w:u:x:";
+static const char nsdb_delete_fsl_opts[] = "?dD:e:l:r:w:x:";
 
 /**
  * Long form command line options
@@ -63,7 +63,6 @@ static const struct option nsdb_delete_fsl_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
 	{ "fsluuid", 1, NULL, 'x', },
-	{ "fsnuuid", 1, NULL, 'u', },
 	{ "help", 0, NULL, '?', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
@@ -83,7 +82,7 @@ nsdb_delete_fsl_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
-			"-u fsn-uuid -x fsl-uuid\n\n",
+			"-x fsl-uuid\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
@@ -93,7 +92,6 @@ nsdb_delete_fsl_usage(const char *progname)
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-w, --password       Bind password\n");
-	fprintf(stderr, "\t-u, --fsnuuid        FSN UUID of FSL's parent\n");
 	fprintf(stderr, "\t-x, --fsluuid        FSL UUID to remove\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
@@ -112,7 +110,7 @@ int
 main(int argc, char **argv)
 {
 	char *progname, *binddn, *passwd, *nsdbname;
-	char *nce, *fsn_uuid, *fsl_uuid;
+	char *nce, *fsl_uuid;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	FedFsStatus retval;
@@ -142,7 +140,7 @@ main(int argc, char **argv)
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
 
-	fsn_uuid = fsl_uuid = NULL;
+	fsl_uuid = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_delete_fsl_opts,
 			nsdb_delete_fsl_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -168,13 +166,6 @@ main(int argc, char **argv)
 		case 'w':
 			passwd = optarg;
 			break;
-		case 'u':
-			if (uuid_parse(optarg, uu) == -1) {
-				fprintf(stderr, "Invalid FSN UUID: %s\n", optarg);
-				nsdb_delete_fsl_usage(progname);
-			}
-			fsn_uuid = optarg;
-			break;
 		case 'x':
 			if (uuid_parse(optarg, uu) == -1) {
 				fprintf(stderr, "Invalid FSL UUID: %s\n", optarg);
@@ -193,8 +184,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "Unrecognized command line argument\n");
 		nsdb_delete_fsl_usage(progname);
 	}
-	if (nce == NULL || nsdbname == NULL ||
-	    fsn_uuid == NULL || fsl_uuid == NULL) {
+	if (nce == NULL || nsdbname == NULL || fsl_uuid == NULL) {
 		fprintf(stderr, "Missing required command line argument\n");
 		nsdb_delete_fsl_usage(progname);
 	}
@@ -244,9 +234,8 @@ main(int argc, char **argv)
 	retval = nsdb_delete_fsl_s(host, nce, fsl_uuid, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully deleted FSL record\n"
-			"  fedfsFslUuid=%s,fedfsFsnUuid=%s,%s\n",
-				fsl_uuid, fsn_uuid, nce);
+		printf("Successfully deleted FSL record for %s under %s\n",
+				fsl_uuid, nce);
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)

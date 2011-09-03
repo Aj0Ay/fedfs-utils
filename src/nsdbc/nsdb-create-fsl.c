@@ -262,9 +262,8 @@ main(int argc, char **argv)
 					servername, serverport, serverpath, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully created FSL record\n"
-			"  fedfsFslUuid=%s,fedfsFsnUuid=%s,%s\n",
-				fsl_uuid, fsn_uuid, nce);
+		printf("Successfully created FSL record for %s under %s\n",
+				fsl_uuid, nce);
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)

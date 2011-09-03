@@ -54,7 +54,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_update_fsl_opts[] = "?a:dD:e:l:r:u:v:w:x:";
+static const char nsdb_update_fsl_opts[] = "?a:dD:e:l:r:v:w:x:";
 
 /**
  * Long form command line options
@@ -64,7 +64,6 @@ static const struct option nsdb_update_fsl_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
 	{ "fsluuid", 1, NULL, 'x', },
-	{ "fsnuuid", 1, NULL, 'u', },
 	{ "help", 0, NULL, '?', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
@@ -85,7 +84,7 @@ nsdb_update_fsl_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] [ -v value ] "
-			"-a attribute -u fsn-uuid -x fsl-uuid\n\n",
+			"-a attribute -x fsl-uuid\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
@@ -95,7 +94,6 @@ nsdb_update_fsl_usage(const char *progname)
 	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-u, --fsnuuid        FSN UUID of parent FSN\n");
 	fprintf(stderr, "\t-v, --value          New attribute value\n");
 	fprintf(stderr, "\t-w, --password       Bind password\n");
 	fprintf(stderr, "\t-x, --fsluuid        FSL UUID of FSL to update\n");
@@ -116,7 +114,7 @@ int
 main(int argc, char **argv)
 {
 	char *progname, *binddn, *passwd, *nsdbname;
-	char *nce, *fsn_uuid, *fsl_uuid, *attribute, *value;
+	char *nce, *fsl_uuid, *attribute, *value;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	FedFsStatus retval;
@@ -146,7 +144,7 @@ main(int argc, char **argv)
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
 
-	fsn_uuid = fsl_uuid = attribute = value = NULL;
+	fsl_uuid = attribute = value = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_update_fsl_opts,
 			nsdb_update_fsl_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -175,13 +173,6 @@ main(int argc, char **argv)
 		case 'w':
 			passwd = optarg;
 			break;
-		case 'u':
-			if (uuid_parse(optarg, uu) == -1) {
-				fprintf(stderr, "Invalid FSN UUID: %s\n", optarg);
-				nsdb_update_fsl_usage(progname);
-			}
-			fsn_uuid = optarg;
-			break;
 		case 'v':
 			value = optarg;
 			break;
@@ -203,8 +194,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "Unrecognized command line argument\n");
 		nsdb_update_fsl_usage(progname);
 	}
-	if (nsdbname == NULL || attribute == NULL ||
-	    fsn_uuid == NULL || fsl_uuid == NULL) {
+	if (nsdbname == NULL || attribute == NULL || fsl_uuid == NULL) {
 		fprintf(stderr, "Missing required command line argument\n");
 		nsdb_update_fsl_usage(progname);
 	}
@@ -255,9 +245,8 @@ main(int argc, char **argv)
 							value, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("Successfully updated FSL record\n"
-			"  fedfsFslUuid=%s,fedfsFsnUuid=%s,%s\n",
-				fsl_uuid, fsn_uuid, nce);
+		printf("Successfully updated FSL record for %s under %s\n",
+				fsl_uuid, nce);
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)
