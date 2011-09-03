@@ -94,6 +94,10 @@ FedFsStatus	 nsdb_delete_attribute_s(LDAP *ld, const char *dn,
 FedFsStatus	 nsdb_delete_attribute_all_s(LDAP *ld, const char *dn,
 				const char *attribute,
 				unsigned int *ldap_err);
+FedFsStatus	 nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
+				unsigned int *ldap_err);
+FedFsStatus	 nsdb_parse_result(LDAP *ld, LDAPMessage *result,
+				unsigned int *ldap_err);
 
 
 /**

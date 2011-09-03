@@ -690,3 +690,93 @@ nsdb_delete_attribute_all_s(LDAP *ld, const char *dn,
 	}
 	return FEDFS_OK;
 }
+
+/**
+ * Handle an LDAP referral message
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param reference an LDAP_RES_SEARCH_REFERENCE message
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * @todo
+ *	Implement LDAP referral handling
+ */
+FedFsStatus
+nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
+		unsigned int *ldap_err)
+{
+	char **referrals = NULL;
+	int i, rc;
+
+	if (ld == NULL || reference == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	xlog(L_ERROR, "%s: Received referral from NSDB", __func__);
+
+	rc = ldap_parse_reference(ld, reference, &referrals, NULL, 0);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to parse result: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	if (referrals != NULL) {
+		for (i = 0; referrals[i] != NULL; i++)
+			xlog(L_ERROR, "%s: Search reference: %s\n",
+				__func__, referrals[i]);
+		ber_memvfree((void **)referrals);
+	}
+
+	/* Haven't implemented LDAP referral support yet */
+	return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+}
+
+/**
+ * Handle an LDAP search result message
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param result an LDAP_RES_SEARCH_RESULT message
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ */
+FedFsStatus
+nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
+{
+	char *matched_msg, *error_msg;
+	int rc, result_code;
+
+	if (ld == NULL || result == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	matched_msg = error_msg = NULL;
+	rc = ldap_parse_result(ld, result, &result_code,
+					&matched_msg, &error_msg, NULL, NULL, 0);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to parse result: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	if (result_code != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Search result: %s",
+			__func__, ldap_err2string(result_code));
+		if ((error_msg != NULL) && (*error_msg != '\0'))
+			xlog(D_GENERAL, "%s: Extended error: %s",
+				__func__, error_msg);
+		if ((matched_msg != NULL) && (*matched_msg != '\0'))
+			xlog(D_GENERAL, "%s: Matched DN: %s",
+				__func__, matched_msg);
+		*ldap_err = result_code;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	xlog(D_GENERAL, "%s: Search completed successfully", __func__);
+	return FEDFS_OK;
+}
