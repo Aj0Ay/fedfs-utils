@@ -23,8 +23,14 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
+FEDFS_CLIENT_CMDS	= fedfs-create-junction.8 fedfs-create-replication.8 \
+			  fedfs-delete-junction.8 fedfs-delete-replication.8 \
+			  fedfs-lookup-junction.8 fedfs-lookup-replication.8 \
+			  fedfs-get-nsdb-params.8 fedfs-set-nsdb-params.8 \
+			  fedfs-get-limited-nsdb-params.8 fedfs-null.8
+
 dist_man7_MANS		= fedfs.7
 dist_man8_MANS		= rpc.fedfsd.8 mount.fedfs.8 fedfs-map-nfs4.8 \
-			  nsdbparams.8
+			  nsdbparams.8 $(FEDFS_CLIENT_CMDS)
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out
 DISTCLEANFILES		= Makefile.in

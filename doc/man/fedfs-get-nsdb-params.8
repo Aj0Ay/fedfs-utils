@@ -1,0 +1,242 @@
+.\"@(#)fedfs-get-nsdb-params.8"
+.\"
+.\" @file doc/man/fedfs-get-nsdb-params.8
+.\" @brief man page for fedfs-get-nsdb-params client command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH FEDFS-GET-NSDB-PARAMS 8 "30 Apr 2011"
+.SH NAME
+fedfs-get-nsdb-params \- send a FEDFS_GET_NSDB_PARAMS ADMIN protocol request
+.SH SYNOPSIS
+.B fedfs-get-nsdb-params
+.RB [ \-?d ]
+.RB [ \-n
+.IR nettype ]
+.RB [ \-h
+.IR hostname ]
+.RB [ \-l
+.IR nsdbname ]
+.RB [ \-r
+.IR nsdbport ]
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+FedFS-enabled file servers allow remote administrative access via an
+authenticated RPC protocol known as the
+.IR "FedFS ADMIN protocol" .
+Using this protocol, FedFS administrators manage
+FedFS junctions and NSDB connection parameter information
+on remote FedFS-enabled file servers.
+.SH DESCRIPTION
+The
+.BR fedfs-get-nsdb-params (8)
+command is part of a collection of low-level single-use programs that are
+intended for testing the FedFS ADMIN protocol or for use in scripts.
+It sends a single FEDFS_GET_NSDB_PARAMS request to a remote
+FedFS ADMIN protocol service.
+.P
+This request retrieves NSDB connection parameter information stored
+on a remote file server.
+The NSDB hostname and the port number (see below)
+are used as the primary key to identify an entry
+in the remote server's NSDB connection parameter database.
+The
+.BR fedfs-get-nsdb-params (8)
+command requires that an NSDB hostname is specified,
+either via the
+.I -l
+option or via an environment variable.
+The NSDB port number assumes a default value, and thus is optional.
+.P
+The NSDB connection parameter database
+matches NSDB hostnames and ports by exact value.
+In other words,
+if two unique hostnames point
+to the IP address of the same physical NSDB,
+they are still considered separate entries
+in the local NSDB connection parameter database.
+.SH OPTIONS
+.IP "\fB\-d, \-\-debug"
+Specifies that debugging messages be produced during operation.
+.IP "\fB\-?, \-\-help"
+Prints a
+.BR fedfs-get-nsdb-params (8)
+version and usage message on
+.IR stderr ,
+then exits.
+.IP "\fB\-h, \-\-hostname=\fIhostname\fP"
+Specifies the hostname of a remote FedFS ADMIN service.
+If this option is not specified, the default value is
+.BR localhost .
+.IP "\fB\-n, \-\-nettype=\fInettype\fP"
+Specifies the transport to use when contacting the remote FedFS ADMIN service.
+Typically the
+.I nettype
+is one of
+.B tcp
+or
+.BR udp .
+If this option is not specified, the default value is
+.BR netpath .
+See
+.BR rpc (3t)
+for details.
+.IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
+Specifies the hostname of the NSDB to insert into the new FedFS junction.
+If this option is not specified,
+the value of the FEDFS_NSDB_HOST environment variable is consulted.
+If the variable is not set and the
+.B -l
+option is not specified, the
+.BR fedfs-get-nsdb-params (8)
+command fails.
+.IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
+Specifies the IP port of the NSDB to insert into the new FedFS junction.
+If this option is not specified,
+the value of the FEDFS_NSDB_PORT environment variable is consulted.
+The default value if the variable is not set is 389.
+.SH EXIT CODES
+The remote administration service returns a value that reflects the
+success of the requested operation.
+.TP
+.B FEDFS_OK
+The operation succeeded.
+.TP
+.B FEDFS_ERR_ACCESS
+The caller does not have permission to perform the requested operation
+on the remote server.
+.TP
+.B FEDFS_ERR_BADCHAR
+The NSDB hostname contains a character which is not
+supported by the remote server.
+.TP
+.B FEDFS_ERR_BADXDR
+The remote server encountered an XDR decoding error while
+processing the request.
+.TP
+.B FEDFS_ERR_INVAL
+One of the arguments was not valid.
+.TP
+.B FEDFS_ERR_IO
+A hard error occurred on the remote server.
+.TP
+.B FEDFS_ERR_PERM
+The operation was not allowed because the caller is
+either not a privileged user or not the owner of an object that
+would be modified by the operation.
+.TP
+.B FEDFS_ERR_SVRFAULT
+An unanticipated non-protocol error occurred on the remote server.
+.TP
+.B FEDFS_ERR_NSDB_ROUTE
+The remote server was unable to find a route to the NSDB.
+.TP
+.B FEDFS_ERR_NSDB_DOWN
+The remote server determined that the NSDB was down.
+.TP
+.B FEDFS_ERR_NSDB_CONN
+The remote server was unable to establish a connection with the NSDB.
+.TP
+.B FEDFS_ERR_NSDB_AUTH
+The remote server was unable to authenticate
+and establish a secure connection with the NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP
+An LDAP error occurred on the connection between the remote server and NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_VAL
+Indicates the same error as FEDFS_ERR_NSDB_LDAP,
+and allows an LDAP protocol error value to be returned to the client.
+.TP
+.B FEDFS_ERR_NSDB_RESPONSE
+The remote server received a malformed response from the NSDB.
+This includes situations when an NSDB entry (e.g. FSN or FSL)
+is missing a required attribute.
+.TP
+.B FEDFS_ERR_NSDB_FAULT
+An unanticipated error related to the NSDB occurred.
+.TP
+.B FEDFS_ERR_NSDB_PARAMS
+The remote server does not have any connection
+parameters on record for the specified NSDB.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL
+The remote server received an LDAP referral that it was unable to follow.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL_VAL
+Indicates the same error as FEDFS_ERR_NSDB_LDAP_REFERRAL,
+and allows an LDAP protocol error value to be returned back to the client.
+.TP
+.B FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED
+The remote server received an LDAP referral that it chose not to follow,
+either because the remote server does not support following LDAP referrals
+or LDAP referral following is disabled.
+.TP
+.B FEDFS_ERR_NSDB_PARAMS_LDAP_REFERRAL
+The remote server received an LDAP referral that it chose not to follow
+because the remote server had no NSDB parameters for the NSDB
+targeted by the LDAP referral.
+.TP
+.B FEDFS_ERR_NOTSUPP
+The remote server does not support the specified procedure.
+.SH EXAMPLES
+Suppose you are the FedFS administrator of the
+.I example.net
+FedFS domain and that your domain's NSDB hostname is
+.IR nsdb.example.net .
+If the remote server
+.IR fs.example.net
+already knows about your domain's NSDB, you can query it with:
+.RS
+.sp
+$ fedfs-get-nsdb-params -h fs.example.net -l nsdb.example.net
+.br
+Call completed successfully
+.br
+ConnectionSec: FEDFS_SEC_NONE
+.sp
+.RE
+The remote server knows about
+.I nsdb.example.net
+and does not use TLS when querying it to resolve junctions.
+.SH SECURITY
+RPCSEC GSSAPI authentication has not yet been implemented for this command.
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR rpc.fedfsd (8),
+.BR fedfs-get-nsdb-limited-params (8),
+.BR rpc (3t)
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

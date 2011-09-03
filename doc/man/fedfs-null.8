@@ -1,0 +1,123 @@
+.\"@(#)fedfs-null.8"
+.\"
+.\" @file doc/man/fedfs-null.8
+.\" @brief man page for fedfs-null client command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH FEDFS-NULL 8 "30 Apr 2011"
+.SH NAME
+fedfs-null \- send a FEDFS_NULL ADMIN protocol request
+.SH SYNOPSIS
+.B fedfs-null
+.RB [ \-?d ]
+.RB [ \-n
+.IR nettype ]
+.RB [ \-h
+.IR hostname ]
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+FedFS-enabled file servers allow remote administrative access via an
+authenticated RPC protocol known as the
+.IR "FedFS ADMIN protocol" .
+Using this protocol, FedFS administrators manage
+FedFS junctions and NSDB connection parameter information
+on remote FedFS-enabled file servers.
+.SH DESCRIPTION
+The
+.BR fedfs-null (8)
+command is part of a collection of low-level single-use programs that are
+intended for testing the FedFS ADMIN protocol or for use in scripts.
+It sends a single FEDFS_NULL request to a remote
+FedFS ADMIN protocol service.
+.P
+This request performs a simple ping operation that determines if
+there is an operational FedFS ADMIN service on the remote server.
+.SH OPTIONS
+.IP "\fB\-d, \-\-debug"
+Specifies that debugging messages be produced during operation.
+.IP "\fB\-?, \-\-help"
+Prints a
+.BR fedfs-null (8)
+version and usage message on
+.IR stderr ,
+then exits.
+.IP "\fB\-h, \-\-hostname=\fIhostname\fP"
+Specifies the hostname of a remote FedFS ADMIN service.
+If this option is not specified, the default value is
+.BR localhost .
+.IP "\fB\-n, \-\-nettype=\fInettype\fP"
+Specifies the transport to use when contacting the remote FedFS ADMIN service.
+Typically the
+.I nettype
+is one of
+.B tcp
+or
+.BR udp .
+If this option is not specified, the default value is
+.BR netpath .
+See
+.BR rpc (3t)
+for details.
+.SH EXIT CODES
+The remote administration service returns a value that reflects the
+success of the requested operation.
+.TP
+.B FEDFS_OK
+The operation succeeded.
+.TP
+.B FEDFS_ERR_NOTSUPP
+The remote server does not support the specified procedure.
+.SH EXAMPLES
+Suppose you are the FedFS administrator of the
+.I example.net
+FedFS domain and that you want to know if the FedFS ADMIN service
+on the remote server
+.IR fs.example.net
+is operational.  Use:
+.RS
+.sp
+$ fedfs-null -h fs.example.net
+.br
+Call completed successfully
+.RE
+.SH SECURITY
+RPCSEC GSSAPI authentication has not yet been implemented for this command.
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR rpc.fedfsd (8),
+.BR rpc (3t)
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

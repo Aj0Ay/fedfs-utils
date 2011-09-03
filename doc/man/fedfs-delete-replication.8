@@ -1,0 +1,181 @@
+.\"@(#)fedfs-delete-replication.8"
+.\"
+.\" @file doc/man/fedfs-delete-replication.8
+.\" @brief man page for fedfs-delete-replication client command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH FEDFS-DELETE-REPLICATION 8 "30 Apr 2011"
+.SH NAME
+fedfs-delete-replication \- send a FEDFS_DELETE_REPLICATION ADMIN protocol request
+.SH SYNOPSIS
+.B fedfs-delete-replication
+.RB [ \-?d ]
+.RB [ \-n
+.IR nettype ]
+.RB [ \-h
+.IR hostname ]
+.BI "-p " path
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+FedFS-enabled file servers allow remote administrative access via an
+authenticated RPC protocol known as the
+.IR "FedFS ADMIN protocol" .
+Using this protocol, FedFS administrators manage
+FedFS junctions and NSDB connection parameter information
+on remote FedFS-enabled file servers.
+.SH DESCRIPTION
+The
+.BR fedfs-delete-replication (8)
+command is part of a collection of low-level single-use programs that are
+intended for testing the FedFS ADMIN protocol or for use in scripts.
+It sends a single FEDFS_DELETE_REPLICATION request to a remote
+FedFS ADMIN protocol service.
+.P
+This request deletes a FedFS replication in the local file system
+on a remote file server.
+.SH OPTIONS
+.IP "\fB\-d, \-\-debug"
+Specifies that debugging messages be produced during operation.
+.IP "\fB\-?, \-\-help"
+Prints a
+.BR fedfs-delete-replication (8)
+version and usage message on
+.IR stderr ,
+then exits.
+.IP "\fB\-h, \-\-hostname=\fIhostname\fP"
+Specifies the hostname of a remote FedFS ADMIN service.
+If this option is not specified, the default value is
+.BR localhost .
+.IP "\fB\-n, \-\-nettype=\fInettype\fP"
+Specifies the transport to use when contacting the remote FedFS ADMIN service.
+Typically the
+.I nettype
+is one of
+.B tcp
+or
+.BR udp .
+If this option is not specified, the default value is
+.BR netpath .
+See
+.BR rpc (3t)
+for details.
+.IP "\fB\-p, \-\-path=\fIpathname\fP"
+Specifies the location on the remote server where the doomed FedFS replication
+resides.
+This pathname is relative to the remote server's physical root directory,
+not the remote server's NFS pseudoroot.
+.SH EXIT CODES
+The remote administration service returns a value that reflects the
+success of the requested operation.
+.TP
+.B FEDFS_OK
+The operation succeeded.
+.TP
+.B FEDFS_ERR_ACCESS
+The caller does not have permission to perform the requested operation
+on the remote server.
+.TP
+.B FEDFS_ERR_BADCHAR
+The pathname contains a character which is not
+supported by the remote server.
+.TP
+.B FEDFS_ERR_BADNAME
+A component of the pathname consisted of valid UTF-8 characters
+supported by the remote server,
+but the name is not supported by the remote server
+as a valid name for the current operation.
+.TP
+.B FEDFS_ERR_NAMETOOLONG
+The length of the pathname exceeds the remote server’s implementation limit.
+.TP
+.B FEDFS_ERR_LOOP
+Too many symbolic links were encountered in resolving the pathname.
+.TP
+.B FEDFS_ERR_BADXDR
+The remote server encountered an XDR decoding error while
+processing the request.
+.TP
+.B FEDFS_ERR_INVAL
+One of the arguments was not valid.
+.TP
+.B FEDFS_ERR_IO
+A hard error occurred on the remote server.
+.TP
+.B FEDFS_ERR_NOSPC
+The requested operation would have caused the remote
+server’s filesystem to exceed some limit (for example, if there is
+a fixed number of replications per fileset or per server).
+.TP
+.B FEDFS_ERR_NOTJUNCT
+The pathname does not end in a replication.
+.TP
+.B FEDFS_ERR_NOTLOCAL
+The pathname contains a junction in any position other than the last component.
+.TP
+.B FEDFS_ERR_PERM
+The operation was not allowed because the caller is
+either not a privileged user or not the owner of an object that
+would be modified by the operation.
+.TP
+.B FEDFS_ERR_ROFS
+A modifying operation was attempted on a read-only filesystem.
+.TP
+.B FEDFS_ERR_SVRFAULT
+An unanticipated non-protocol error occurred on the remote server.
+.TP
+.B FEDFS_ERR_PATH_TYPE_UNSUPP
+The remote server does not support the specified FedFsPathType value.
+.TP
+.B FEDFS_ERR_NOTSUPP
+The remote server does not support the specified procedure.
+.SH EXAMPLES
+Suppose you are the FedFS administrator of the
+.I example.net
+FedFS domain.
+To delete an existing FedFS replication on the remote server
+.IR fs.example.net ,
+use:
+.RS
+.sp
+$ fedfs-delete-replication -h fs.example.net -p /export/replication1
+.SH SECURITY
+RPCSEC GSSAPI authentication has not yet been implemented for this command.
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR rpc.fedfsd (8),
+.BR rpc (3t)
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>
