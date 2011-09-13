@@ -155,6 +155,12 @@ fedfs_is_sticky_bit_set(int fd, const char *path)
 		return FEDFS_ERR_ACCESS;
 	}
 
+	if (stb.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) {
+		xlog(D_CALL, "%s: execute bit set on %s",
+				__func__, path);
+		return FEDFS_ERR_NOTJUNCT;
+	}
+
 	if (!(stb.st_mode & S_ISVTX)) {
 		xlog(D_CALL, "%s: sticky bit not set on %s",
 				__func__, path);
@@ -166,7 +172,7 @@ fedfs_is_sticky_bit_set(int fd, const char *path)
 }
 
 /**
- * Set a directory's sticky bit
+ * Set just a directory's sticky bit
  *
  * @param fd an open file descriptor
  * @param path NUL-terminated C string containing pathname of a directory
@@ -183,6 +189,7 @@ fedfs_set_sticky_bit(int fd, const char *path)
 		return FEDFS_ERR_ACCESS;
 	}
 
+	stb.st_mode &= ~ALLPERMS;
 	stb.st_mode |= S_ISVTX;
 
 	if (fchmod(fd, stb.st_mode) == -1) {
