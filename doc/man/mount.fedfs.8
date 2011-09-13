@@ -137,24 +137,22 @@ To mount the domain root of the
 .I example.net
 FedFS domain via NFS version 4 automatically, you might add this to your
 .IR /etc/fstab :
-.P
-.NF
-.TA 2.5i +0.7i +0.7i +0.7i +0.7i
-	/nfs4/example.net	/nfs4/example.net	fedfs	defaults	0 0
-.FI
-.P
+.RS
+.sp
+/nfs4/example.net   /nfs4/example.net   fedfs  defaults  0  0
+.sp
+.RE
 If you wanted the read-write replica instead, you could use:
-.P
-.NF
-.TA 2.5i +0.7i +0.7i +0.7i +0.7i
-	/nfs4/.example.net	/nfs4/.example.net	fedfs	defaults	0 0
-.FI
-.P
+.RS
+.sp
+/nfs4/.example.net  /nfs4/.example.net  fedfs  defaults  0  0
+.sp
+.RE
 A FedFS domain root can also be mounted with a stand-alone invocation of
 .BR mount (8):
 .RS
 .sp
-mount -t fedfs /nfs4/.example.net /mnt/fedfs
+# mount -t fedfs /nfs4/.example.net /mnt/fedfs
 .sp
 .RE
 This mounts the read-write replica of the FedFS domain root for the
@@ -165,7 +163,7 @@ directory.
 A simple
 .RS
 .sp
-umount /mnt/fedfs
+# umount /mnt/fedfs
 .sp
 .RE
 unmounts it when you are finished with it.

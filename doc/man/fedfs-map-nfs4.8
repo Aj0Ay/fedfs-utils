@@ -86,12 +86,11 @@ Typically, a
 entry in
 .I /etc/auto.master
 looks like this:
-.P
-.NF
-.TA 2.5i +0.7i +0.7i
-	/nfs4	/usr/sbin/fedfs-map-nfs4
-.FI
-.P
+.RS
+.sp
+/nfs4  /usr/sbin/fedfs-map-nfs4
+.sp
+.RE
 Under the /nfs4 directory on the local system, the automounter uses
 .BR fedfs-map-nfs4 (8)
 to convert a FedFS domain name to a set of servers and an export path,
@@ -110,7 +109,7 @@ to access files in the
 FedFS domain, for instance, you can start with:
 .RS
 .sp
-cd /nfs4/example.net
+$ cd /nfs4/example.net
 .sp
 .RE
 The automounter uses the
