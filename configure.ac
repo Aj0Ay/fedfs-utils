@@ -27,7 +27,7 @@
 #
 
 AC_PREREQ([2.65])
-AC_INIT([fedfs-utils], [0.7.0], [fedfs-utils-devel@oss.oracle.com])
+AC_INIT([fedfs-utils], [0.8-devel], [fedfs-utils-devel@oss.oracle.com])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
