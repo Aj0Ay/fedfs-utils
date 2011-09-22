@@ -33,8 +33,9 @@ fedfs-lookup-replication \- send a FEDFS_LOOKUP_REPLICATION ADMIN protocol reque
 .IR nettype ]
 .RB [ \-h
 .IR hostname ]
+.RB [ \-t
+.IR resolvetype ]
 .BI "-p " path
-.BI "-t " type
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -135,6 +136,8 @@ are
 .BR nsdb ", or"
 .BR fedfs_resolve_nsdb .
 The value is not case-sensitive.
+If this option is not specified, the default value is
+.BR none .
 .SH EXIT CODES
 The remote administration service returns a value that reflects the
 success of the requested operation.

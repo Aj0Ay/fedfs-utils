@@ -73,14 +73,14 @@ fedfs_lookup_junction_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"-p path -t <none|cache|nsdb>\n\n", progname);
+			"[-t <none|cache|nsdb>] -p path\n\n", progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
 	fprintf(stderr, "\t-p, --path           Pathname of junction to resolve\n");
-	fprintf(stderr, "\t-t, --resolvetype    Type of desired result\n");
+	fprintf(stderr, "\t-t, --resolvetype    Type of desired result (default: 'none')\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -280,7 +280,8 @@ main(int argc, char **argv)
 
 	hostname = "localhost";
 	nettype = "netpath";
-	path = resolvetype = NULL;
+	resolvetype = "none";
+	path = NULL;
 	while ((arg = getopt_long(argc, argv, fedfs_lookup_junction_opts,
 				fedfs_lookup_junction_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -309,7 +310,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "Unrecognized command line argument\n");
 		fedfs_lookup_junction_usage(progname);
 	}
-	if (path == NULL || resolvetype == NULL) {
+	if (path == NULL) {
 		fprintf(stderr, "Missing required command line argument\n");
 		fedfs_lookup_junction_usage(progname);
 	}
