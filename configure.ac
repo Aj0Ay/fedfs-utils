@@ -125,6 +125,8 @@ esac
 AC_SUBST([root_sbindir])
 
 AC_CONFIG_FILES([Makefile
+                 contrib/Makefile
+                 contrib/init-scripts/Makefile
                  doc/Makefile
                  doc/ldap/Makefile
                  doc/man/Makefile
