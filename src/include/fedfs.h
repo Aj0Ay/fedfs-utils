@@ -47,21 +47,6 @@
 #define FEDFS_DATABASE_FILE		"nsdbparam.sqlite3"
 
 /**
- * Default pathname of directory where fedfsd maintains persistent state
- */
-#ifndef FEDFS_DEFAULT_STATEDIR
-#define FEDFS_DEFAULT_STATEDIR		"/var/lib/fedfs"
-#endif	/* FEDFS_DEFAULT_STATEDIR */
-
-/**
- * User name to use when dropping privileges.  This user is
- * typically the owner of default state directory.
- */
-#ifndef FEDFS_USER
-#define FEDFS_USER	"fedfs"
-#endif	/* FEDFS_USER */
-
-/**
  * Initial number of seconds to wait after receiving FEDFS_ERR_DELAY
  */
 #define FEDFS_DELAY_MIN_SECS	2

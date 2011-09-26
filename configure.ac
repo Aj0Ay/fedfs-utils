@@ -36,6 +36,24 @@ AC_CONFIG_MACRO_DIR([m4])
 LT_INIT
 AM_INIT_AUTOMAKE
 
+# configure command line options
+AC_ARG_WITH([fedfsuser],
+	[AS_HELP_STRING([--with-fedfsuser=name],
+		[User name to use when dropping privileges @<:@default=fedfs@:>@])],
+	fedfsuser=$withval,
+	fedfsuser=fedfs)
+	AC_SUBST(fedfsuser)
+	AC_DEFINE_UNQUOTED([FEDFS_USER], ["$fedfsuser"],
+		[Define to the user name to use when dropping privileges.])
+AC_ARG_WITH([statedir],
+	[AS_HELP_STRING([--with-statedir=pathname],
+		[Default pathname of directory where fedfsd maintains persistent state @<:@default=/var/lib/fedfs@:>@])],
+	statedir=$withval,
+	statedir=/var/lib/fedfs)
+	AC_SUBST(statedir)
+	AC_DEFINE_UNQUOTED([FEDFS_DEFAULT_STATEDIR], ["$statedir"],
+		[Define to the default pathname of the directory where fedfsd maintains persistent state.])
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
