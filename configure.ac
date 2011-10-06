@@ -64,6 +64,10 @@ if test "$DOT_PRESENT" = no; then
 	echo "Warning: GraphViz not present on this system. 'make doxy' will fail."
 fi
 
+# Needed for doc/rpcl
+AC_ARG_VAR([RPCGEN], [rpcgen-like protocol compiler command])
+AC_PATH_PROG([RPCGEN], [rpcgen])
+
 # C compiler options
 AC_PROG_CC_C99
 AC_C_INLINE
