@@ -46,8 +46,10 @@ install-data-hook:
 	(cd $(DESTDIR)$(mandir)/man7 && \
 	  for p in $(dist_man7_MANS); do \
 	    $(SED) -i 's,[@]statedir@,$(statedir),' $$p ;\
+	    $(SED) -i 's,[@]fedfsuser@,$(fedfsuser),' $$p ;\
 	  done)
 	(cd $(DESTDIR)$(mandir)/man8 && \
 	  for p in $(dist_man8_MANS); do \
 	    $(SED) -i 's,[@]statedir@,$(statedir),' $$p ;\
+	    $(SED) -i 's,[@]fedfsuser@,$(fedfsuser),' $$p ;\
 	  done)
