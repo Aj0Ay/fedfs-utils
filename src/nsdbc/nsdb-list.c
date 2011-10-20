@@ -251,7 +251,12 @@ main(int argc, char **argv)
 	retval = nsdb_list_s(host, nce, &fsns, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("NSDB: %s:%u, %s\n", nsdbname, nsdbport, nce);
+		if (nce == NULL)
+			printf("NSDB: %s:%u\n",
+				nsdbname, nsdbport);
+		else
+			printf("NSDB: %s:%u, %s\n",
+				nsdbname, nsdbport, nce);
 		for (i = 0; fsns[i] != NULL; i++)
 			nsdb_list_resolve_and_display_fsn(host, nce, fsns[i]);
 		nsdb_free_string_array(fsns);
