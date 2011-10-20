@@ -83,7 +83,7 @@ nsdb_normalize_path(const char *pathname)
 		return NULL;
 	}
 
-	result = malloc(len);
+	result = malloc(len + 1);
 	if (result == NULL) {
 		xlog(L_ERROR, "%s: Failed to allocate pathname buffer",
 			__func__);
@@ -97,9 +97,8 @@ nsdb_normalize_path(const char *pathname)
 	}
 	result[j] = '\0';
 
-	len = strlen(result);
-	if (len > 1 && result[len - 1] == '/')
-		result[len - 1] = '\0';
+	if (j > 1 && result[j - 1] == '/')
+		result[j - 1] = '\0';
 
 	xlog(D_CALL, "%s: result = '%s'", __func__, result);
 	return result;
