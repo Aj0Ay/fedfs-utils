@@ -130,8 +130,10 @@ fedfs_lookup_junction_print_nsdbname(const char *pre_text,
 		printf("%s: NSDB name was empty\n", pre_text);
 		return;
 	}
-	printf("%s: %s:%u\n", pre_text,
-		nsdbname.hostname.utf8string_val, nsdbname.port);
+	printf("%s: %.*s:%u\n", pre_text,
+		nsdbname.hostname.utf8string_len,
+		nsdbname.hostname.utf8string_val,
+		nsdbname.port);
 }
 
 static void
@@ -151,8 +153,10 @@ fedfs_lookup_junction_print_nfs_fsl(FedFsNfsFsl fsl)
 	if (fsl.hostname.utf8string_val == NULL)
 		printf(" FSL hostname: empty\n");
 	else
-		printf(" FSL hostname: %s:%u\n", fsl.hostname.utf8string_val,
-								fsl.port);
+		printf(" FSL hostname: %.*s:%u\n",
+			fsl.hostname.utf8string_len,
+			fsl.hostname.utf8string_val,
+			fsl.port);
 	status = nsdb_fedfspathname_to_posix(fsl.path, &pathname);
 	if (status != FEDFS_OK)
 		printf(" Returned NFS export pathname was invalid: %s\n",
