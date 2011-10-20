@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <memory.h>
 #include <signal.h>
 #include <termios.h>
@@ -216,14 +217,24 @@ nsdb_parse_singlevalue_bool(char *attr, struct berval **values, _Bool *result)
 FedFsStatus
 nsdb_parse_singlevalue_int(char *attr, struct berval **values, int *result)
 {
+	char *endptr;
+	long tmp;
+
 	if (values[1] != NULL) {
 		xlog(L_ERROR, "%s: Expecting only one value for attribute %s",
 			__func__, attr);
 		return FEDFS_ERR_NSDB_RESPONSE;
 	}
 
-	/* XXX: Better value type checking, please */
-	*result = atoi(values[0]->bv_val);
+	errno = 0;
+	tmp = strtol(values[0]->bv_val, &endptr, 10);
+	if (errno != 0 || *endptr != '\0' || tmp < INT_MIN || tmp > INT_MAX) {
+		xlog(D_CALL, "%s: Attribute %s contains out-of-range value %.*s",
+			__func__, attr, values[0]->bv_len, values[0]->bv_val);
+		return FEDFS_ERR_NSDB_RESPONSE;
+	}
+
+	*result = (int)tmp;
 	xlog(D_CALL, "%s: Attribute %s contains value %d",
 		__func__, attr, *result);
 	return FEDFS_OK;
