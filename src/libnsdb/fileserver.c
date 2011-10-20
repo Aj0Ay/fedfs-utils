@@ -1217,10 +1217,13 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 	if (j == 0)
 		goto out;
 
-	for (j = 0; nce_list[j] != NULL; j++)
-		nsdb_list_find_entries_s(host->fn_ldap, nce_list[j],
+	for (j = 0; nce_list[j] != NULL; j++) {
+		retval = nsdb_list_find_entries_s(host->fn_ldap,
+						nce_list[j],
 						fsns, ldap_err);
-	retval = FEDFS_OK;
+		if (retval == FEDFS_OK)
+			break;
+	}
 
 out:
 	nsdb_free_string_array(nce_list);

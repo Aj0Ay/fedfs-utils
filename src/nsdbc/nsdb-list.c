@@ -256,6 +256,10 @@ main(int argc, char **argv)
 			nsdb_list_resolve_and_display_fsn(host, nce, fsns[i]);
 		nsdb_free_string_array(fsns);
 		break;
+	case FEDFS_ERR_NSDB_NOFSN:
+		fprintf(stderr, "NSDB %s:%u has no FSN records\n",
+			nsdbname, nsdbport);
+		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)
 			fprintf(stderr, "NSDB %s:%u has no NCE\n",
