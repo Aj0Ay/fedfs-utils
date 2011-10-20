@@ -62,8 +62,8 @@
 static void
 fedfsd_caller(struct svc_req *rqstp, char *buf, const size_t buflen)
 {
-	const struct sockaddr *sap = (struct sockaddr *)(char *)
-					svc_getcaller(rqstp->rq_xprt);
+	const struct sockaddr_in6 *sin6 = svc_getcaller(rqstp->rq_xprt);
+	const struct sockaddr *sap = (struct sockaddr *)sin6;
 	socklen_t salen;
 
 	switch (sap->sa_family) {
