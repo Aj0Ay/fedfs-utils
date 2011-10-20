@@ -188,17 +188,37 @@ static int
 nsdbparams_delete(const char *progname, const char *nsdbname,
 		const unsigned short nsdbport)
 {
+	FedFsStatus status;
+	nsdb_t host;
+
 	if (nsdbname == NULL) {
 		xlog(L_ERROR, "Missing required command line argument\n");
 		nsdbparams_usage(progname);
 		return EXIT_FAILURE;
 	}
 
-	if (nsdb_delete_nsdb(nsdbname, nsdbport) != FEDFS_OK)
+	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
+	switch (status) {
+	case FEDFS_OK:
+		nsdb_free_nsdb(host);
+		status = nsdb_delete_nsdb(nsdbname, nsdbport);
+		if (status != FEDFS_OK) {
+			xlog(L_ERROR, "nsdb_delete_nsdb returned %s",
+				nsdb_display_fedfsstatus(status));
+			return EXIT_FAILURE;
+		}
+		printf("%s:%u was deleted successfully\n", nsdbname, nsdbport);
+		break;
+	case FEDFS_ERR_NSDB_PARAMS:
+		xlog(L_ERROR, "No record for %s:%u was found",
+			nsdbname, nsdbport);
+		break;
+	default:
+		xlog(L_ERROR, "nsdb_lookup_nsdb returned %s",
+			nsdb_display_fedfsstatus(status));
 		return EXIT_FAILURE;
+	}
 
-	printf("%s: %s:%u deleted successfully\n",
-		progname, nsdbname, nsdbport);
 	return EXIT_SUCCESS;
 }
 
