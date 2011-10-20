@@ -179,21 +179,30 @@ nsdb_free_string_array(char **strings)
 FedFsStatus
 nsdb_parse_singlevalue_bool(char *attr, struct berval **values, _Bool *result)
 {
+	struct berval *value;
+
 	if (values[1] != NULL) {
 		xlog(L_ERROR, "%s: Expecting only one value for attribute %s",
 			__func__, attr);
 		return FEDFS_ERR_NSDB_RESPONSE;
 	}
-
-	/* XXX: Better value type checking, please */
-	if (atoi(values[0]->bv_val)) {
-		xlog(D_CALL, "%s: Attribute %s contains TRUE", __func__, attr);
+	value = values[0];
+	
+	if (strncmp(value->bv_val, "TRUE", value->bv_len) == 0) {
+		xlog(D_CALL, "%s: Attribute %s contains TRUE",
+			__func__, attr);
 		*result = true;
-	} else {
-		xlog(D_CALL, "%s: Attribute %s contains FALSE", __func__, attr);
+		return FEDFS_OK;
+	} else if (strncmp(value->bv_val, "FALSE", value->bv_len) == 0) {
+		xlog(D_CALL, "%s: Attribute %s contains FALSE",
+			__func__, attr);
 		*result = false;
+		return FEDFS_OK;
 	}
-	return FEDFS_OK;
+
+	xlog(D_CALL, "%s: Attribute %s contains out-of-range value: %.*s",
+		__func__, attr, value->bv_len, value->bv_val);
+	return FEDFS_ERR_NSDB_RESPONSE;
 }
 
 /**
