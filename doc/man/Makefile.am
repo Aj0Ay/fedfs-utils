@@ -42,6 +42,12 @@ dist_man8_MANS		= rpc.fedfsd.8 mount.fedfs.8 fedfs-map-nfs4.8 \
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out
 DISTCLEANFILES		= Makefile.in
 
+dist-hook:
+	(cd $(distdir) && \
+	  for p in $(dist_man7_MANS) $(dist_man8_MANS); do \
+	    $(SED) -i 's,[@]publication-date@,$(pubdate),' $$p ;\
+	  done)
+
 install-data-hook:
 	(cd $(DESTDIR)$(mandir)/man7 && \
 	  for p in $(dist_man7_MANS); do \

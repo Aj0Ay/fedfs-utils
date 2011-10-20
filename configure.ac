@@ -54,6 +54,10 @@ AC_ARG_WITH([statedir],
 	AC_DEFINE_UNQUOTED([FEDFS_DEFAULT_STATEDIR], ["$statedir"],
 		[Define to the default pathname of the directory where fedfsd maintains persistent state.])
 
+# Publication date stamp for man pages
+pubdate=`date +"%e %B %Y"`
+AC_SUBST(pubdate)
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL

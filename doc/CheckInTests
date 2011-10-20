@@ -133,5 +133,6 @@ Per-release
   4. Create a commit for the release
   5. Create a tag for the release commit
   6. gc the git database and push the release
-  7. "make dist" and publish the tarball
+  7. "make distclean; sh ./autogen.sh; ./configure"
+  8. "make distcheck" and publish the tarball
 
