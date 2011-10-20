@@ -62,7 +62,7 @@ static const struct option nsdb_describe_longopts[] = {
 	{ "help", 0, NULL, '?', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "password", 1, NULL, 'w', },
+	{ "bindpw", 1, NULL, 'w', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -75,7 +75,7 @@ static void
 nsdb_describe_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -b ] [ -D binddn ] [ -w passwd ] "
+	fprintf(stderr, "Usage: %s [ -b ] [ -D binddn ] [ -w bindpw ] "
 			"[ -l nsdbname ] [ -r nsdbport ] -e entry "
 			"[ -a description] [-y]\n\n",
 			progname);
@@ -87,7 +87,7 @@ nsdb_describe_usage(const char *progname)
 	fprintf(stderr, "\t-e, --entry          DN of entry to update\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-w, --password       Bind password\n");
+	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
 	fprintf(stderr, "\t-y, --delete         Delete specified description\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
@@ -105,7 +105,7 @@ nsdb_describe_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *passwd, *nsdbname;
+	char *progname, *binddn, *bindpw, *nsdbname;
 	char *description, *entry;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
@@ -134,7 +134,7 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &passwd);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &bindpw);
 
 	delete = false;
 	entry = description = NULL;
@@ -164,7 +164,7 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'w':
-			passwd = optarg;
+			bindpw = optarg;
 			break;
 		case 'y':
 			delete = true;
@@ -206,7 +206,7 @@ main(int argc, char **argv)
 
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
-	retval = nsdb_open_nsdb(host, binddn, passwd, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

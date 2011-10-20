@@ -63,7 +63,7 @@ static const struct option nsdb_annotate_longopts[] = {
 	{ "keyword", 1, NULL, 'k', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "password", 1, NULL, 'w', },
+	{ "bindpw", 1, NULL, 'w', },
 	{ "value", 1, NULL, 'v', },
 	{ NULL, 0, NULL, 0, },
 };
@@ -77,7 +77,7 @@ static void
 nsdb_annotate_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
+	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
 			"[ -l nsdbname ] [ -r nsdbport ] -e entry "
 			"[ -a annotation ] [ -k keyword ] [ -v value ] [ -y ]\n\n",
 			progname);
@@ -91,7 +91,7 @@ nsdb_annotate_usage(const char *progname)
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-v, --value          Annotation value\n");
-	fprintf(stderr, "\t-w, --password       Bind password\n");
+	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
 	fprintf(stderr, "\t-y, --delete         Delete specified annotation\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
@@ -109,7 +109,7 @@ nsdb_annotate_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *passwd, *nsdbname;
+	char *progname, *binddn, *bindpw, *nsdbname;
 	char *keyword, *value, *entry, *annotation;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
@@ -138,7 +138,7 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &passwd);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &bindpw);
 
 	delete = false;
 	keyword = value = entry = annotation = NULL;
@@ -174,7 +174,7 @@ main(int argc, char **argv)
 			value = optarg;
 			break;
 		case 'w':
-			passwd = optarg;
+			bindpw = optarg;
 			break;
 		case 'y':
 			delete = true;
@@ -248,7 +248,7 @@ main(int argc, char **argv)
 
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
-	retval = nsdb_open_nsdb(host, binddn, passwd, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

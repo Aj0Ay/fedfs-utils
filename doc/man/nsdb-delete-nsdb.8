@@ -36,7 +36,7 @@ nsdb-delete-nsdb \- remove all FedFS info from an NSDB
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
-.IR passwd ]
+.IR bindpw ]
 .RB \-e
 .IR nce
 .SH INTRODUCTION
@@ -116,7 +116,7 @@ If the
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
-.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
 Specifies the password used for simple authentication to this LDAP server.
 If the
 .B -w

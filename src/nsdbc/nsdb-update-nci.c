@@ -60,7 +60,7 @@ static const struct option nsdb_update_nci_longopts[] = {
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "password", 1, NULL, 'w', },
+	{ "bindpw", 1, NULL, 'w', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -73,7 +73,7 @@ static void
 nsdb_update_nci_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
+	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
 			"[ -l nsdbname ] [ -r nsdbport ] "
 			"[ -e entry ] [-y]\n\n",
 			progname);
@@ -84,7 +84,7 @@ nsdb_update_nci_usage(const char *progname)
 	fprintf(stderr, "\t-e, --nce            Full DN of NCE\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-w, --password       Bind password\n");
+	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
 	fprintf(stderr, "\t-y, --delete         Delete NSDB container info\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
@@ -102,7 +102,7 @@ nsdb_update_nci_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *passwd, *nsdbname, *nce;
+	char *progname, *binddn, *bindpw, *nsdbname, *nce;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	FedFsStatus retval;
@@ -130,7 +130,7 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &bindpw);
 	if (nce == NULL)
 		nce = NSDB_DEFAULT_NCE;
 
@@ -158,7 +158,7 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'w':
-			passwd = optarg;
+			bindpw = optarg;
 			break;
 		case 'y':
 			delete = true;
@@ -196,7 +196,7 @@ main(int argc, char **argv)
 
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
-	retval = nsdb_open_nsdb(host, binddn, passwd, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

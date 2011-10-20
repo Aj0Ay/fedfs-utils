@@ -42,7 +42,7 @@ nsdb-annotate \- modify the fedfsAnnotation attribute of an NSDB entry
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
-.IR passwd ]
+.IR bindpw ]
 .RB [ \-v
 .IR value ]
 .SH INTRODUCTION
@@ -175,7 +175,7 @@ If the
 option is specified and this value exists in the target
 entry's fedfsAnnotation attribute, it is removed.
 Otherwise the value is added.
-.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
 Specifies the password used for simple authentication to this LDAP server.
 If the
 .B -w

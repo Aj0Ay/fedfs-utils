@@ -63,7 +63,7 @@ static const struct option nsdb_create_fsn_longopts[] = {
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "password", 1, NULL, 'w', },
+	{ "bindpw", 1, NULL, 'w', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -76,7 +76,7 @@ static void
 nsdb_create_fsn_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w passwd ] "
+	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
 			"-u fsn-uuid\n\n",
 			progname);
@@ -87,7 +87,7 @@ nsdb_create_fsn_usage(const char *progname)
 	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-w, --password       Bind password\n");
+	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
 	fprintf(stderr, "\t-u, --fsnuuid        New FSN UUID\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
@@ -105,7 +105,7 @@ nsdb_create_fsn_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *passwd, *nsdbname;
+	char *progname, *binddn, *bindpw, *nsdbname;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	char *nce, *fsn_uuid;
@@ -134,7 +134,7 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &passwd);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &bindpw);
 
 	fsn_uuid = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_create_fsn_opts,
@@ -160,7 +160,7 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'w':
-			passwd = optarg;
+			bindpw = optarg;
 			break;
 		case 'u':
 			if (uuid_parse(optarg, uu) == -1) {
@@ -202,7 +202,7 @@ main(int argc, char **argv)
 
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
-	retval = nsdb_open_nsdb(host, binddn, passwd, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

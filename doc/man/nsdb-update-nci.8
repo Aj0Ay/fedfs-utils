@@ -38,7 +38,7 @@ nsdb-update-nci \- update NSDB container information on an LDAP server
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
-.IR passwd ]
+.IR bindpw ]
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -145,7 +145,7 @@ If the
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
-.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
 Specifies the password used for simple authentication to this LDAP server.
 If the
 .B -w

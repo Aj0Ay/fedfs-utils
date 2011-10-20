@@ -38,7 +38,7 @@ nsdb-create-fsl \- create a fileset location (FSL) record on an NSDB
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
-.IR passwd ]
+.IR bindpw ]
 .B \-u
 .I fsn-uuid
 .B \-x
@@ -185,7 +185,7 @@ command fails.
 Specifies the IP port of the file server a client should mount to access
 this fileset location.
 The default value if this option is not specified is 2049.
-.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
 Specifies the password used for simple authentication to this LDAP server.
 If the
 .B -w

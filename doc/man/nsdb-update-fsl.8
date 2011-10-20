@@ -38,7 +38,7 @@ nsdb-update-fsl \- update attributes of a fileset location (FSL) record
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
-.IR passwd ]
+.IR bindpw ]
 .B \-u
 .I fsn-uuid
 .B \-x
@@ -188,7 +188,7 @@ If the
 option is not specified, the
 .BR nsdb-update-fsl (8)
 command attempts to delete the specified attribute.
-.IP "\fB\-w, \-\-passwd=\fIbinddn-password\fP"
+.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
 Specifies the password used for simple authentication to this LDAP server.
 If the
 .B -w
