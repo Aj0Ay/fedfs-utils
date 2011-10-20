@@ -25,7 +25,8 @@
 
 noinst_LIBRARIES	= libparser.a
 libparser_a_SOURCES	= parse_opt.c token.c
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \

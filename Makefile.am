@@ -27,7 +27,8 @@ AUTOMAKE_OPTIONS	= foreign
 SUBDIRS			= doc src contrib
 dist_noinst_SCRIPTS	= autogen.sh
 EXTRA_DIST		= ChangeLog COPYING README INSTALL doxy.cfg .gitignore
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in ChangeLog
 
 ChangeLog:

@@ -1,6 +1,7 @@
 cscope.in.out
 cscope.out
 cscope.po.out
+fedfs-utils-*.tar.gz
 ChangeLog
 Doxygen/
 .*.swp

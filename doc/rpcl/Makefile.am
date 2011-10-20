@@ -32,7 +32,8 @@ GENFILES		= $(GENFILES_CLNT) $(GENFILES_SVC) $(GENFILES_XDR) \
 
 EXTRA_DIST		= fedfs_admin.x
 BUILT_SOURCES		= $(GENFILES)
-CLEANFILES		= $(GENFILES) cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= $(GENFILES) cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 $(GENFILES_H): %.h: %.x $(RPCGEN)

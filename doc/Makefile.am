@@ -25,5 +25,6 @@
 
 EXTRA_DIST		= CheckInTests
 SUBDIRS			= man ldap rpcl
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

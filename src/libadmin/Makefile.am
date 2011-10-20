@@ -25,7 +25,8 @@
 
 noinst_LIBRARIES	= libadmin.a
 libadmin_a_SOURCES	= fedfs_admin_clnt.c fedfs_admin_svc.c fedfs_admin_xdr.c
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 # Squelch compiler warnings for rpcgen-produced source code

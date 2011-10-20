@@ -39,7 +39,8 @@ NSDB_CLIENT_CMDS	= nsdb-create-fsl.8 nsdb-create-fsn.8 \
 dist_man7_MANS		= fedfs.7
 dist_man8_MANS		= rpc.fedfsd.8 mount.fedfs.8 fedfs-map-nfs4.8 \
 			  nsdbparams.8 $(FEDFS_CLIENT_CMDS) $(NSDB_CLIENT_CMDS)
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 dist-hook:

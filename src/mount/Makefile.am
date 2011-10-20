@@ -33,7 +33,8 @@ mount_fedfs_SOURCES	= main.c
 # mount.fedfs must never link against libraries in /usr
 mount_fedfs_LDADD	= $(LIBRESOLV) \
 			  $(top_builddir)/src/libsi/libsi.a
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \

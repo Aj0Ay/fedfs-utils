@@ -37,7 +37,8 @@ LDADD			= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libpath/libpath.a \
 			  $(top_builddir)/src/libxlog/libxlog.a
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \

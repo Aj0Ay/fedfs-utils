@@ -26,5 +26,6 @@
 noinst_HEADERS		= fedfs_admin.h fedfs.h getsrvinfo.h gpl-boiler.h \
 			  junction.h list.h nsdb.h parse_opt.h path.h \
 			  token.h xlog.h
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

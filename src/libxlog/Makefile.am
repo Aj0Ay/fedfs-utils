@@ -25,7 +25,8 @@
 
 noinst_LIBRARIES	= libxlog.a
 libxlog_a_SOURCES	= xlog.c
-CLEANFILES		= cscope.in.out cscope.out cscope.po.out
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \
