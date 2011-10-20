@@ -138,8 +138,12 @@ fedfs_get_limited_nsdb_params_call(const char *hostname, const char *nettype,
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_GET_LIMITED_NSDB_PARAMS call failed");
 		result.status = FEDFS_ERR_SVRFAULT;
-	} else
+	} else {
 		fedfs_get_limited_nsdb_params_print_result(result);
+		clnt_freeres(client,
+			(xdrproc_t)xdr_FedFsGetLimitedNsdbParamsRes,
+			(caddr_t)&result);
+	}
 	(void)clnt_destroy(client);
 
 out:

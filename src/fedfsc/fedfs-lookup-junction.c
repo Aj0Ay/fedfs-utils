@@ -247,8 +247,12 @@ fedfs_lookup_junction_call(const char *hostname, const char *nettype,
 	if (status != RPC_SUCCESS) {
 		clnt_perror(client, "FEDFS_LOOKUP_JUNCTION call failed");
 		result.status = FEDFS_ERR_SVRFAULT;
-	} else
+	} else {
 		fedfs_lookup_junction_print_result(result);
+		clnt_freeres(client,
+			(xdrproc_t)xdr_FedFsLookupRes,
+			(caddr_t)&result);
+	}
 	(void)clnt_destroy(client);
 
 out:
