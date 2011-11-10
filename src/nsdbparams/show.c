@@ -189,9 +189,6 @@ nsdbparams_show(const char *progname, int argc, char **argv)
 		}
 	}
 
-	if (!nsdb_create_basedir())
-		return EXIT_FAILURE;
-
 	if (!nsdbparams_drop_privileges(uid, gid))
 		return EXIT_FAILURE;
 

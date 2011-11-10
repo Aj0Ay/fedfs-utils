@@ -157,50 +157,6 @@ nsdb_set_parentdir(const char *parentdir)
 }
 
 /**
- * Create parent directory
- *
- * @return true if fedfsd directory exists
- *
- * Warning: this function must be called as root, and is usually
- * invoked before the process has set its umask.
- */
-_Bool
-nsdb_create_basedir(void)
-{
-	struct passwd *pw;
-	_Bool retval;
-
-	retval = false;
-	if (mkdir(fedfs_base_dirname, FEDFS_BASE_DIRMODE) == -1) {
-		if (errno == EEXIST) {
-			xlog(D_CALL, "FedFS base directory exists");
-			retval = true;
-			goto out;
-		}
-		xlog(L_ERROR, "Failed to create base dir: %m");
-		goto out;
-	}
-
-	pw = getpwnam(FEDFS_USER);
-	if (pw == NULL) {
-		xlog(L_ERROR, "Failed to find %s", FEDFS_USER);
-		rmdir(fedfs_base_dirname);
-		goto out;
-	}
-
-	if (chown(fedfs_base_dirname, pw->pw_uid, pw->pw_gid) == -1) {
-		xlog(L_ERROR, "Failed to chown base dir: %m");
-		rmdir(fedfs_base_dirname);
-		goto out;
-	}
-
-	retval = true;
-
-out:
-	return retval;
-}
-
-/**
  * Predicate: Does parent directory refer to default FedFS state directory?
  *
  * @return true if active fedfsd directory is same as default
@@ -241,6 +197,10 @@ nsdb_create_tables(sqlite3 *db)
  * Ensure database file and tables exist
  *
  * @return true if successful
+ *
+ * This must be called with capabilities that allow the base
+ * directory and database to be created.  This is typically
+ * "cap_dac_override=ep".
  */
 _Bool
 nsdb_init_database(void)
@@ -253,6 +213,16 @@ nsdb_init_database(void)
 	xlog(D_CALL, "%s: Initializing database", __func__);
 
 	retval = false;
+
+	if (mkdir(fedfs_base_dirname, FEDFS_BASE_DIRMODE) == -1) {
+		if (errno != EEXIST) {
+			xlog(L_ERROR, "Failed to create base dir: %m");
+			goto out;
+		}
+		xlog(D_GENERAL, "%s: Base dir %s exists",
+			__func__, fedfs_base_dirname);
+	}
+
 	db = fedfs_open_db(fedfs_db_filename,
 				SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 	if (db == NULL)

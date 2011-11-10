@@ -115,7 +115,6 @@ struct fedfs_fsl {
  * Locate the cert store
  */
 _Bool		 nsdb_set_parentdir(const char *parentdir);
-_Bool		 nsdb_create_basedir(void);
 _Bool		 nsdb_is_default_parentdir(void);
 _Bool		 nsdb_init_database(void);
 

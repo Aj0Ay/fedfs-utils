@@ -333,9 +333,6 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 		goto out;
 	}
 
-	if (!nsdb_create_basedir())
-		goto out;
-
 	if (!nsdbparams_drop_privileges(uid, gid))
 		goto out;
 

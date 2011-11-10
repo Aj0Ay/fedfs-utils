@@ -47,6 +47,11 @@
 #include "nsdbparams.h"
 
 /**
+ * Capabilies that nsdbparams should retain, in text format.
+ */
+#define NSDBPARAMS_CAPABILITIES "cap_dac_override=ep"
+
+/**
  * Display program synopsis
  *
  * @param progname NUL-terminated C string containing name of program
@@ -69,6 +74,52 @@ nsdbparams_usage(const char *progname)
 }
 
 /**
+ * Clear all capabilities but a certain few.
+ *
+ * @return true if successful
+ *
+ * This permits callers to create directories anywhere, but all other
+ * capabilities are dropped.
+ */
+static _Bool
+nsdbparams_clear_capabilities(void)
+{
+	cap_t caps;
+	char *text;
+
+	caps = cap_from_text(NSDBPARAMS_CAPABILITIES);
+	if (caps == NULL) {
+		xlog(L_ERROR, "Failed to allocate capability: %m");
+		return false;
+	}
+
+	if (cap_set_proc(caps) == -1) {
+		xlog(L_ERROR, "Failed to set capability flags: %m");
+		(void)cap_free(caps);
+		return false;
+	}
+
+	(void)cap_free(caps);
+
+	caps = cap_get_proc();
+	if (caps == NULL)
+		goto out;
+
+	text = cap_to_text(caps, NULL);
+	if (text == NULL)
+		goto out_free;
+
+	xlog(D_CALL, "Process capabilities: %s", text);
+	(void)cap_free(text);
+
+out_free:
+	(void)cap_free(caps);
+
+out:
+	return true;
+}
+
+/**
  * Drop root privileges
  *
  * @param uid run as this effective uid
@@ -80,6 +131,8 @@ nsdbparams_usage(const char *progname)
 _Bool
 nsdbparams_drop_privileges(const uid_t uid, const gid_t gid)
 {
+	_Bool result;
+
 	(void)umask(S_IWGRP | S_IWOTH);
 
 	/*
@@ -109,10 +162,11 @@ nsdbparams_drop_privileges(const uid_t uid, const gid_t gid)
 		return false;
 	}
 
+	result = nsdbparams_clear_capabilities();
+
 	xlog(D_CALL, "%s: Effective UID, GID: %u, %u",
 			__func__, geteuid(), getegid());
-
-	return true;
+	return result;
 }
 
 /**

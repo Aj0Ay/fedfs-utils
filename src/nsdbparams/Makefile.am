@@ -27,7 +27,7 @@ noinst_HEADERS		= nsdbparams.h
 sbin_PROGRAMS		= nsdbparams
 nsdbparams_SOURCES	= delete.c list.c main.c show.c update.c
 LDADD			= $(LIBLDAP) $(LIBLBER) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libjunction/libjunction.a \
 			  $(top_builddir)/src/libpath/libpath.a \
