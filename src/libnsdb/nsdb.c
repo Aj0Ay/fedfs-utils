@@ -182,7 +182,7 @@ nsdb_is_default_parentdir(void)
 static _Bool
 nsdb_create_tables(sqlite3 *db)
 {
-	return fedfs_create_table(db, "nsdbs",
+	return nsdb_create_table(db, "nsdbs",
 				"nsdbName TEXT, "
 				"nsdbPort INTEGER, "
 				"securityType INTEGER, "
@@ -223,7 +223,7 @@ nsdb_init_database(void)
 			__func__, fedfs_base_dirname);
 	}
 
-	db = fedfs_open_db(fedfs_db_filename,
+	db = nsdb_open_db(fedfs_db_filename,
 				SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 	if (db == NULL)
 		goto out;
@@ -247,7 +247,7 @@ nsdb_init_database(void)
 	retval = true;
 
 out_close:
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 
 out:
 	return retval;
@@ -606,7 +606,7 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 			__func__, domainname);
 
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "SELECT"
+	if (!nsdb_prepare_stmt(db, &stmt, "SELECT"
 			" securityType,securityFilename,defaultBindDN,defaultNCE,followReferrals"
 			" FROM nsdbs WHERE nsdbName=? and nsdbPort=?;"))
 		goto out;
@@ -674,7 +674,7 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -696,7 +696,7 @@ nsdb_new_nsdbname(sqlite3 *db, const nsdb_t host)
 	int rc;
 
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "INSERT INTO nsdbs"
+	if (!nsdb_prepare_stmt(db, &stmt, "INSERT INTO nsdbs"
 			" (nsdbName,nsdbPort) VALUES(?,?);"))
 		goto out;
 
@@ -732,7 +732,7 @@ nsdb_new_nsdbname(sqlite3 *db, const nsdb_t host)
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -759,7 +759,7 @@ nsdb_update_nsdbname(sqlite3 *db, const nsdb_t host,
 	int rc;
 
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "UPDATE nsdbs "
+	if (!nsdb_prepare_stmt(db, &stmt, "UPDATE nsdbs "
 			" SET securityType=?,securityFilename=?"
 			"WHERE nsdbName=? and nsdbPort=?;"))
 		goto out;
@@ -805,7 +805,7 @@ nsdb_update_nsdbname(sqlite3 *db, const nsdb_t host,
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -829,7 +829,7 @@ nsdb_update_nsdb_default_binddn(sqlite3 *db, const nsdb_t host,
 	int rc;
 
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "UPDATE nsdbs SET defaultBindDN=?"
+	if (!nsdb_prepare_stmt(db, &stmt, "UPDATE nsdbs SET defaultBindDN=?"
 			" WHERE nsdbName=? and nsdbPort=?;"))
 		goto out;
 
@@ -867,7 +867,7 @@ nsdb_update_nsdb_default_binddn(sqlite3 *db, const nsdb_t host,
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -891,7 +891,7 @@ nsdb_update_nsdb_default_nce(sqlite3 *db, const nsdb_t host,
 	int rc;
 
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "UPDATE nsdbs SET defaultNCE=?"
+	if (!nsdb_prepare_stmt(db, &stmt, "UPDATE nsdbs SET defaultNCE=?"
 			" WHERE nsdbName=? and nsdbPort=?;"))
 		goto out;
 
@@ -929,7 +929,7 @@ nsdb_update_nsdb_default_nce(sqlite3 *db, const nsdb_t host,
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -953,7 +953,7 @@ nsdb_update_nsdb_follow_referrals(sqlite3 *db, const nsdb_t host,
 	int rc;
 
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "UPDATE nsdbs SET followReferrals=?"
+	if (!nsdb_prepare_stmt(db, &stmt, "UPDATE nsdbs SET followReferrals=?"
 			" WHERE nsdbName=? and nsdbPort=?;"))
 		goto out;
 
@@ -991,7 +991,7 @@ nsdb_update_nsdb_follow_referrals(sqlite3 *db, const nsdb_t host,
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -1018,7 +1018,7 @@ nsdb_delete_nsdbname(sqlite3 *db, const nsdb_t host)
 	 * same whether there was a matching row or not.
 	 */
 	retval = FEDFS_ERR_IO;
-	if (!fedfs_prepare_stmt(db, &stmt, "DELETE FROM nsdbs "
+	if (!nsdb_prepare_stmt(db, &stmt, "DELETE FROM nsdbs "
 				"WHERE nsdbName=? and nsdbPort=?;"))
 		goto out;
 
@@ -1049,7 +1049,7 @@ nsdb_delete_nsdbname(sqlite3 *db, const nsdb_t host)
 	}
 
 out_finalize:
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 out:
 	return retval;
 }
@@ -1072,7 +1072,7 @@ nsdb_read_nsdbparams(nsdb_t host, struct fedfs_secdata *sec)
 	sqlite3 *db;
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READONLY);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READONLY);
 	if (db == NULL)
 		goto out;
 
@@ -1096,7 +1096,7 @@ nsdb_read_nsdbparams(nsdb_t host, struct fedfs_secdata *sec)
 	retval = FEDFS_OK;
 
 out_close:
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 out:
 	return retval;
 }
@@ -1167,7 +1167,7 @@ nsdb_update_nsdbparams(nsdb_t host, const struct fedfs_secdata *sec)
 	}
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
 	if (db == NULL) {
 		free(certfile);
 		goto out;
@@ -1190,7 +1190,7 @@ nsdb_update_nsdbparams(nsdb_t host, const struct fedfs_secdata *sec)
 	retval = FEDFS_OK;
 
 out_close:
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 out:
 	return retval;
 }
@@ -1241,13 +1241,13 @@ nsdb_update_default_binddn(const char *hostname, const unsigned short port,
 		return retval;
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
 	if (db == NULL)
 		goto out;
 
 	retval = nsdb_update_nsdb_default_binddn(db, host, binddn);
 
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 out:
 	nsdb_free_nsdb(host);
 	return retval;
@@ -1274,13 +1274,13 @@ nsdb_update_default_nce(const char *hostname, const unsigned short port,
 		return retval;
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
 	if (db == NULL)
 		goto out;
 
 	retval = nsdb_update_nsdb_default_nce(db, host, nce);
 
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 out:
 	nsdb_free_nsdb(host);
 	return retval;
@@ -1307,13 +1307,13 @@ nsdb_update_follow_referrals(const char *hostname, const unsigned short port,
 		return retval;
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
 	if (db == NULL)
 		goto out;
 
 	retval = nsdb_update_nsdb_follow_referrals(db, host, follow_referrals);
 
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 out:
 	nsdb_free_nsdb(host);
 	return retval;
@@ -1335,7 +1335,7 @@ nsdb_delete_nsdbparams(nsdb_t host)
 			__func__, host->fn_hostname);
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
 	if (db == NULL)
 		goto out;
 
@@ -1346,7 +1346,7 @@ nsdb_delete_nsdbparams(nsdb_t host)
 	retval = FEDFS_OK;
 
 out_close:
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 out:
 	return retval;
 }
@@ -1368,7 +1368,7 @@ nsdb_enumerate_nsdbs(char ***nsdblist)
 	sqlite3 *db;
 
 	retval = FEDFS_ERR_IO;
-	db = fedfs_open_db(fedfs_db_filename, SQLITE_OPEN_READONLY);
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READONLY);
 	if (db == NULL)
 		goto out_close;
 
@@ -1430,7 +1430,7 @@ nsdb_enumerate_nsdbs(char ***nsdblist)
 out_free:
 	sqlite3_free_table(resultp);
 out_close:
-	fedfs_close_db(db);
+	nsdb_close_db(db);
 	return retval;
 }
 

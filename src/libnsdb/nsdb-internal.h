@@ -115,15 +115,15 @@ FedFsStatus	 nsdb_right_append_rdn(LDAPDN *dn, LDAPRDN rdn,
 /**
  ** Private sqlite-related APIs (sqlite.c)
  **/
-sqlite3		*fedfs_open_db(const char *db_filename, int flags);
-void		 fedfs_close_db(sqlite3 *db);
-_Bool		 fedfs_prepare_stmt(sqlite3 *db, sqlite3_stmt **stmt,
+sqlite3		*nsdb_open_db(const char *db_filename, int flags);
+void		 nsdb_close_db(sqlite3 *db);
+_Bool		 nsdb_prepare_stmt(sqlite3 *db, sqlite3_stmt **stmt,
 				const char *sql);
-void		 fedfs_finalize_stmt(sqlite3_stmt *stmt);
-_Bool		 fedfs_begin_transaction(sqlite3 *db);
-void		 fedfs_end_transaction(sqlite3 *db);
-void		 fedfs_rollback_transaction(sqlite3 *db);
-_Bool		 fedfs_create_table(sqlite3 *db, const char *table_name,
+void		 nsdb_finalize_stmt(sqlite3_stmt *stmt);
+_Bool		 nsdb_begin_transaction(sqlite3 *db);
+void		 nsdb_end_transaction(sqlite3 *db);
+void		 nsdb_rollback_transaction(sqlite3 *db);
+_Bool		 nsdb_create_table(sqlite3 *db, const char *table_name,
 				const char *table_def);
 
 #endif	/* !_FEDFS_NSDB_INTERNAL_H_ */

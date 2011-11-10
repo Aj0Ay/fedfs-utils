@@ -50,7 +50,7 @@
  * @return pointer to an open sqlite3 db handle, or NULL
  */
 sqlite3 *
-fedfs_open_db(const char *db_filename, int flags)
+nsdb_open_db(const char *db_filename, int flags)
 {
 	sqlite3 *db;
 	int rc;
@@ -85,7 +85,7 @@ fedfs_open_db(const char *db_filename, int flags)
  * @param db pointer to an sqlite3 database handle
  */
 void
-fedfs_close_db(sqlite3 *db)
+nsdb_close_db(sqlite3 *db)
 {
 	int rc;
 
@@ -108,7 +108,7 @@ fedfs_close_db(sqlite3 *db)
  * @return true if statement was prepared, otherwise false
  */
 _Bool
-fedfs_prepare_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char *sql)
+nsdb_prepare_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char *sql)
 {
 	int rc;
 
@@ -128,7 +128,7 @@ fedfs_prepare_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char *sql)
  * @param stmt pointer to sqlite3 statement handle to free
  */
 void
-fedfs_finalize_stmt(sqlite3_stmt *stmt)
+nsdb_finalize_stmt(sqlite3_stmt *stmt)
 {
 	sqlite3 *db = sqlite3_db_handle(stmt);
 	int rc;
@@ -152,7 +152,7 @@ fedfs_finalize_stmt(sqlite3_stmt *stmt)
  * @return true if the transaction was started; otherwise FALSE 
  */
 _Bool
-fedfs_begin_transaction(sqlite3 *db)
+nsdb_begin_transaction(sqlite3 *db)
 {
 	char *err_msg;
 	int rc;
@@ -175,7 +175,7 @@ fedfs_begin_transaction(sqlite3 *db)
  * @param db pointer to an sqlite3 database handle
  */
 void
-fedfs_end_transaction(sqlite3 *db)
+nsdb_end_transaction(sqlite3 *db)
 {
 	char *err_msg;
 	int rc;
@@ -197,7 +197,7 @@ fedfs_end_transaction(sqlite3 *db)
  * @param db pointer to an sqlite3 database handle
  */
 void
-fedfs_rollback_transaction(sqlite3 *db)
+nsdb_rollback_transaction(sqlite3 *db)
 {
 	char *err_msg;
 	int rc;
@@ -224,7 +224,7 @@ fedfs_rollback_transaction(sqlite3 *db)
  * NB: Do not pass untrusted strings to this function!
  */
 _Bool
-fedfs_create_table(sqlite3 *db, const char *table_name, const char *table_def)
+nsdb_create_table(sqlite3 *db, const char *table_name, const char *table_def)
 {
 	sqlite3_stmt *stmt;
 	char *sql;
@@ -256,10 +256,10 @@ fedfs_create_table(sqlite3 *db, const char *table_name, const char *table_def)
 	if (rc != SQLITE_DONE) {
 		xlog(L_ERROR, "Failed to create %s table: %s",
 			table_name, sqlite3_errmsg(db));
-		fedfs_finalize_stmt(stmt);
+		nsdb_finalize_stmt(stmt);
 		return false;
 	}
-	fedfs_finalize_stmt(stmt);
+	nsdb_finalize_stmt(stmt);
 
 	xlog(D_CALL, "Created table %s successfully", table_name);
 	return true;
