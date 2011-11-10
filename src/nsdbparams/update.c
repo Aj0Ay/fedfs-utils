@@ -93,6 +93,44 @@ nsdbparams_update_usage(const char *progname)
 }
 
 /**
+ * Ping NSDB server
+ *
+ * @param nsdbname NUL-terminated C string containing DNS hostname of NSDB
+ * @param nsdbport port number of NSDB
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_test_nsdb(const char *nsdbname, unsigned short nsdbport)
+{
+	unsigned int ldap_err;
+	FedFsStatus retval;
+
+	printf("Pinging NSDB %s:%u...\n", nsdbname, nsdbport);
+	fflush(stdout);
+
+	retval = nsdb_ping_s(nsdbname, nsdbport, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		xlog(D_GENERAL, "%s:%u passed ping test", nsdbname, nsdbport);
+		break;
+	case FEDFS_ERR_NSDB_NONCE:
+		xlog(L_WARNING, "Warning: %s:%u is not an NSDB: %s",
+			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
+		retval = FEDFS_OK;
+		break;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		xlog(L_WARNING, "Failed to ping NSDB %s:%u: %s",
+			nsdbname, nsdbport, ldap_err2string(ldap_err));
+		retval = FEDFS_OK;
+		break;
+	default:
+		xlog(L_ERROR, "Failed to ping NSDB %s:%u: %s",
+			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
+	}
+	return retval;
+}
+
+/**
  * Parse FedFS security type
  *
  * @param arg NUL-terminated string containing input argument
@@ -150,11 +188,11 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 		.type		= type,
 	};
 	int arg, follow_referrals;
-	unsigned int ldap_err;
 	FedFsStatus retval;
 	unsigned long tmp;
 	struct passwd *pw;
 	struct group *grp;
+	nsdb_t host;
 	uid_t uid;
 	gid_t gid;
 	int rc;
@@ -304,19 +342,21 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 	if (!nsdb_init_database())
 		goto out;
 
-	printf("Pinging NSDB %s:%u...", nsdbname, nsdbport);
-	retval = nsdb_ping_s(nsdbname, nsdbport, &ldap_err);
+	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (retval) {
 	case FEDFS_OK:
-		xlog(D_GENERAL, "%s:%u passed ping test", nsdbname, nsdbport);
+		nsdb_free_nsdb(host);
 		break;
-	case FEDFS_ERR_NSDB_LDAP_VAL:
-		xlog(L_WARNING, "Failed to ping NSDB %s:%u: %s",
-			nsdbname, nsdbport, ldap_err2string(ldap_err));
+	case FEDFS_ERR_NSDB_PARAMS:
+		retval = nsdb_test_nsdb(nsdbname, nsdbport);
+		if (retval != FEDFS_OK)
+			goto out;
 		break;
 	default:
-		xlog(L_WARNING, "Warning: %s:%u is not an NSDB: %s",
+		xlog(L_ERROR, "Failed to access NSDB "
+			"connection parameter database: %s",
 			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
+		goto out;
 	}
 
 	if (type != FEDFS_SEC_NONE) {
@@ -341,7 +381,6 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 		printf("NSDB list was updated successfully.\n");
 		rc = EXIT_SUCCESS;
 	}
-
 	free(secdata.data);
 
 	if (binddn != NULL)
