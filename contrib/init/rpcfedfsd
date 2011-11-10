@@ -3,8 +3,7 @@
 # rpcfedfsd     Start up and shut down FedFS admin service
 #
 # chkconfig: 345 19 83
-# description: Starts user-level daemon for NFSv4 that handles \
-#              FedFS administrative requests
+# description: Starts user-level daemon that handles FedFS administrative requests
 
 ### BEGIN INIT INFO
 # Provides: rpcfedfsd
@@ -12,10 +11,9 @@
 # Required-Stop: $network $syslog
 # Default-Start: 3 4 5
 # Default-Stop: 0 1 6
-# Short-Description: Starts the NFSv4 fedfsd daemon
-# Description: NFS is a popular protocol for file sharing across \
-#          networks. This daemon processes FedFS administrative \
-#          requests on NFSv4 exports.
+# Short-Description: Starts the rpc.fedfsd daemon
+# Description: Starts daemon that processes FedFS administrative \
+#          requests shared file system exports.
 ### END INIT INFO
 
 ##
