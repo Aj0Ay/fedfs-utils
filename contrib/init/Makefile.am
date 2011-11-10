@@ -1,6 +1,6 @@
 ##
-## @file contrib/init-scripts/Makefile.am
-## @brief Process this file with automake to produce contrib/init-scripts/Makefile.in
+## @file contrib/init/Makefile.am
+## @brief Process this file with automake to produce contrib/init/Makefile.in
 ##
 
 ##

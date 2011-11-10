@@ -54,7 +54,7 @@ case "$1" in
   start|condstart)
 	# Check that networking is up.
 	[ "${NETWORKING}" != "yes" ] && exit 6
-	
+
 	[ ! -x /usr/sbin/rpc.fedfsd ] && exit 5
 
 	# Only root can start the service
