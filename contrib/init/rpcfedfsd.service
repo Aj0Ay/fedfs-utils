@@ -1,0 +1,29 @@
+##
+## Copyright 2011 Red Hat.  All rights reserved.
+##
+## rpcfedfsd.service is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License version 2.0 as
+## published by the Free Software Foundation.
+##
+## rpcfedfsd.service is distributed in the hope that it will be useful, but
+## WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License version 2.0 for more details.
+##
+## A copy of the GNU General Public License version 2.0 is
+## available here:
+##
+##      http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+##
+
+[Unit]
+Description=FedFS administrative service daemon
+After=syslog.target
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/fedfs
+ExecStart=/usr/sbin/rpc.fedfsd $RPCFEDFSDARGS
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
