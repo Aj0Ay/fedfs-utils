@@ -23,7 +23,7 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
-EXTRA_DIST		= rpcfedfsd
+EXTRA_DIST		= fedfs rpcfedfsd
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

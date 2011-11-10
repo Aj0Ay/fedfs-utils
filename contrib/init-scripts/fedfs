@@ -1,0 +1,11 @@
+# /etc/sysconfig/fedfs
+#
+# This configuration file controls the behavior of the rpc.fedfsd
+# daemon, part of the fedfs-utils package.  For the vast majority
+# of users, there shouldn't be any need to alter the contents of
+# this file at all.
+
+#
+# Optional arguments passed to rpc.fedfsd.  See rpc.fedfsd(8)
+#
+#RPCFEDFSDARGS="--debug --uid 501 --gid 501 --port 45678"
