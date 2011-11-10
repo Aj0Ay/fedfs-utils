@@ -34,7 +34,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Automake and libtools initialization
 LT_INIT
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall -Werror silent-rules])
 
 # configure command line options
 AC_ARG_WITH([fedfsuser],

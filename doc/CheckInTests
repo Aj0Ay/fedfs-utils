@@ -82,11 +82,13 @@ This is basic stuff that's easy to run, and should be working for
 bisecting to be useful.
 
  1.  "autogen.sh" and "configure" must run without error
- 2.  "make" must complete without error; No new compiler warnings
+ 2.  "./configure --enable-silent-rules; make -s" must complete without
+     error, and without new compiler warnings
  3.  "make doxy" must complete with no errors or warnings
  4.  "make distcheck" must complete without error
  5.  "git status" must produce no output on a clean tree
  6.  "git log -p" shows no new white space damage
+ 7.  "git clean -d -f -x" does not break anything
 
 Note that to preserve bisectability, the tree MUST build after each
 commit.
