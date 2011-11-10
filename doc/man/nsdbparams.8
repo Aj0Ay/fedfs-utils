@@ -27,9 +27,50 @@
 .SH NAME
 nsdbparams \- manage local NSDB connection parameter database
 .SH SYNOPSIS
-.B nsdbparams
-.IR subcommand " ["
-.IR options " ]"
+.B nsdbparams delete
+.RB [ \-?d ]
+.RB [ \-g
+.IR gid ]
+.RB [ \-r
+.IR nsdbport ]
+.RB [ \-u
+.IR uid ]
+.I nsdbname
+.P
+.B nsdbparams list
+.RB [ \-?d ]
+.RB [ \-u
+.IR uid ]
+.RB [ \-g
+.IR gid ]
+.P
+.B nsdbparams show
+.RB [ \-?d ]
+.RB [ \-g
+.IR gid ]
+.RB [ \-r
+.IR nsdbport ]
+.RB [ \-u
+.IR uid ]
+.I nsdbname
+.P
+.B nsdbparams update
+.RB [ \-?dR ]
+.RB [ \-D
+.IR def-binddn ]
+.RB [ \-e
+.IR def-nce ]
+.RB [ \-f
+.IR certfile ]
+.RB [ \-g
+.IR gid ]
+.RB [ \-r
+.IR nsdbport ]
+.RB [ \-t
+.IR sectype ]
+.RB [ \-u
+.IR uid ]
+.I nsdbname
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -44,10 +85,11 @@ on one or more LDAP servers.
 These servers are known as
 .IR "namespace databases" ,
 or NSDBs, for short.
-A local NSDB connection parameter database is used
-to remember connection parameters for each NSDB
-during FedFS server-side operations
-and when executing FedFS administrative commands.
+On systems that contact NSDBs,
+a local database stores connection parameters for each NSDB.
+These connection parameters are used during FedFS server-side operations
+that access NSDBs,
+and when executing NSDB administrative commands.
 .SH DESCRIPTION
 The
 .BR nsdbparams (8)
@@ -58,35 +100,44 @@ such as the preferred bind DN and the location of the
 NSDB container entry,
 for each NSDB the local system knows about.
 .P
-Note that some NSDB connection parameters
-are also remotely accessible via
+Some NSDB connection parameters are also remotely accessible via
 .BR rpc.fedfsd (8).
 The
 .BR nsdbparams (8)
-command allows complete access to the local system's NSDB database,
+command allows complete access to the local system's NSDB database
 including access to some parameters which are not accessible to clients of
 .BR rpc.fedfsd (8).
 .P
+Typically
+.BR rpc.fedfsd (8)
+runs only on FedFS-enabled file servers.
 FedFS administrators can manage NSDB connection parameters with
 .BR nsdbparams (8)
 on a system that is not running
-.BR rpc.fedfsd (8)
-(say, on a system that is acting as a FedFS administrative client,
-but not as a FedFS-enabled file server).
+.BR rpc.fedfsd (8),
+such as a system that is acting only as a FedFS administrative client.
+Connection parameters for NSDBs must be stored
+in the local NSDB connection parameter database
+before FedFS junction resolution and
+NSDB administrative commands can work.
 .SS Operation
-The NSDB connection parameter database is typically stored
-in a directory that is owned by a special UID and GID.
+The NSDB connection parameter database is stored
+in a directory
+(typically
+.IR @statedir )
+that is owned by a special UID and GID.
 Therefore, this command must be run as root.
 During operation,
 .BR nsdbparams (8)
 drops its root privileges,
 running as the special user and group instead.
-The default value of the special IDs are determined when
+.P
+The default value of these special IDs is determined when
 .BR nsdbparams (8)
-is built, but can also be specified at run time using the
-.B --uid
+is built.  They can also be specified at run time using the
+.B \-\-uid
 or
-.B --gid
+.B \-\-gid
 command line options.
 .P
 When executing a subcommand,
@@ -95,128 +146,143 @@ verifies that the local NSDB connection parameter database exists
 and is accessible.
 If it does not exist,
 .BR nsdbparams (8)
-attempts to create the connection parameter database.
+attempts to create and initialize a new connection parameter database.
 If it cannot, the subcommand fails.
 .SS Subcommands
-Valid subcommands are:
+Valid
+.BR nsdbparams (8)
+subcommands are:
 .IP "\fBdelete\fP"
-Remove the entry for the specified NSDB.
+Remove the connection parameters for the specified NSDB
+from the local NSDB connection parameter database.
 If this subcommand succeeds,
-subsequent access of the specified NSDB on the local system fails.
+subsequent attempts to access the specified NSDB on the local system fail.
 .IP "\fBlist\fP"
-Display a list of all entries in the local NSDB connection parameter database.
-An abbreviated form of the parameters are shown for each NSDB.
+Display a list of all NSDBs in the local NSDB connection parameter database.
+An abbreviated form of the connection parameters for each known NSDB
+are shown.
+This subcommand does not take an NSDB domain name parameter.
 .IP "\fBupdate\fP"
-Update the entry for the specified NSDB.
+Update the connection parameters for the specified NSDB
+in the local NSDB connection parameter database.
 Use this subcommand to
 add a new entry for an NSDB to the local connection parameter database,
 or to modify an existing entry in the database.
 .IP "\fBshow\fP"
-Display the entry for the specified NSDB.
-This subcommand displays all known local settings for the specified NSDB.
+Display the recorded connection parameters for the specified NSDB.
+This subcommand displays all known settings for the specified NSDB
+stored in the local NSDB connection parameter database.
 .P
-The NSDB domain name and the port number (see below)
-are used as the primary key to identify an entry in the NSDB
+The NSDB domain name and IP port number pair
+are used as the primary key to identify an NSDB to the NSDB
 connection parameter database.
 The subcommands
 .BR delete ,
 .BR update ", and"
 .B show
-require that the
-.I -l
-option be specified.
-The NSDB port number assumes a default value, and thus is optional.
+require that an NSDB domain name be specified as a positional parameter.
+If no NSDB port number is provided on the command line, the
+.BR nsdbparams (8)
+command uses the default LDAP port (389).
 .P
 The database matches NSDB domain names and ports by exact value.
-In other words,
-if two unique domain names point
+If two unique domain names point
 to the IP address of the same physical NSDB,
-they are still considered separate entries
+they are considered separate entries
 in the local NSDB connection parameter database.
 .SS Command line options
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during subcommand operation.
+This option is valid for all subcommands.
 .IP "\fB\-D, \-\-binddn=\fIbind-DN\fP"
 Specifies the default LDAP distinguished name to use
-when binding to the specified NSDB during administrative operations.
+when binding to the specified NSDB for administrative operations.
+This option is valid for the
+.B update
+subcommand.
 .IP "\fB-e, \-\-nce=\fINCE-DN\fP"
 Specifies the default LDAP distinguished name of the NSDB container entry
-for the specified NSDB during administrative operations.
+for the specified NSDB for administrative operations.
+This option is valid for the
+.B update
+subcommand.
 .IP "\fB-f, \-\-certfile=\fIpathname\fP"
 Specifies the pathname of a local file containing the X.509 certificate
-to use for establishing a TLS connection with the specified NSDB.
+to establish a TLS connection with the specified NSDB.
 The
 .BR nsdbparams (8)
-command copies the certificate to a private directory.
-The specified file may be deleted if the subcommand succeeds.
+command copies the specified certificate to a private directory.
+The specified file can be deleted after the subcommand succeeds.
+This option is valid for the
+.B update
+subcommand.
 .IP "\fB\-g, \-\-gid=\fIid\fP"
-Specifies the numeric or text GID that
-.BR rpc.fedfsd (8)
-runs under after dropping root privileges.
+Specifies the numeric or text GID that the
+.BR nsdbparams (8)
+command runs as after dropping root privileges.
 By default, the GID for the group
 .I @fedfsuser@
 is used.
 If that group doesn't exist, then the GID for
 .I nobody
 is used instead.
+This option is valid for all subcommands.
 .IP "\fB\-?, \-\-help"
-Prints
+Displays
 .BR nsdbparams (8)
-version and usage message on
-.IR stderr ,
-then exits.
-.IP "\fB\-l, \-\-nsdbname=\fINSDB-domain-name\fP"
-Specifies the domain name of the NSDB.
-This and the port number are used as the primary key for matching
-NSDB connection parameters in this database.
+version information and a subcommand usage message on
+.IR stderr .
+This option is valid for all subcommands.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the IP port for the specified NSDB.
-This and the NSDB domain name are used as the primary key for matching
-NSDB connection parameters in this database.
 The default value if this option is not specified is 389.
+This option is valid for any subcommand that requires an
+NSDB domain name to be specified.
 .IP "\fB\-R, \-\-referral=\fP[\fByes\fP|\fBno\fP]"
 Specifies whether or not the local system should follow LDAP referrals
 received from the specified NSDB.
+This option is valid for the
+.B update
+subcommand.
 .IP "\fB\-t, \-\-sectype=\fIsecurity-type\fP"
 Specifies the FedFS connection security type to use when connecting
 to the specified NSDB.  Valid values for
 .I security-type
 are
 .BR 0 ,
+.BR none ,
 .BR FEDFS_SEC_NONE ,
 .BR 1 ,
+.BR tls ,
 or
 .BR FEDFS_SEC_TLS .
+This option is valid for the
+.B update
+subcommand.
 .IP "\fB\-u, \-\-uid=\fIid\fP"
 Specifies the numeric or text UID that
-.BR rpc.fedfsd (8)
-runs under after dropping root privileges.
+.BR nsdbparams (8)
+runs as after dropping root privileges.
 By default, the UID for the user
 .I @fedfsuser@
 is used.
 If that user doesn't exist, then the UID for
 .I nobody
 is used instead.
+This option is valid for all subcommands.
 .SH EXAMPLES
-On systems that act only as FedFS administrative clients,
-connection parameters for NSDBs must be stored
-in the local NSDB connection parameter database
-before FedFS administrative commands can work.
-.P
-For example, if there is an NSDB in the
-.I example.net
-domain called
+If there is an NSDB called
 .IR nsdb.example.net ,
 the first command you might issue on a new administrative client might be:
 .RS
 .sp
-sudo nsdbparams update --nsdbname=nsdb.example.net
+# nsdbparams update nsdb.example.net
 .sp
 .RE
-You can view the new entry with
+You can view the new connection parameter entry with
 .RS
 .sp
-sudo nsdbparams show --nsdbname=nsdb.example.net
+# nsdbparams show nsdb.example.net
 .sp
 .RE
 The result of this command would look like:
@@ -232,15 +298,25 @@ nsdb.example.net:389:
 To set up TLS security, use the
 .B update
 subcommand and specify the
-.I --sectype
+.B \-\-sectype
 and
-.I --certfile
+.B \-\-certfile
 options.
+For instance, if an X.509 certificate for
+.I nsdb.example.net
+were contained in a local file called
+.IR /tmp/nsdb.pem ,
+you might use:
+.RS
+.sp
+# nsdbparams update -t tls -f /tmp/nsdb.pem nsdb.example.net
+.sp
+.RE
 To switch from TLS security back to no connection security for this NSDB,
 you might use:
 .RS
 .sp
-sudo nsdbparams update --nsdbparams=nsdb.example.net --sectype FEDFS_SEC_NONE
+# nsdbparams update nsdb.example.net -t none
 .SH FILES
 .TP
 .I @statedir@/nsdbparam.sqlite3

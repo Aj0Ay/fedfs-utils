@@ -4,7 +4,7 @@
 ##
 
 ##
-## Copyright 2010 Oracle.  All rights reserved.
+## Copyright 2010, 2011 Oracle.  All rights reserved.
 ##
 ## This file is part of fedfs-utils.
 ##
@@ -23,8 +23,9 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
+noinst_HEADERS		= nsdbparams.h
 sbin_PROGRAMS		= nsdbparams
-nsdbparams_SOURCES	= main.c
+nsdbparams_SOURCES	= delete.c list.c main.c show.c update.c
 LDADD			= $(LIBLDAP) $(LIBLBER) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \

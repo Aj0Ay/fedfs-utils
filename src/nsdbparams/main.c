@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright 2010 Oracle.  All rights reserved.
+ * Copyright 2010, 2011 Oracle.  All rights reserved.
  *
  * This file is part of fedfs-utils.
  *
@@ -33,47 +33,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <getopt.h>
 #include <locale.h>
-#include <netdb.h>
-#include <pwd.h>
 #include <grp.h>
 
-#include <uuid/uuid.h>
 #include <langinfo.h>
 
 #include "fedfs.h"
 #include "nsdb.h"
-#include "junction.h"
 #include "xlog.h"
 #include "gpl-boiler.h"
-
-/**
- * Short form command line options
- */
-static const char nsdbparams_opts[] = "?dD:e:g:l:r:R:f:t:u:";
-
-/**
- * Long form command line options
- */
-static const struct option nsdbparams_longopts[] = {
-	{ "binddn", 1, NULL, 'D', },
-	{ "certfile", 1, NULL, 'f', },
-	{ "debug", 0, NULL, 'd', },
-	{ "gid", 1, NULL, 'g', },
-	{ "help", 0, NULL, '?', },
-	{ "nce", 1, NULL, 'e', },
-	{ "nsdbname", 1, NULL, 'l', },
-	{ "nsdbport", 1, NULL, 'r', },
-	{ "referral", 1, NULL, 'R', },
-	{ "sectype", 1, NULL, 't', },
-	{ "uid", 1, NULL, 'u', },
-	{ NULL, 0, NULL, 0, },
-};
+#include "nsdbparams.h"
 
 /**
  * Display program synopsis
@@ -84,13 +55,15 @@ static void
 nsdbparams_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s: version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ COMMAND [ ARGUMENTS ]]\n\n", progname);
+	fprintf(stderr, "Usage: %s SUBCOMMAND [ ARGUMENTS ]\n\n", progname);
 
-	fprintf(stderr, "COMMAND is one of:\n");
+	fprintf(stderr, "SUBCOMMAND is one of:\n");
 	fprintf(stderr, "\tdelete     Delete connection parameters\n");
 	fprintf(stderr, "\tlist       Enumerate the store\n");
-	fprintf(stderr, "\tupdate     Update connection parameters\n");
 	fprintf(stderr, "\tshow       Show connection parameters for one NSDB\n");
+	fprintf(stderr, "\tupdate     Update connection parameters\n");
+
+	fprintf(stderr, "\nUse \"%s SUBCOMMAND -?\" for details.\n", progname);
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 }
@@ -104,7 +77,7 @@ nsdbparams_usage(const char *progname)
  *
  * Set our effective UID and GID to that of our on-disk cert database.
  */
-static _Bool
+_Bool
 nsdbparams_drop_privileges(const uid_t uid, const gid_t gid)
 {
 	(void)umask(S_IWGRP | S_IWOTH);
@@ -143,277 +116,6 @@ nsdbparams_drop_privileges(const uid_t uid, const gid_t gid)
 }
 
 /**
- * Parse FedFS security type
- *
- * @param arg NUL-terminated string containing input argument
- * @param type OUT: numeric FedFS security type value
- * @return false if could not parse security type
- */
-static _Bool
-nsdbparams_sectype(const char *arg, unsigned int *type)
-{
-	unsigned long tmp;
-	char *endptr;
-
-	errno = 0;
-	tmp = strtoul(arg, &endptr, 10);
-	if (errno != 0 || *endptr != '\0')
-		goto try_symbolic;
-	switch (tmp) {
-	case FEDFS_SEC_NONE:
-	case FEDFS_SEC_TLS:
-		*type = tmp;
-		return true;
-	}
-try_symbolic:
-	if (strcasecmp(arg, "FEDFS_SEC_NONE") == 0) {
-		*type = FEDFS_SEC_NONE;
-		return true;
-	} else if (strcasecmp(arg, "FEDFS_SEC_TLS") == 0) {
-		*type = FEDFS_SEC_TLS;
-		return true;
-	}
-	return false;
-}
-
-/**
- * Delete an NSDB entry in our NSDB connection parameter database
- *
- * @param progname NUL-terminated UTF-8 string containing name of this program
- * @param nsdbname NUL-terminated UTF-8 string containing DNS hostname of target NSDB
- * @param nsdbport IP port number of target NSDB
- * @return a program exit code
- */
-static int
-nsdbparams_delete(const char *progname, const char *nsdbname,
-		const unsigned short nsdbport)
-{
-	FedFsStatus status;
-	nsdb_t host;
-
-	if (nsdbname == NULL) {
-		xlog(L_ERROR, "Missing required command line argument\n");
-		nsdbparams_usage(progname);
-		return EXIT_FAILURE;
-	}
-
-	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
-	switch (status) {
-	case FEDFS_OK:
-		nsdb_free_nsdb(host);
-		status = nsdb_delete_nsdb(nsdbname, nsdbport);
-		if (status != FEDFS_OK) {
-			xlog(L_ERROR, "nsdb_delete_nsdb returned %s",
-				nsdb_display_fedfsstatus(status));
-			return EXIT_FAILURE;
-		}
-		printf("%s:%u was deleted successfully\n", nsdbname, nsdbport);
-		break;
-	case FEDFS_ERR_NSDB_PARAMS:
-		xlog(L_ERROR, "No record for %s:%u was found",
-			nsdbname, nsdbport);
-		break;
-	default:
-		xlog(L_ERROR, "nsdb_lookup_nsdb returned %s",
-			nsdb_display_fedfsstatus(status));
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
-}
-
-/**
- * List all entries in our NSDB connection parameter database
- *
- * @return a program exit code
- */
-static int
-nsdbparams_list(void)
-{
-	FedFsStatus status;
-	unsigned int i;
-	char **list;
-
-	status = nsdb_enumerate_nsdbs(&list);
-	switch (status) {
-	case FEDFS_OK:
-		for (i = 0; list[i] != NULL; i++)
-			printf("\t%s\n", list[i]);
-		nsdb_free_string_array(list);
-		break;
-	case FEDFS_ERR_NSDB_PARAMS:
-		printf("The NSDB list is empty.\n");
-		break;
-	default:
-		xlog(L_ERROR, "fedfs_enumerate_nsdbs returned %s",
-			nsdb_display_fedfsstatus(status));
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
-}
-
-/**
- * Update an NSDB entry in our NSDB connection parameter database
- *
- * @param progname NUL-terminated UTF-8 string containing name of this program
- * @param nsdbname NUL-terminated UTF-8 string containing DNS hostname of target NSDB
- * @param nsdbport IP port number of target NSDB
- * @param type new FEDFS_SEC value for target NSDB
- * @param certfile NUL-terminated UTF-8 string containing filename of X.509 cert
- * @param binddn NUL-terminated UTF-8 string containing admin bind DN of target NSDB
- * @param nce NUL-terminated UTF-8 string containing default NCE of target NSDB
- * @param follow_referrals 0 means do not set; 1 means set to false; 2 means set to true
- * @return a program exit code
- */
-static int
-nsdbparams_update(const char *progname, const char *nsdbname,
-		const unsigned short nsdbport, const unsigned int type,
-		const char *certfile, const char *binddn,
-		const char *nce, const _Bool follow_referrals)
-{
-	struct fedfs_secdata secdata = {
-		.type		= type,
-	};
-	unsigned int ldap_err;
-	FedFsStatus retval;
-	int rc;
-
-	rc = EXIT_FAILURE;
-
-	if (nsdbname == NULL) {
-		xlog(L_ERROR, "Missing required command line argument\n");
-		nsdbparams_usage(progname);
-		goto out;
-	}
-
-	retval = nsdb_ping_s(nsdbname, nsdbport, &ldap_err);
-	switch (retval) {
-	case FEDFS_OK:
-		xlog(D_GENERAL, "%s:%u passed ping test", nsdbname, nsdbport);
-		break;
-	case FEDFS_ERR_NSDB_LDAP_VAL:
-		xlog(D_GENERAL, "Failed to ping NSDB %s:%u: %s\n",
-			nsdbname, nsdbport, ldap_err2string(ldap_err));
-		break;
-	default:
-		xlog(L_ERROR, "Warning: %s:%u is not an NSDB: %s",
-			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
-	}
-
-	if (type != FEDFS_SEC_NONE) {
-		if (certfile == NULL) {
-			xlog(L_ERROR, "Missing required command line argument\n");
-			nsdbparams_usage(progname);
-			goto out;
-		}
-
-		if (nsdb_read_certfile(certfile, &secdata.data,
-				&secdata.len) != FEDFS_OK) {
-			xlog(L_ERROR, "Failed to read certfile\n");
-			goto out;
-		}
-	}
-
-	/*
-	 * Ensure entry for this NSDB exists before trying to
-	 * update bind DN, NCE, and referral flags for it.
-	 */
-	if (nsdb_update_nsdb(nsdbname, nsdbport, &secdata) == FEDFS_OK) {
-		printf("NSDB list was updated successfully.\n");
-		rc = EXIT_SUCCESS;
-	}
-
-	free(secdata.data);
-
-	if (binddn != NULL)
-		if (nsdb_update_default_binddn(nsdbname, nsdbport,
-						binddn) != FEDFS_OK) {
-			rc = EXIT_FAILURE;
-			goto out;
-		}
-
-	if (nce != NULL)
-		if (nsdb_update_default_nce(nsdbname, nsdbport,
-						nce) != FEDFS_OK) {
-			rc = EXIT_FAILURE;
-			goto out;
-		}
-	if (follow_referrals != 0) {
-		_Bool follow = follow_referrals == 2 ? true : false;
-		if (nsdb_update_follow_referrals(nsdbname, nsdbport,
-						follow) != FEDFS_OK) {
-			rc = EXIT_FAILURE;
-			goto out;
-		}
-	}
-
-out:
-	return rc;
-}
-
-/**
- * Show one NSDB entry in our NSDB connection parameter database
- *
- * @param progname NUL-terminated UTF-8 string containing name of this program
- * @param nsdbname NUL-terminated UTF-8 string containing DNS hostname of target NSDB
- * @param nsdbport IP port number of target NSDB
- * @return a program exit code
- */
-static int
-nsdbparams_show(const char *progname, const char *nsdbname,
-		const unsigned short nsdbport)
-{
-	struct fedfs_secdata secdata = {
-		.type		= 0,
-	};
-	FedFsStatus status;
-	nsdb_t host;
-	char *tmp;
-	int rc;
-
-	rc = EXIT_FAILURE;
-
-	if (nsdbname == NULL) {
-		xlog(L_ERROR, "Missing required command line argument");
-		nsdbparams_usage(progname);
-		goto out;
-	}
-
-	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, &secdata);
-	switch (status) {
-	case FEDFS_OK:
-		printf("%s:%u:\n", nsdbname, nsdbport);
-		printf("\tconnection security: %s\n",
-			nsdb_display_fedfsconnectionsec(secdata.type));
-		printf("\tfollow referrals: %s\n",
-			nsdb_follow_referrals(host) ? "yes" : "no");
-		tmp = (char *)nsdb_default_binddn(host);
-		if (tmp != NULL)
-			printf("\tdefault bind DN: %s\n", tmp);
-		tmp = (char *)nsdb_default_nce(host);
-		if (tmp != NULL)
-			printf("\tdefault NCE: %s\n", tmp);
-		nsdb_free_nsdb(host);
-		if (secdata.type != FEDFS_SEC_NONE)
-			printf("secdata:\n%s\n", secdata.data);
-		rc = EXIT_SUCCESS;
-		break;
-	case FEDFS_ERR_NSDB_PARAMS:
-		xlog(L_ERROR, "No record for %s was found", nsdbname);
-		rc = EXIT_SUCCESS;
-		break;
-	default:
-		xlog(L_ERROR, "nsdb_lookup_nsdb returned %s",
-			nsdb_display_fedfsstatus(status));
-		rc = EXIT_FAILURE;
-	}
-
-out:
-	return rc;
-}
-
-/**
  * Program entry point
  *
  * @param argc count of command line arguments
@@ -423,15 +125,8 @@ out:
 int
 main(int argc, char **argv)
 {
-	char *progname, *command, *binddn, *certfile, *nce, *nsdbname, *endptr;
-	int arg, exit_status, follow_referrals;
-	unsigned short nsdbport = LDAP_PORT;
-	unsigned int type = FEDFS_SEC_NONE;
-	unsigned long tmp;
-	struct passwd *pw;
-	struct group *grp;
-	uid_t uid;
-	gid_t gid;
+	int exit_status;
+	char *progname;
 
 	exit_status = EXIT_FAILURE;
 
@@ -447,162 +142,26 @@ main(int argc, char **argv)
 	else
 		progname = argv[0];
 
-	if (argc < 2) {
-		nsdbparams_usage(progname);
-		goto out;
-	}
-
 	/* For the libraries */
 	xlog_stderr(1);
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	/* Discover the user ID who owns the store */
-	uid = 99;
-	gid = 99;
-	pw = getpwnam(FEDFS_USER);
-	if (pw != NULL) {
-		uid = pw->pw_uid;
-		gid = pw->pw_gid;
-		xlog(D_GENERAL, "Found user %s: UID %u and GID %u",
-			FEDFS_USER, uid, gid);
+	if (argc < 2) {
+		nsdbparams_usage(progname);
+		goto out;
 	}
 
-	nsdbname = nce = certfile = binddn = NULL;
-	follow_referrals = 0;
-
-	/* so that getopt_long(3)'s error messages are meaningful */
-	command = argv[1];
-	argv[1] = argv[0];
-	while ((arg = getopt_long(argc - 1, argv + 1, nsdbparams_opts,
-			nsdbparams_longopts, NULL)) != -1) {
-		switch (arg) {
-		case 'd':
-			xlog_config(D_ALL, 1);
-			xlog_stderr(1);
-			break;
-		case 'D':
-			binddn = optarg;
-			break;
-		case 'e':
-			nce = optarg;
-			break;
-		case 'f':
-			certfile = optarg;
-			break;
-		case 'g':
-			if (optarg == NULL || *optarg == '\0') {
-				fprintf(stderr, "Invalid gid specified");
-				nsdbparams_usage(progname);
-				goto out;
-			}
-
-			errno = 0;
-			tmp = strtoul(optarg, &endptr, 10);
-			if (errno != 0 || *endptr != '\0' || tmp > UINT_MAX) {
-				grp = getgrnam(optarg);
-				if (grp == NULL) {
-					fprintf(stderr, "Invalid gid specified");
-					goto out;
-				}
-			} else {
-				grp = getgrgid((gid_t)tmp);
-				if (grp == NULL) {
-					fprintf(stderr, "Invalid gid specified");
-					goto out;
-				}
-			}
-			gid = grp->gr_gid;
-			break;
-		case 'h':
-		case '?':
-			nsdbparams_usage(progname);
-			goto out;
-		case 'l':
-			nsdbname = optarg;
-			break;
-		case 'r':
-			if (!nsdb_parse_port_string(optarg, &nsdbport)) {
-				fprintf(stderr, "Bad port number: %s\n",
-					optarg);
-				nsdbparams_usage(progname);
-				goto out;
-			}
-			break;
-		case 'R':
-			if (strcmp(optarg, "yes") == 0)
-				follow_referrals = 2;
-			else if (strcmp(optarg, "no") == 0)
-				follow_referrals = 1;
-			else {
-				fprintf(stderr, "Bad referral flag: %s\n",
-					optarg);
-				nsdbparams_usage(progname);
-				goto out;
-			}
-			break;
-		case 't':
-			if (!nsdbparams_sectype(optarg, &type)) {
-				fprintf(stderr, "Bad security type: %s\n",
-					optarg);
-				nsdbparams_usage(progname);
-				goto out;
-			}
-			break;
-		case 'u':
-			if (optarg == NULL || *optarg == '\0') {
-				fprintf(stderr, "Invalid uid specified");
-				nsdbparams_usage(progname);
-				goto out;
-			}
-
-			errno = 0;
-			tmp = strtoul(optarg, &endptr, 10);
-			if (errno != 0 || *endptr != '\0' || tmp > UINT_MAX) {
-				pw = getpwnam(optarg);
-				if (pw == NULL) {
-					fprintf(stderr, "Invalid uid specified");
-					goto out;
-				}
-			} else {
-				pw = getpwuid((uid_t)tmp);
-				if (pw == NULL) {
-					fprintf(stderr, "Invalid uid specified");
-					goto out;
-				}
-			}
-			uid = pw->pw_uid;
-			gid = pw->pw_gid;
-			break;
-		default:
-			xlog(L_ERROR, "Invalid command line "
-				"argument: %c\n", (char)arg);
-			nsdbparams_usage(progname);
-			goto out;
-		}
-	}
-
-	if (!nsdb_create_basedir())
-		goto out;
-
-	if (!nsdbparams_drop_privileges(uid, gid))
-		goto out;
-
-	if (!nsdb_init_database())
-		goto out;
-
-	if (strcasecmp(command, "delete") == 0)
-		exit_status = nsdbparams_delete(progname, nsdbname, nsdbport);
-	else if (strcasecmp(command, "list") == 0)
-		exit_status = nsdbparams_list();
-	else if (strcasecmp(command, "update") == 0)
-		exit_status = nsdbparams_update(progname, nsdbname, nsdbport,
-						type, certfile, binddn, nce,
-						follow_referrals);
-	else if (strcasecmp(command, "show") == 0)
-		exit_status = nsdbparams_show(progname, nsdbname, nsdbport);
+	if (strcasecmp(argv[1], "delete") == 0)
+		exit_status = nsdbparams_delete(progname, argc - 1, argv + 1);
+	else if (strcasecmp(argv[1], "list") == 0)
+		exit_status = nsdbparams_list(progname, argc - 1, argv + 1);
+	else if (strcasecmp(argv[1], "update") == 0)
+		exit_status = nsdbparams_update(progname, argc - 1, argv + 1);
+	else if (strcasecmp(argv[1], "show") == 0)
+		exit_status = nsdbparams_show(progname, argc - 1, argv + 1);
 	else {
-		xlog(L_ERROR, "Unrecognized command\n");
+		xlog(L_ERROR, "Unrecognized subcommand: %s", argv[1]);
 		nsdbparams_usage(progname);
 	}
 
