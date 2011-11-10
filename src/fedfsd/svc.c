@@ -648,6 +648,17 @@ fedfsd_free_fedfsfsl(FedFsFsl *rpcfsl)
 	nsdb_free_fedfspathname(&rpcfsl->FedFsFsl_u.nfsFsl.path);
 }
 
+static void
+fedfsd_free_fedfslookupresok(FedFsLookupResOk *resok)
+{
+	unsigned int i;
+
+	for (i = 0; i < resok->fsl.fsl_len; i++)
+		fedfsd_free_fedfsfsl(&resok->fsl.fsl_val[i]);
+	free(resok->fsl.fsl_val);
+	free(resok->fsn.nsdbName.hostname.utf8string_val);
+}
+
 /**
  * Fill in one FedFsFsl structure
  *
@@ -728,9 +739,7 @@ fedfsd_prepare_fedfsfsl_array(const struct fedfs_fsl *fsls,
 			i--;
 			continue;
 		default:
-			for (i = 0; i <= count; i++)
-				fedfsd_free_fedfsfsl(&result->fsl.fsl_val[i]);
-			free(result->fsl.fsl_val);
+			fedfsd_free_fedfslookupresok(result);
 			return FEDFS_ERR_SVRFAULT;
 		}
 	}
@@ -765,6 +774,7 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 		return;
 	}
 
+	memset(&result, 0, sizeof(result));
 	result.status = FEDFS_ERR_PATH_TYPE_UNSUPP;
 	if (args.path.type != FEDFS_PATH_SYS)
 		goto out;
@@ -843,12 +853,13 @@ out:
 		svcerr_systemerr(xprt);
 	}
 
-	if (!svc_freeargs(xprt, (xdrproc_t)xdr_FedFsLookupArgs, (caddr_t)&args))
-		xlog(L_WARNING, "Failed to free LOOKUP_JUNCTION arguments");
-
+	fedfsd_free_fedfslookupresok(resok);
 	free(fsn_uuid);
 	nsdb_free_nsdb(host);
 	free(pathname);
+
+	if (!svc_freeargs(xprt, (xdrproc_t)xdr_FedFsLookupArgs, (caddr_t)&args))
+		xlog(L_WARNING, "Failed to free LOOKUP_JUNCTION arguments");
 }
 
 /**
