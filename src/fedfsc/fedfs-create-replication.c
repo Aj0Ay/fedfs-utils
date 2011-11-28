@@ -52,7 +52,7 @@ static struct timeval fedfs_create_replication_timeout = { 25, 0 };
 /**
  * Short form command line options
  */
-static const char fedfs_create_replication_opts[] = "?dh:l:n:p:r:u:";
+static const char fedfs_create_replication_opts[] = "?dh:l:n:r:";
 
 /**
  * Long form command line options
@@ -63,9 +63,7 @@ static const struct option fedfs_create_replication_longopts[] = {
 	{ "hostname", 1, NULL, 'h', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nettype", 1, NULL, 'n', },
-	{ "path", 1, NULL, 'p', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "fsnuuid", 1, NULL, 'u', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -74,15 +72,14 @@ fedfs_create_replication_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"-p path -u fsn-uuid [-l nsdbname] [-r nsdbport]\n\n",
+			"[-l nsdbname] [-r nsdbport] "
+			"path uuid\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
-	fprintf(stderr, "\t-p, --path           Pathname of new junction\n");
-	fprintf(stderr, "\t-u, --fsnuuid        FSN UUID to set\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname to set\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port to set\n");
 
@@ -178,7 +175,6 @@ main(int argc, char **argv)
 
 	hostname = "localhost";
 	nettype = "netpath";
-	uuid = path = NULL;
 	while ((arg = getopt_long(argc, argv, fedfs_create_replication_opts,
 			fedfs_create_replication_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -199,18 +195,12 @@ main(int argc, char **argv)
 		case 'n':
 			nettype = optarg;
 			break;
-		case 'p':
-			path = optarg;
-			break;
 		case 'r':
 			if (!nsdb_parse_port_string(optarg, &nsdbport)) {
 				fprintf(stderr, "Bad port number: %s\n",
 					optarg);
 				fedfs_create_replication_usage(progname);
 			}
-			break;
-		case 'u':
-			uuid = optarg;
 			break;
 		default:
 			fprintf(stderr, "Invalid command line "
@@ -219,12 +209,15 @@ main(int argc, char **argv)
 			fedfs_create_replication_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 2) {
+		path = argv[optind];
+		uuid = argv[optind + 1];
+	} else {
+		fprintf(stderr, "Ambiguous positional parameters\n");
 		fedfs_create_replication_usage(progname);
 	}
-	if (path == NULL || uuid == NULL || nsdbname == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		fedfs_create_replication_usage(progname);
 	}
 

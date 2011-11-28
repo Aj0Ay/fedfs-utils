@@ -35,7 +35,7 @@ fedfs-lookup-replication \- send a FEDFS_LOOKUP_REPLICATION ADMIN protocol reque
 .IR hostname ]
 .RB [ \-t
 .IR resolvetype ]
-.BI "-p " path
+.I path
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -54,52 +54,57 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-lookup-replication (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_LOOKUP_REPLICATION request to a remote
 FedFS ADMIN protocol service.
 .P
-This request causes a remote server to report FedFS replication resolution
-results as the remote server sees them.
-It can report cached results or can force a fresh replication resolution if,
-for example, the contents of an NSDB are known to have changed.
-These capabilities are especially useful for tracking down
-configuration problems in a FedFS domain.
+The FEDFS_LOOKUP_REPLICATION request causes a remote server
+to reveal the contents of a replication marker,
+or to report cached or immediate NSDB lookup results as that server sees them.
+The
+.BR fedfs-lookup-replication (8)
+command takes a single positional parameter which is the
+pathname on the remote server of the junction to be looked up.
+The pathname is relative to the root
+of the local file system on the remote server.
 .P
-The contents of a FedFS replication are a UUID and an NSDB name and port.
+Resolving a junction means performing an NSDB query with the contents
+of the junction to obtain a list of fileset locations, or FSLs,
+matching the stored UUID.
 The meaning of these is described in more detail in
 .BR fedfs (7).
-Resolving a replication means performing an NSDB query with the contents
-of the replication to obtain the list of fileset locations matching the FSN UUID.
 .P
-There are three distinct types of replication resolution:
+There are three distinct types of replication lookup:
 .TP
 .B none
 The remote server reports the actual contents of the replication stored
 on its local disk.
-This includes an FSN UUID and the name and port of an NSDB.
+This includes a UUID and the name and port of an NSDB.
+If the
+.B \-t
+option is not specified, this type of lookup is performed.
 .TP
 .B cache
-The remote server reports resolution results it may have cached from
-previous NSDB resolution requests.
-This includes an FSN UUID, the name and port of an NSDB, and the cached
-list of fileset locations matching the FSN UUID.
+The remote server reports lookup results it may have cached from
+previous replication lookup requests.
+This includes a UUID, the name and port of an NSDB, and the cached
+list of fileset locations matching the UUID in the replication marker.
 Not all FedFS ADMIN service implementations support this type of request.
 .TP
 .B nsdb
-The remote server performs a fresh replication resolution,
+The remote server performs a fresh replication lookup,
 and the results are returned.
-This includes an FSN UUID, the name and port of an NSDB,
-and a list of fileset locations matching the FSN UUID.
+This includes an UUID, the name and port of an NSDB,
+and a list of fileset locations matching the UUID in the replication marker.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-lookup-replication (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -269,12 +274,12 @@ Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain and that your domain's NSDB hostname is
 .IR nsdb.example.net .
-You have created a FedFS replication on remote server
+You have created a FedFS replication on file server
 .IR fs.example.net .
 To see how the replication appears on the remote server, use:
 .RS
 .sp
-$ fedfs-lookup-replication -h fs.example.net -p /export/replication1 -t none
+$ fedfs-lookup-replication -h fs.example.net /export/replication1
 .br
 Call completed successfully
 .br
@@ -286,15 +291,15 @@ NSDB: nsdb.example.net:389
 To see real-time replication resolution results as the remote server sees them, use:
 .RS
 .sp
-$ fedfs-lookup-replication -h fs.example.net -p /export/replication1 -t nsdb
+$ fedfs-lookup-replication -h fs.example.net -t nsdb /export/replication1
 .br
 Server returned FEDFS_ERR_NSDB_NOFSN
 .sp
 .RE
-In this example, the replication exists on the remote server,
+In this example, the replication marker exists on the file server,
 but the domain's NSDB has not yet been updated to contain a list of
-fileset locations for the FSN contained in the replication.
-The remote server is therefore not able to resolve the replication.
+fileset locations for the UUID contained in the replication marker.
+The file server is therefore not able to resolve the replication.
 .SH SECURITY
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .SH "SEE ALSO"

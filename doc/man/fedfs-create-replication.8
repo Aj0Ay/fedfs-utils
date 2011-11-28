@@ -33,12 +33,12 @@ fedfs-create-replication \- send a FEDFS_CREATE_REPLICATION ADMIN protocol reque
 .IR nettype ]
 .RB [ \-h
 .IR hostname ]
-.BI "-p " path
-.BI "-u " fsn-uuid
 .RB [ \-l
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
+.I path
+.I uuid
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -57,28 +57,33 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-create-replication (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_CREATE_REPLICATION request to a remote
 FedFS ADMIN protocol service.
 .P
-This request creates a FedFS replication in the local file system
-on a remote file server.
-The contents of a FedFS replication are a UUID and an NSDB name and port,
-which are specified on the command line.
+The FEDFS_CREATE_REPLICATION request creates a replication marker
+in a local file system on a remote file server.
+The contents of a replication marker are an UUID and an NSDB name and port.
+.P
+The
+.BR fedfs-create-replication (8)
+command takes two positional parameters which specify
+the pathname on the remote server of the replication, and an UUID.
+This pathname is relative to the roo
+of the local file system on the remote server.
+Required NSDB information can be inferred
+from the command's environment or specified on the command line.
 The meaning of these arguments is described in more detail in
 .BR fedfs (7).
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
-.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
-Specifies the FSN UUID to insert into the new FedFS replication.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-create-replication (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -101,7 +106,7 @@ Specifies the hostname of the NSDB to insert into the new FedFS replication.
 If this option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B --nsdbname
 option is not specified, the
 .BR fedfs-create-replication (8)
 command fails.
@@ -110,11 +115,6 @@ Specifies the IP port of the NSDB to insert into the new FedFS replication.
 If this option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
-.IP "\fB\-p, \-\-path=\fIpathname\fP"
-Specifies the location on the remote server where the new FedFS replication
-should be created.
-This pathname is relative to the remote server's physical root directory,
-not the remote server's NFS pseudoroot.
 .SH EXIT CODES
 The remote administration service returns a value that reflects the
 success of the requested operation.
@@ -191,15 +191,16 @@ Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain and that your domain's NSDB hostname is
 .IR nsdb.example.net .
-To create a new FedFS replication on the remote server
+To create a new FedFS replication on the file server
 .IR fs.example.net ,
 use:
 .RS
 .sp
-$ fedfs-create-replication -h fs.example.net -l nsdb.example.net `uuidgen -t` -p /export/replication1
+$ fedfs-create-replication -h fs.example.net -l nsdb.example.net \\
+	/export/replication1 `uuidgen -t`
 .sp
 .RE
-In this example, a new FSN UUID is created on the spot.
+In this example, a new UUID is created on the spot.
 It can be read back from the server using the
 .BR fedfs-lookup-replication (8)
 command.

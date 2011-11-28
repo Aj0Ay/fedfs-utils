@@ -51,7 +51,7 @@ static struct timeval fedfs_delete_replication_timeout = { 25, 0 };
 /**
  * Short form command line options
  */
-static const char fedfs_delete_replication_opts[] = "?dh:n:p:";
+static const char fedfs_delete_replication_opts[] = "?dh:n:";
 
 /**
  * Long form command line options
@@ -61,7 +61,6 @@ static const struct option fedfs_delete_replication_longopts[] = {
 	{ "help", 0, NULL, '?', },
 	{ "hostname", 1, NULL, 'h', },
 	{ "nettype", 1, NULL, 'n', },
-	{ "path", 1, NULL, 'p', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -70,13 +69,12 @@ fedfs_delete_replication_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"-p path\n\n", progname);
+			"path\n\n", progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
-	fprintf(stderr, "\t-p, --path           Pathname of replication to delete\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -150,7 +148,6 @@ main(int argc, char **argv)
 
 	hostname = "localhost";
 	nettype = "netpath";
-	path = NULL;
 	while ((arg = getopt_long(argc, argv, fedfs_delete_replication_opts, fedfs_delete_replication_longopts, NULL)) != -1) {
 		switch (arg) {
 		case 'd':
@@ -168,12 +165,13 @@ main(int argc, char **argv)
 			fedfs_delete_replication_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1)
+		path = argv[optind];
+	else if (argc > optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
 		fedfs_delete_replication_usage(progname);
-	}
-	if (path == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	} else {
+		fprintf(stderr, "No replication pathname was specified\n");
 		fedfs_delete_replication_usage(progname);
 	}
 

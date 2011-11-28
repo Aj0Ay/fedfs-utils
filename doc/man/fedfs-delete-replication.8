@@ -33,7 +33,7 @@ fedfs-delete-replication \- send a FEDFS_DELETE_REPLICATION ADMIN protocol reque
 .IR nettype ]
 .RB [ \-h
 .IR hostname ]
-.BI "-p " path
+.I path
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -52,22 +52,27 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-delete-replication (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_DELETE_REPLICATION request to a remote
 FedFS ADMIN protocol service.
 .P
-This request deletes a FedFS replication in the local file system
-on a remote file server.
+The FEDFS_DELETE_REPLICATION request deletes a replication marker
+in a local file system on a remote file server.
+The
+.BR fedfs-delete-replication (8)
+command taks a single positional parameter which is the
+pathname on the remote server of the replication marker to be deleted.
+This pathname is relative to the root
+of the local file system on the remote server.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-delete-replication (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -85,11 +90,6 @@ If this option is not specified, the default value is
 See
 .BR rpc (3t)
 for details.
-.IP "\fB\-p, \-\-path=\fIpathname\fP"
-Specifies the location on the remote server where the doomed FedFS replication
-resides.
-This pathname is relative to the remote server's physical root directory,
-not the remote server's NFS pseudoroot.
 .SH EXIT CODES
 The remote administration service returns a value that reflects the
 success of the requested operation.
@@ -163,7 +163,7 @@ To delete an existing FedFS replication on the remote server
 use:
 .RS
 .sp
-$ fedfs-delete-replication -h fs.example.net -p /export/replication1
+$ fedfs-delete-replication -h fs.example.net /export/replication1
 .SH SECURITY
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .SH "SEE ALSO"

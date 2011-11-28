@@ -53,7 +53,7 @@ static struct timeval fedfs_lookup_replication_timeout = { 25, 0 };
 /**
  * Short form command line options
  */
-static const char fedfs_lookup_replication_opts[] = "?dh:n:p:t:";
+static const char fedfs_lookup_replication_opts[] = "?dh:n:t:";
 
 /**
  * Long form command line options
@@ -63,7 +63,6 @@ static const struct option fedfs_lookup_replication_longopts[] = {
 	{ "help", 0, NULL, '?', },
 	{ "hostname", 1, NULL, 'h', },
 	{ "nettype", 1, NULL, 'n', },
-	{ "path", 1, NULL, 'p', },
 	{ "resolvetype", 1, NULL, 't', },
 	{ NULL, 0, NULL, 0, },
 };
@@ -73,13 +72,12 @@ fedfs_lookup_replication_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"[-t <none|cache|nsdb>] -p path\n\n", progname);
+			"[-t <none|cache|nsdb>] path\n\n", progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
-	fprintf(stderr, "\t-p, --path           Pathname of replication to resolve\n");
 	fprintf(stderr, "\t-t, --resolvetype    Type of desired result (default: 'none')\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
@@ -319,12 +317,13 @@ main(int argc, char **argv)
 			fedfs_lookup_replication_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1)
+		path = argv[optind];
+	else if (argc > optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
 		fedfs_lookup_replication_usage(progname);
-	}
-	if (path == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	} else {
+		fprintf(stderr, "No replication pathname was specified\n");
 		fedfs_lookup_replication_usage(progname);
 	}
 
