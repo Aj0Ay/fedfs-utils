@@ -56,10 +56,10 @@ about file sets contained in a FedFS domain name space.
 .SH DESCRIPTION
 The
 .BR nsdb-nces (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the NSDB protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that in intended for testing the NSDB protocol or for use in scripts.
 It queries an LDAP server for the existance of
-.IR "NSDB container entries" ,
+.IR "NSDB Container Entries" ,
 or
 .IR NCEs ,
 for short.
@@ -102,18 +102,18 @@ then exits.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
 Specifies the hostname of the NSDB to enumerate.
 If the
-.B -l
+.B --nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B --nsdbname
 option is not specified, the
 .BR nsdb-nces (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the IP port of the NSDB to enumerate.
 If the
-.B -r
+.B --nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
@@ -226,13 +226,13 @@ Host: ldap.example.net:389
 .sp
 .RE
 This shows there are three LDAP naming contexts on the target LDAP server.
-One of these is an NSDB container entry.
+One of these is an NSDB Container Entry.
 Thus the target LDAP server is an NSDB.
 .SH SECURITY
-LDAP naming contexts are typically readable by everyone.
 The
 .BR nsdb-nces (8)
-command uses anonymous binding to perform this query.
+command uses anonymous binding when performing LDAP queries.
+LDAP naming contexts are typically readable by everyone.
 .P
 The target LDAP server must be registered in the local NSDB connection
 parameter database.

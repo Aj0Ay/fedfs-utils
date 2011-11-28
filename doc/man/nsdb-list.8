@@ -58,10 +58,11 @@ about file sets contained in a FedFS domain name space.
 .SH DESCRIPTION
 The
 .BR nsdb-list (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the NSDB protocol or for use in scripts.
-It retrieves a list of file set name and location
-entries stored on an NSDB.
+command is part of a collection of low-level single-use programs
+that is intended for testing the NSDB protocol or for use in scripts.
+It retrieves the list of file set name and location records
+stored on an NSDB
+under one NSDB Container Entry.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
 Specifies that debugging messages be produced during operation.
@@ -74,29 +75,29 @@ then exits.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
 Specifies the hostname of the NSDB to enumerate.
 If the
-.B -l
+.B --nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B --nsdbname
 option is not specified, the
 .BR nsdb-list (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the IP port of the NSDB to enumerate.
 If the
-.B -r
+.B --nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
 .IP "\fB\-e, \-\-nce=\fINSDB-container-entry\fP"
-Limits the query to a particular NSDB container entry on the target NSDB.
+Limits the query to a particular NSDB Container Entry on the target NSDB.
 If the
-.B -e
+.B --nce
 option is not specified,
 the value of the FEDFS_NSDB_NCE environment variable is consulted.
 If the variable is not set and the
-.B -e
+.B --nce
 option is not specified,
 or the specified NCE does not exist on the target NSDB, the
 .BR nsdb-list (8)
@@ -220,7 +221,7 @@ The NSDB protocol draft standard requires that FedFS FSN and FSL
 records are readable by everyone.
 The
 .BR nsdb-list (8)
-command uses anonymous binding to perform LDAP queries.
+command uses anonymous binding when performing LDAP queries.
 .P
 The target LDAP server must be registered in the local NSDB connection
 parameter database.
