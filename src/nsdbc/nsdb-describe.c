@@ -48,7 +48,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_describe_opts[] = "?a:dD:e:l:r:w:y";
+static const char nsdb_describe_opts[] = "?a:dD:l:r:w:y";
 
 /**
  * Long form command line options
@@ -58,7 +58,6 @@ static const struct option nsdb_describe_longopts[] = {
 	{ "debug", 0, NULL, 'd', },
 	{ "delete", 0, NULL, 'y', },
 	{ "description", 1, NULL, 'a', },
-	{ "entry", 1, NULL, 'e', },
 	{ "help", 0, NULL, '?', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
@@ -75,16 +74,15 @@ static void
 nsdb_describe_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -b ] [ -D binddn ] [ -w bindpw ] "
-			"[ -l nsdbname ] [ -r nsdbport ] -e entry "
-			"[ -a description] [-y]\n\n",
+	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
+			"[ -l nsdbname ] [ -r nsdbport ] [ -a description] "
+			"distinguished-name [-y]\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-a, --description    Description value to modify\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-D, --binddn         Bind DN\n");
-	fprintf(stderr, "\t-e, --entry          DN of entry to update\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
@@ -150,9 +148,6 @@ main(int argc, char **argv)
 		case 'D':
 			binddn = optarg;
 			break;
-		case 'e':
-			entry = optarg;
-			break;
 		case 'l':
 			nsdbname = optarg;
 			break;
@@ -176,16 +171,21 @@ main(int argc, char **argv)
 			nsdb_describe_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1)
+		entry = argv[optind];
+	else if (argc > optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
+		nsdb_describe_usage(progname);
+	} else {
+		fprintf(stderr, "No distinguished name was specified\n");
 		nsdb_describe_usage(progname);
 	}
-	if (nsdbname == NULL || entry == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		nsdb_describe_usage(progname);
 	}
 	if (description == NULL && !delete) {
-		fprintf(stderr, "Missing description\n");
+		fprintf(stderr, "No description was specified\n");
 		nsdb_describe_usage(progname);
 	}
 
@@ -203,9 +203,13 @@ main(int argc, char **argv)
 			nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
-
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
+	if (binddn == NULL) {
+		fprintf(stderr, "No NDSB bind DN was specified\n");
+		goto out_free;
+	}
+
 	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:

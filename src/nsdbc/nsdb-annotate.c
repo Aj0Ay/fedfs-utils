@@ -48,7 +48,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_annotate_opts[] = "?adD:e:k:l:r:v:w:y";
+static const char nsdb_annotate_opts[] = "?adD:k:l:r:v:w:y";
 
 /**
  * Long form command line options
@@ -58,7 +58,6 @@ static const struct option nsdb_annotate_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
 	{ "delete", 0, NULL, 'y', },
-	{ "entry", 1, NULL, 'e', },
 	{ "help", 0, NULL, '?', },
 	{ "keyword", 1, NULL, 'k', },
 	{ "nsdbname", 1, NULL, 'l', },
@@ -78,15 +77,15 @@ nsdb_annotate_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
-			"[ -l nsdbname ] [ -r nsdbport ] -e entry "
-			"[ -a annotation ] [ -k keyword ] [ -v value ] [ -y ]\n\n",
+			"[ -l nsdbname ] [ -r nsdbport ] [ -a annotation ] "
+			"[ -k keyword ] [ -v value ] [ -y ] "
+			"distinguished-name\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-a, --annotation     Full annotation\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-D, --binddn         Bind DN\n");
-	fprintf(stderr, "\t-e, --entry          DN of entry to update\n");
 	fprintf(stderr, "\t-k, --keyword        Annotation keyword\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
@@ -154,9 +153,6 @@ main(int argc, char **argv)
 		case 'D':
 			binddn = optarg;
 			break;
-		case 'e':
-			entry = optarg;
-			break;
 		case 'k':
 			keyword = optarg;
 			break;
@@ -188,12 +184,17 @@ main(int argc, char **argv)
 			nsdb_annotate_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1)
+		entry = argv[optind];
+	else if (argc > optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
+		nsdb_annotate_usage(progname);
+	} else {
+		fprintf(stderr, "No distinguished name was specified\n");
 		nsdb_annotate_usage(progname);
 	}
-	if (nsdbname == NULL || entry == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		nsdb_annotate_usage(progname);
 	}
 
@@ -245,9 +246,13 @@ main(int argc, char **argv)
 			nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
-
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
+	if (binddn == NULL) {
+		fprintf(stderr, "No NDSB bind DN was specified\n");
+		goto out_free;
+	}
+
 	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:

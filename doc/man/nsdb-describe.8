@@ -25,7 +25,7 @@
 .\"
 .TH NSDB-DESCRIBE 8 "@publication-date@"
 .SH NAME
-nsdb-describe \- modify the fedfsDescr attribute of an NSDB entry
+nsdb-describe \- modify the fedfsDescr attribute of a FedFS NSDB record
 .SH SYNOPSIS
 .B nsdb-describe
 .RB [ \-?dy ]
@@ -33,14 +33,13 @@ nsdb-describe \- modify the fedfsDescr attribute of an NSDB entry
 .IR description ]
 .RB [ \-D
 .IR binddn ]
-.RB \-e
-.IR entry
 .RB [ \-l
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
 .IR bindpw ]
+.I distinguished-name
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -64,45 +63,65 @@ about file sets contained in a FedFS domain name space.
 .SH DESCRIPTION
 The
 .BR nsdb-describe (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the NSDB protocol or for use in scripts.
-It allows FedFS administrators to update the fedfsDescr
-attribute of entries stored on an NSDB.
+command is part of a collection of low-level single-use programs
+that is intended for testing the NSDB protocol or for use in scripts.
+It allows FedFS administrators to update the
+.B fedfsDescr
+attribute of FedFS records stored on an NSDB.
 .P
-An entry's fedfsDescr attribute is multi-valued.
-Each value of this attribute is an unstructured string.
-Each value can contain any valid UTF-8 character.
-The whole string has no meaning to FedFS and is ignored.
+This command has one positional parameter which specifies the
+LDAP distinguished name of the FedFS record to be modified.
+All FedFS object classes may have a
+.B fedfsDescr
+attribute, thus a fully qualified distinguished name, rather than, say,
+an FSN UUID by itself, must be specified.
 .P
-This allows human-readable descriptions of an entry to be stored without
-requiring changes to the NSDB's FedFS schema.
+The
+.B fedfsDescr
+attribute is multi-valued.
+Each attribute value is an unstructured string.
+These strings may contain any valid UTF-8 character.
+.P
 The
 .BR nsdb-describe (8)
-command can insert new values or delete or replace old ones.
+command inserts new values or deletes or replaces existing ones
+while maintaining the correct structure of the
+.B fedfsDescr
+attribute.
+.P
+Each value of the
+.B fedfsDescr
+attribute has no meaning to FedFS and is ignored.
+Adding a description allows
+free-form documentation of a FedFS record to be stored with it
+without requiring changes to the NSDB's FedFS schema.
 .SH OPTIONS
 .IP "\fB\-a, \-\-description=\fIdescription-text\fP"
-Specifies a fedfsDescr value.
-The form of the value is not checked by the
+Specifies a single
+.B fedfsDescr
+string to be added to or deleted from the attribute's value.
+The form of the string is not checked by the
 .BR
 nsdb-describe (8)
 command.
 If the
-.B -y
-option is specified and this value exists in the target
-entry's fedfsDescr attribute, it is removed.
+.B \-\-delete
+option is specified and this string exists as a value of the target record's
+.B fedfsDescr
+attribute, it is removed.
 Otherwise the value is added.
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints an
+Displays
 .BR nsdb-describe (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
-Specifies a distinguished name of an entity used to bind to this LDAP server.
+Specifies a distinguished name of an entity used to bind to the LDAP server
+where the NSDB resides.
 If the
-.B -D
+.B \-\-binddn
 option is not specified,
 the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
 If this variable is not set,
@@ -112,42 +131,33 @@ if this entity does not have permission to modify this area
 of the server's DIT, the
 .BR nsdb-describe (8)
 command fails.
-.IP "\fB-e, \-\-entry=\fIdistinguished-name\fP"
-Specifies the distinguished name of the target entry
-in the NSDB to modify.
-Since any FedFS entry can have a fedfsDescr attribute,
-a full distinguished name must be specified.
-If the
-.B -e
-option is not specified,
-.BR nsdb-describe (8)
-command fails.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
-Specifies the hostname of the NSDB where the target entry resides.
+Specifies the hostname of the NSDB where the target record resides.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-describe (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
-Specifies the IP port of the NSDB where the target entry resides.
+Specifies the IP port of the NSDB where the target record resides.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
 .IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to this LDAP server.
+Specifies the password used for simple authentication to the LDAP server
+where the NSDB resides.
 If the
-.B -w
+.B \-\-bindpw
 option is not specified,
 the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
 If the variable is not set and the
-.B -w
+.B \-\-bindpw
 option is not specified, the
 .BR nsdb-describe (8)
 command asks for a password on
@@ -155,8 +165,7 @@ command asks for a password on
 Standard password blanking techniques are used
 to obscure the password on the user's terminal.
 .IP "\fB\-y, \-\-delete\fP"
-Specifies that the specified fedfsDescr value is deleted
-rather than added.
+Specifies that the specified value string is deleted rather than added.
 .SH EXIT CODES
 The NSDB returns a value that reflects the success of the requested operation.
 .TP
@@ -259,18 +268,18 @@ connection parameters for the NSDB targeted by the LDAP referral.
 .SH EXAMPLES
 Suppose you are the FedFS administrator of the
 .I example.net
-FedFS domain and that you want to modify the entry for
+FedFS domain, and you want to modify the record for
 FSN UUID dc25a644-06e4-11e0-ae55-000c29dc7f8a on
-the LDAP server
-.IR ldap.example.net .
+the NSDB
+.IR nsdb.example.net .
 You might use:
 .RS
 .sp
-$ nsdb-describe -l ldap.example.net \\
+$ nsdb-describe -l nsdb.example.net \\
 .br
 	-a "Hello, world\\!" -D cn=Manager \\
 .br
-	-e fedfsFsnUuid=dc25a644-06e4-\\
+	fedfsFsnUuid=dc25a644-06e4-\\
 .br
 	11e0-ae55-000c29dc7f8a,o=fedfs
 .br
@@ -284,7 +293,7 @@ Successfully updated description value for
 To see the new description, use
 .BR nsdb-resolve-fsn (8).
 .SH SECURITY
-Modify access to the LDAP's DIT is required to update an LDAP entry.
+Permission to modify the LDAP's DIT is required to update an LDAP entry.
 The
 .BR nsdb-describe (8)
 command must bind as an entity permitted to modify the DIT
