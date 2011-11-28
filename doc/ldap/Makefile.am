@@ -23,4 +23,7 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
-EXTRA_DIST	= fedfs.schema fedfs-schema.ldif
+EXTRA_DIST		= fedfs.schema fedfs-schema.ldif
+
+CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
+DISTCLEANFILES		= Makefile.in
