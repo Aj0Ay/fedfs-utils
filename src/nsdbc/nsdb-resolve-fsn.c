@@ -50,14 +50,13 @@
 /**
  * Short form command line options
  */
-static const char nsdb_resolve_fsn_opts[] = "?de:l:r:u:";
+static const char nsdb_resolve_fsn_opts[] = "?de:l:r:";
 
 /**
  * Long form command line options
  */
 static const struct option nsdb_resolve_fsn_longopts[] = {
 	{ "debug", 0, NULL, 'd', },
-	{ "fsnuuid", 1, NULL, 'u', },
 	{ "help", 0, NULL, '?', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
@@ -76,14 +75,13 @@ nsdb_resolve_fsn_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
-			"-u fsn-uuid\n\n", progname);
+			"fsn-uuid\n\n", progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-u, --fsnuuid        FSN UUID to resolve\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -203,7 +201,6 @@ main(int argc, char **argv)
 	char *nce, *fsn_uuid;
 	FedFsStatus retval;
 	nsdb_t host;
-	uuid_t uu;
 	int arg;
 
 	(void)umask(S_IRWXO);
@@ -248,14 +245,6 @@ main(int argc, char **argv)
 				nsdb_resolve_fsn_usage(progname);
 			}
 			break;
-		case 'u':
-			if (uuid_parse(optarg, uu) == -1) {
-				fprintf(stderr, "Invalid FSN UUID: %s\n",
-					optarg);
-				nsdb_resolve_fsn_usage(progname);
-			}
-			fsn_uuid = optarg;
-			break;
 		default:
 			fprintf(stderr, "Invalid command line "
 				"argument: %c\n", (char)arg);
@@ -263,12 +252,22 @@ main(int argc, char **argv)
 			nsdb_resolve_fsn_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1) {
+		uuid_t uu;
+		fsn_uuid = argv[optind];
+		if (uuid_parse(fsn_uuid, uu) == -1) {
+			fprintf(stderr, "Invalid FSN UUID was specified\n");
+			nsdb_resolve_fsn_usage(progname);
+		}
+	} else if (argc >  optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
+		nsdb_resolve_fsn_usage(progname);
+	} else {
+		fprintf(stderr, "No FSN UUID was specified\n");
 		nsdb_resolve_fsn_usage(progname);
 	}
-	if (nsdbname == NULL || fsn_uuid == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		nsdb_resolve_fsn_usage(progname);
 	}
 

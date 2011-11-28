@@ -39,7 +39,6 @@ nsdb-delete-fsn \- delete a fileset name (FSN) record from an NSDB
 .IR nsdbport ]
 .RB [ \-w
 .IR bindpw ]
-.B \-u
 .I fsn-uuid
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
@@ -86,38 +85,36 @@ The
 .BR nsdb-delete-fsn (8)
 command removes an FSN record from the named NSDB
 after it is no longer used in FedFS junctions.
-It does not remove FedFS junctions; to remove a junction, use
-.BR fedfs-delete-junction (8).
+It does not remove FedFS junctions.
+To remove a junction, use the
+.BR fedfs-delete-junction (8)
+command
 .P
 The default behavior, if the
-.B -y
+.B \-\-delete
 option is not specified,
 removes the specified FSN record and all of its FSL children records.
 If the
-.B -y
+.B \-\-delete
 option is specified,
 all FSL child records of the specified FSN record are removed,
 but the specified FSN record is left in place.
+.P
+This command has one positional parameter which specifies
+the UUID of the FSN record to modify or remove.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
-.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
-Specifies the FSN UUID of the doomed FSN record.
-If the
-.B -u
-option is not specified, the
-.BR nsdb-delete-fsn (8)
-command fails.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints an
+Displays
 .BR nsdb-delete-fsn (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
-Specifies a distinguished name of an entity used to bind to this LDAP server.
+Specifies a distinguished name of an entity used to bind to the LDAP server
+where the NSDB resides.
 If the
-.B -D
+.B \-\-binddn
 option is not specified,
 the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
 If this variable is not set,
@@ -128,10 +125,10 @@ of the server's DIT, the
 .BR nsdb-delete-fsn (8)
 command fails.
 .IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
-Specifies the distinguished name of the NSDB container entry
+Specifies the distinguished name of the NSDB Container Entry
 under which the doomed FSN record exists.
 If the
-.B -e
+.B \-\-nce
 option is not specified,
 the value of the FEDFS_NSDB_NCE environment variable is consulted.
 If this variable is not set,
@@ -142,29 +139,30 @@ command fails.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-host-name\fP"
 Specifies the hostname of the NSDB where the doomed FSN record resides.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-delete-fsn (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the IP port of the NSDB where the doomed FSN record resides.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
 .IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to this LDAP server.
+Specifies the password used for simple authentication to th LDAP server
+where the NSDB resides.
 If the
-.B -w
+.B \-\-bindpw
 option is not specified,
 the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
 If the variable is not set and the
-.B -w
+.B \-\-bindpw
 option is not specified, the
 .BR nsdb-delete-fsn (8)
 command asks for a password on
@@ -275,21 +273,21 @@ FedFS domain and that you want to remove the FSN record for this FSN:
 .sp
 	FSN UUID: 8e246ddc-7b46-11e0-8252-000c297fd679
 .br
-	NSDB: ldap.example.net:389
+	NSDB: nsdb.example.net:389
 .sp
 .RE
 Further suppose the NSDB
-.I ldap.example.net:389
-has an NSDB container entry whose distinguished name is
+.I nsdb.example.net:389
+has an NSDB Container Entry whose distinguished name is
 .IR o=fedfs .
 To delete the corresponding FSN record, you might use:
 .RS
 .sp
 $ nsdb-delete-fsn -D cn=Manager -e o=fedfs \\
 .br
-	-u 8e246ddc-7b46-11e0-8252-000c297fd679
+	-l nsdb.example.net \\
 .br
-	-l ldap.example.net
+	8e246ddc-7b46-11e0-8252-000c297fd679
 .br
 Enter NSDB password:
 .br
@@ -297,9 +295,10 @@ Successfully deleted FSN record
   fedfsFsnUuid=8e246ddc-7b46-11e0-8252-000c297fd679,o=fedfs
 .sp
 .RE
-All FSL child records for this FSN record are also removed.
+In this example,
+all FSL child records for this FSN record are also removed.
 .SH SECURITY
-Modify access to the LDAP's DIT is required to delete an FSN record.
+Permission to modify the LDAP's DIT is required to delete an FSN record.
 The
 .BR nsdb-delete-fsn (8)
 command must bind as an entity permitted to modify the DIT

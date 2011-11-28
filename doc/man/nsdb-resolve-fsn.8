@@ -35,7 +35,6 @@ nsdb-resolve-fsn \- resolve a fileset name (FSN) record on an NSDB
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
-.B \-u
 .I fsn-uuid
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
@@ -84,27 +83,22 @@ command looks up an FSN record on the named NSDB
 and returns the set of FSL records that are its children.
 This is the same operation that FedFS-enabled file servers perform
 when resolving the FSN contained in a FedFS junction.
+.P
+This command has one positional parameter which specifies
+the UUID of the FSN record to resolve.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
-.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
-Specifies the FSN UUID to resolve.
-If the
-.B -u
-option is not specified, the
-.BR nsdb-resolve-fsn (8)
-command fails.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints an
+Displays
 .BR nsdb-resolve-fsn (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
-Specifies the distinguished name of the NSDB container entry
+Specifies the distinguished name of the NSDB Container Entry
 under which this FSN record resides.
 If the
-.B -e
+.B \-\-nce
 option is not specified,
 the value of the FEDFS_NSDB_NCE environment variable is consulted.
 If this variable is not set,
@@ -115,18 +109,18 @@ command searches the NSDB's naming contexts to discover its NCEs.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-host-name\fP"
 Specifies the NSDB hostname portion of the FSN to resolve.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-resolve-fsn (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the NSDB IP port portion of the FSN to resolve.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
@@ -237,12 +231,12 @@ FedFS domain and that you have created a new FSN that looks like:
 .sp
 	FSN UUID: 8e246ddc-7b46-11e0-8252-000c297fd679
 .br
-	NSDB: ldap.example.net:389
+	NSDB: nsdb.example.net:389
 .sp
 .RE
 Further suppose the NSDB
-.I ldap.example.net:389
-has an NSDB container entry whose distinguished name is
+.I nsdb.example.net:389
+has an NSDB Container Entry whose distinguished name is
 .IR o=fedfs ,
 and that the FSN has a single FSL child record.
 To resolve the FSN, you might use:
@@ -250,9 +244,9 @@ To resolve the FSN, you might use:
 .sp
 $ nsdb-resolve-fsn -e o=fedfs \\
 .br
-	-u 8e246ddc-7b46-11e0-8252-000c297fd679 \\
+	-l nsdb.example.net \\
 .br
-	-l ldap.example.net
+	8e246ddc-7b46-11e0-8252-000c297fd679
 .sp
 For FSN UUID 8e246ddc-7b46-11e0-8252-000c297fd679
 .br
@@ -264,7 +258,7 @@ dn: fedfsFslUuid=323c5068-7c11-11e0-8d38-000c297fd679,
 .br
  FSL UUID:		323c5068-7c11-11e0-8d38-000c297fd679
 .br
- NSDB:			ldap.example.net
+ NSDB:			nsdb.example.net
 .br
  FSL host:		fileserver.example.net
 .br

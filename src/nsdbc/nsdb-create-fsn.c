@@ -50,7 +50,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_create_fsn_opts[] = "?dD:e:l:r:w:u:";
+static const char nsdb_create_fsn_opts[] = "?dD:e:l:r:w:";
 
 /**
  * Long form command line options
@@ -58,7 +58,6 @@ static const char nsdb_create_fsn_opts[] = "?dD:e:l:r:w:u:";
 static const struct option nsdb_create_fsn_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
-	{ "fsnuuid", 1, NULL, 'u', },
 	{ "help", 0, NULL, '?', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
@@ -78,7 +77,7 @@ nsdb_create_fsn_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
-			"-u fsn-uuid\n\n",
+			"fsn-uuid\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
@@ -88,7 +87,6 @@ nsdb_create_fsn_usage(const char *progname)
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
-	fprintf(stderr, "\t-u, --fsnuuid        New FSN UUID\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -111,7 +109,6 @@ main(int argc, char **argv)
 	char *nce, *fsn_uuid;
 	FedFsStatus retval;
 	nsdb_t host;
-	uuid_t uu;
 	int arg;
 
 	(void)umask(S_IRWXO);
@@ -136,7 +133,6 @@ main(int argc, char **argv)
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &bindpw);
 
-	fsn_uuid = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_create_fsn_opts,
 			nsdb_create_fsn_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -162,13 +158,6 @@ main(int argc, char **argv)
 		case 'w':
 			bindpw = optarg;
 			break;
-		case 'u':
-			if (uuid_parse(optarg, uu) == -1) {
-				fprintf(stderr, "Invalid uuid: %s\n", optarg);
-				nsdb_create_fsn_usage(progname);
-			}
-			fsn_uuid = optarg;
-			break;
 		default:
 			fprintf(stderr, "Invalid command line "
 				"argument: %c\n", (char)arg);
@@ -176,12 +165,22 @@ main(int argc, char **argv)
 			nsdb_create_fsn_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1) {
+		uuid_t uu;
+		fsn_uuid = argv[optind];
+		if (uuid_parse(fsn_uuid, uu) == -1) {
+			fprintf(stderr, "Invalid FSN UUID was specified\n");
+			nsdb_create_fsn_usage(progname);
+		}
+	} else if (argc > optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
+		nsdb_create_fsn_usage(progname);
+	} else {
+		fprintf(stderr, "No FSN UUID was specified\n");
 		nsdb_create_fsn_usage(progname);
 	}
-	if (nce == NULL || nsdbname == NULL || fsn_uuid == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		nsdb_create_fsn_usage(progname);
 	}
 
@@ -199,9 +198,19 @@ main(int argc, char **argv)
 			nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
-
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
+	if (binddn == NULL) {
+		fprintf(stderr, "No NDSB bind DN was specified\n");
+		goto out_free;
+	}
+	if (nce == NULL)
+		nce = (char *)nsdb_default_nce(host);
+	if (nce == NULL) {
+		fprintf(stderr, "No NCE was specified\n");
+		goto out_free;
+	}
+
 	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
@@ -225,8 +234,6 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
-	if (nce == NULL)
-		nce = (char *)nsdb_default_nce(host);
 	retval = nsdb_create_fsn_s(host, nce, fsn_uuid,
 					nsdbname, nsdbport, &ldap_err);
 	switch (retval) {
