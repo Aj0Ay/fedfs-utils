@@ -46,7 +46,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_delete_nsdb_opts[] = "?dD:e:l:r:w:";
+static const char nsdb_delete_nsdb_opts[] = "?dD:l:r:w:";
 
 /**
  * Long form command line options
@@ -55,7 +55,6 @@ static const struct option nsdb_delete_nsdb_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
 	{ "help", 0, NULL, '?', },
-	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
 	{ "bindpw", 1, NULL, 'w', },
@@ -72,13 +71,12 @@ nsdb_delete_nsdb_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
-			"[ -l nsdbname ] [ -r nsdbport ] -e nce\n\n",
+			"[ -l nsdbname ] [ -r nsdbport ] nce\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
 	fprintf(stderr, "\t-D, --binddn         Bind DN\n");
-	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry to remove\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
 	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
@@ -128,7 +126,6 @@ main(int argc, char **argv)
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &bindpw);
 
-	nce = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_delete_nsdb_opts,
 			nsdb_delete_nsdb_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -137,9 +134,6 @@ main(int argc, char **argv)
 			break;
 		case 'D':
 			binddn = optarg;
-			break;
-		case 'e':
-			nce = optarg;
 			break;
 		case 'l':
 			nsdbname = optarg;
@@ -161,12 +155,17 @@ main(int argc, char **argv)
 			nsdb_delete_nsdb_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 1)
+		nce = argv[optind];
+	else if (argc > optind + 1) {
+		fprintf(stderr, "Unrecognized positional parameters\n");
+		nsdb_delete_nsdb_usage(progname);
+	} else {
+		fprintf(stderr, "No NSDB Container Entry was specified\n");
 		nsdb_delete_nsdb_usage(progname);
 	}
-	if (nce == NULL || nsdbname == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		nsdb_delete_nsdb_usage(progname);
 	}
 
@@ -184,9 +183,13 @@ main(int argc, char **argv)
 			nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
-
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
+	if (binddn == NULL) {
+		fprintf(stderr, "No NDSB bind DN was specified\n");
+		goto out_free;
+	}
+
 	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:

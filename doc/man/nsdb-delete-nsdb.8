@@ -37,7 +37,6 @@ nsdb-delete-nsdb \- remove all FedFS info from an NSDB
 .IR nsdbport ]
 .RB [ \-w
 .IR bindpw ]
-.RB \-e
 .IR nce
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
@@ -62,29 +61,36 @@ about file sets contained in a FedFS domain name space.
 .SH DESCRIPTION
 The
 .BR nsdb-delete-nsdb (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the NSDB protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the NSDB protocol or for use in scripts.
 This command wipes part or all of an NSDB clean by
-disconnecting an NCE and removing all FedFS records under it.
+disconnecting an
+.IR "NSDB Container Entry" ,
+or NCE, and removing all FedFS records under it.
 .P
-Effectively, this command first removes the NSDB container information
+This command has one positional parameter which specifies the
+fully qualified distinguished name of the NCE to be removed.
+.P
+The
+.BR nsdb-delete-nsdb (8)
+command first removes the NSDB container information
 for the specified NCE to prevent FedFS-enabled clients and servers
-from accessing the FedFS records under the NCE.
+from accessing the FedFS records under that NCE.
 Then, it removes all FSN and FSL records under the NCE.
-The NCE object itself is left on the server.
+The NCE object itself is left on the LDAP server.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints an
+Displays
 .BR nsdb-delete-nsdb (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
-Specifies a distinguished name of an entity used to bind to this LDAP server.
+Specifies a distinguished name of an entity used to bind to the LDAP server
+where the NSDB resides.
 If the
-.B -D
+.B \-\-binddn
 option is not specified,
 the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
 If this variable is not set,
@@ -95,35 +101,36 @@ of the server's DIT, the
 .BR nsdb-delete-nsdb (8)
 command fails.
 .IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
-Specifies the distinguished name of the doomed NSDB container entry.
+Specifies the distinguished name of the NSDB Container Entry.
 This option must be specified on the command line.
 No default value is assumed or read from an environment variable.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
-Specifies the hostname of the NSDB where the doomed entry resides.
+Specifies the hostname of the NSDB where the NSDB Container Entry resides.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-delete-nsdb (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
-Specifies the IP port of the NSDB where the doomed entry resides.
+Specifies the IP port of the NSDB where the NSDB Container Entry resides.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
 .IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to this LDAP server.
+Specifies the password used for simple authentication to th LDAP server
+where the NSDB resides.
 If the
-.B -w
+.B \-\-bindpw
 option is not specified,
 the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
 If the variable is not set and the
-.B -w
+.B \-\-bindpw
 option is not specified, the
 .BR nsdb-delete-nsdb (8)
 command asks for a password on

@@ -103,9 +103,10 @@ version and usage message on
 .IR stderr ,
 then exits.
 .IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
-Specifies a distinguished name of an entity used to bind to this LDAP server.
+Specifies a distinguished name of an entity used to bind to the LDAP server
+where the NSDB resides.
 If the
-.B -D
+.B \-\-binddn
 option is not specified,
 the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
 If this variable is not set,
@@ -116,9 +117,9 @@ of the server's DIT, the
 .BR nsdb-remove-nci (8)
 command fails.
 .IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
-Specifies the distinguished name of the doomed NSDB container entry.
+Specifies the distinguished name of the doomed NSDB Container Entry.
 If the
-.B -e
+.B \-\-nce
 option is not specified,
 the value of the FEDFS_NSDB_NCE environment variable is consulted.
 If this variable is not set,
@@ -127,31 +128,32 @@ If none of these is specified, the
 .BR nsdb-remove-nci (8)
 command fails.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
-Specifies the hostname of the NSDB where the doomed entry resides.
+Specifies the hostname of the NSDB where the NSDB Container Entry resides.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-remove-nci (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
-Specifies the IP port of the NSDB where the doomed entry resides.
+Specifies the IP port of the NSDB where the NSDB Container Entry resides.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
 .IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to this LDAP server.
+Specifies the password used for simple authentication to the LDAP server
+where the NSDB resides
 If the
-.B -w
+.B \-\-bindpw
 option is not specified,
 the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
 If the variable is not set and the
-.B -w
+.B \-\-bindpw
 option is not specified, the
 .BR nsdb-remove-nci (8)
 command asks for a password on
@@ -246,11 +248,11 @@ Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain and that you want to disable the NCE
 .I o=fedfs
-on the LDAP server
-.IR ldap.example.net .
+on the NSDB
+.IR nsdb.example.net .
 .RS
 .sp
-$ nsdb-remove-nci -l ldap.example.net -D cn=Manager -e o=fedfs
+$ nsdb-remove-nci -l nsdb.example.net -D cn=Manager -e o=fedfs
 .br
 Enter NSDB password:
 .br
