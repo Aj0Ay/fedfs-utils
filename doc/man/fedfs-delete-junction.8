@@ -33,7 +33,7 @@ fedfs-delete-junction \- send a FEDFS_DELETE_JUNCTION ADMIN protocol request
 .IR nettype ]
 .RB [ \-h
 .IR hostname ]
-.BI "-p " path
+.I path
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -52,22 +52,39 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-delete-junction (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_DELETE_JUNCTION request to a remote
 FedFS ADMIN protocol service.
 .P
-This request deletes a FedFS junction in the local file system
-on a remote file server.
+The FEDFS_DELETE_JUNCTION request deletes a FedFS junction
+in a local file system on a remote file server.
+The
+.BR fedfs-delete-junction (8)
+command takes a single positional parameter which is the
+pathname on the remote server of the junction to be deleted.
+This pathname is relative to the root
+of the local file system on the remote server.
+.P
+The FEDFS_DELETE_JUNCTION request does not remove the FSN record
+associated with the deleted junction.
+Other junctions may continue to refer to the FSN in the deleted junction.
+.P
+When no junction refers to this FSN, use the
+.BR nsdb-delete-fsn (8)
+command to delete the FSN and children FSL records.
+Resolving a junction that contains an FSN UUID
+without a matching FSN record on the NSDB
+results in an error on the file server.
+.P
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-delete-junction (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -85,11 +102,6 @@ If this option is not specified, the default value is
 See
 .BR rpc (3t)
 for details.
-.IP "\fB\-p, \-\-path=\fIpathname\fP"
-Specifies the location on the remote server where the doomed FedFS junction
-resides.
-This pathname is relative to the remote server's physical root directory,
-not the remote server's NFS pseudoroot.
 .SH EXIT CODES
 The remote administration service returns a value that reflects the
 success of the requested operation.
@@ -158,12 +170,14 @@ The remote server does not support the specified procedure.
 Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain.
-To delete an existing FedFS junction on the remote server
+To delete the existing FedFS junction
+.I /export/junction1
+on the file server
 .IR fs.example.net ,
 use:
 .RS
 .sp
-$ fedfs-delete-junction -h fs.example.net -p /export/junction1
+$ fedfs-delete-junction -h fs.example.net /export/junction1
 .SH SECURITY
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .SH "SEE ALSO"

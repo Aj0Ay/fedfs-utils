@@ -35,7 +35,7 @@ fedfs-lookup-junction \- send a FEDFS_LOOKUP_JUNCTION ADMIN protocol request
 .IR hostname ]
 .RB [ \-t
 .IR resolvetype ]
-.BI "-p " path
+.I path
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -54,52 +54,59 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-lookup-junction (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_LOOKUP_JUNCTION request to a remote
 FedFS ADMIN protocol service.
 .P
-This request causes a remote server to report FedFS junction resolution
-results as the remote server sees them.
-It can report cached results or can force a fresh junction resolution if,
-for example, the contents of an NSDB are known to have changed.
-These capabilities are especially useful for tracking down
-configuration problems in a FedFS domain.
+The FEDFS_LOOKUP_JUNCTION request causes a remote server
+to reveal the contents of a junction,
+or to report cached or immediate NSDB lookup results as that server sees them.
+The contents of a FedFS junction are an FSN UUID and an NSDB name and port.
 .P
-The contents of a FedFS junction are a UUID and an NSDB name and port.
+The
+.BR fedfs-lookup-junction (8)
+command takes a single positional parameter which is the
+pathname on the remote server of the junction to be looked up.
+The pathname is relative to the root
+of the local file system on the remote server.
+.P
+Resolving a junction means performing an NSDB query with the contents
+of the junction to obtain a list of fileset locations, or FSLs,
+matching the stored FSN UUID.
 The meaning of these is described in more detail in
 .BR fedfs (7).
-Resolving a junction means performing an NSDB query with the contents
-of the junction to obtain the list of fileset locations matching the FSN UUID.
 .P
-There are three distinct types of junction resolution:
+There are three distinct types of junction lookup:
 .TP
 .B none
 The remote server reports the actual contents of the junction stored
 on its local disk.
 This includes an FSN UUID and the name and port of an NSDB.
+If the
+.B \-t
+option is not specified, this type of lookup is performed.
 .TP
 .B cache
-The remote server reports resolution results it may have cached from
-previous NSDB resolution requests.
+The remote server reports lookup results it may have cached from
+previous junction lookup requests.
 This includes an FSN UUID, the name and port of an NSDB, and the cached
-list of fileset locations matching the FSN UUID.
+list of fileset locations matching the FSN UUID in the junction.
 Not all FedFS ADMIN service implementations support this type of request.
 .TP
 .B nsdb
-The remote server performs a fresh junction resolution,
+The remote server performs a fresh junction lookup
 and the results are returned.
 This includes an FSN UUID, the name and port of an NSDB,
-and a list of fileset locations matching the FSN UUID.
+and a list of fileset locations matching the FSN UUID in the junction.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-lookup-junction (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -271,10 +278,10 @@ FedFS domain and that your domain's NSDB hostname is
 .IR nsdb.example.net .
 You have created a FedFS junction on remote server
 .IR fs.example.net .
-To see how the junction appears on the remote server, use:
+To see how the junction appears on the file server, use:
 .RS
 .sp
-$ fedfs-lookup-junction -h fs.example.net -p /export/junction1 -t none
+$ fedfs-lookup-junction -h fs.example.net /export/junction1
 .br
 Call completed successfully
 .br
@@ -283,18 +290,18 @@ FSN UUID: 89c6d208-7280-11e0-9f1d-000c297fd679
 NSDB: nsdb.example.net:389
 .sp
 .RE
-To see real-time junction resolution results as the remote server sees them, use:
+To see real-time junction lookup results as the remote server sees them, use:
 .RS
 .sp
-$ fedfs-lookup-junction -h fs.example.net -p /export/junction1 -t nsdb
+$ fedfs-lookup-junction -h fs.example.net -t nsdb /export/junction1
 .br
 Server returned FEDFS_ERR_NSDB_NOFSN
 .sp
 .RE
-In this example, the junction exists on the remote server,
+In this example, the junction exists on the file server,
 but the domain's NSDB has not yet been updated to contain a list of
-fileset locations for the FSN contained in the junction.
-The remote server is therefore not able to resolve the junction.
+fileset locations for the FSN UUID contained in the junction.
+The file server is therefore not able to resolve the junction.
 .SH SECURITY
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .SH "SEE ALSO"

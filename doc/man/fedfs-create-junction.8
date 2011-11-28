@@ -33,12 +33,12 @@ fedfs-create-junction \- send a FEDFS_CREATE_JUNCTION ADMIN protocol request
 .IR nettype ]
 .RB [ \-h
 .IR hostname ]
-.BI "-p " path
-.BI "-u " fsn-uuid
 .RB [ \-l
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
+.I path
+.I fsn-uuid
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -57,28 +57,40 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-create-junction (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_CREATE_JUNCTION request to a remote
 FedFS ADMIN protocol service.
 .P
-This request creates a FedFS junction in the local file system
-on a remote file server.
-The contents of a FedFS junction are a UUID and an NSDB name and port,
-which are specified on the command line.
+The FEDFS_CREATE_JUNCTION request creates a FedFS junction
+in a local file system on a remote file server.
+The contents of a FedFS junction are an FSN UUID and an NSDB name and port.
+.P
+The
+.BR fedfs-create-junction (8)
+command takes two positional parameters which specify
+the pathname on the remote server of the new junction, and the FSN UUID.
+This pathname is relative to the root
+of the local file system on the remote server.
+Required NSDB information can be inferred
+from the command's environment or specified on the command line.
 The meaning of these arguments is described in more detail in
 .BR fedfs (7).
+.P
+The FEDFS_CREATE_JUNCTION request does not create an FSN record.
+To create an FSN record, use the
+.BR nsdb-create-fsn (8)
+command.
+Resolving a junction that contains an FSN UUID without
+a matching FSN record on the NSDB results in an error on the file server.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
-.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
-Specifies the FSN UUID to insert into the new FedFS junction.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-create-junction (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -101,7 +113,7 @@ Specifies the hostname of the NSDB to insert into the new FedFS junction.
 If this option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \--nsdbname
 option is not specified, the
 .BR fedfs-create-junction (8)
 command fails.
@@ -110,11 +122,6 @@ Specifies the IP port of the NSDB to insert into the new FedFS junction.
 If this option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
-.IP "\fB\-p, \-\-path=\fIpathname\fP"
-Specifies the location on the remote server where the new FedFS junction
-should be created.
-This pathname is relative to the remote server's physical root directory,
-not the remote server's NFS pseudoroot.
 .SH EXIT CODES
 The remote administration service returns a value that reflects the
 success of the requested operation.
@@ -191,17 +198,20 @@ Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain and that your domain's NSDB hostname is
 .IR nsdb.example.net .
-To create a new FedFS junction on the remote server
+To create a new FedFS junction on the file server
 .IR fs.example.net ,
 use:
 .RS
 .sp
-$ fedfs-create-junction -h fs.example.net -l nsdb.example.net `uuidgen -t` -p /export/junction1
+$ fedfs-create-junction -h fs.example.net -l nsdb.example.net \\
+	/export/junction1 `uuidgen -t`
 .sp
 .RE
 In this example, a new FSN UUID is created on the spot.
 It can be read back from the remote server using the
 .BR fedfs-lookup-junction (8)
+command, and added to the NSDB using the
+.BR nsdb-create-fsn (8)
 command.
 .SH SECURITY
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
@@ -209,6 +219,7 @@ RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .BR fedfs (7),
 .BR rpc.fedfsd (8),
 .BR fedfs-lookup-junction (8),
+.BR nsdb-create-fsn (8),
 .BR rpc (3t)
 .sp
 RFC 5716 for FedFS requirements and overview
