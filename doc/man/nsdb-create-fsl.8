@@ -35,20 +35,16 @@ nsdb-create-fsl \- create a fileset location (FSL) record on an NSDB
 .IR nce ]
 .RB [ \-l
 .IR nsdbname ]
+.RB [ \-o
+.IR serverport ]
 .RB [ \-r
 .IR nsdbport ]
 .RB [ \-w
 .IR bindpw ]
-.B \-u
 .I fsn-uuid
-.B \-x
 .I fsl-uuid
-.B \-s
 .I servername
-.RB [ \-o
-.IR serverport ]
-.RB [ \-p
-.IR serverpath ]
+.I serverpath
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -72,8 +68,8 @@ about file sets contained in a FedFS domain name space.
 .SH DESCRIPTION
 The
 .BR nsdb-create-fsl (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the NSDB protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the NSDB protocol or for use in scripts.
 This command creates a FedFS
 .I fileset location
 (FSL) record on an NSDB.
@@ -86,47 +82,49 @@ The meaning of these items is described in more detail in
 .BR fedfs (7).
 .P
 FSLs are stored in records on an NSDB.
-These records are stored as children of FSN records.
+FSL records are stored as children of FSN records.
 Replicas of these records can exist on more than one LDAP server.
 .P
 The
 .BR nsdb-create-fsl (8)
 command creates an FSL record on the named NSDB.
-It does not create parent FSN records;
-to create FSN records, use
-.BR nsdb-create-fsn (8).
-It does not create a replica of a fileset;
-to create a fileset replica,
+It does not create parent FSN records.
+To create FSN records, use the
+.BR nsdb-create-fsn (8)
+command.
+It does not create a replica of a fileset.
+To create a fileset replica,
 use appropriate file server administrative commands.
+.P
+This command has four positional parameters.  The first parameter
+specifies the target FSN UUID.  If a record for this FSN does not
+already exist, the
+.BR nsdb-create-fsn (8)
+command fails.
+The second parameter specifies the
+UUID of the new FSL record.  If a record for this FSL already
+exists, the
+.BR nsdb-create-fsn (8)
+command fails.
+.P
+The third parameter specifies the
+hostname of the fileserver where the fileset replica resides.
+The fourth parameter specifies the export path of that replica.
+The
+.BR nsdb-create-fsn (8)
+command does not verify that a replica exists at that location.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
-.IP "\fB\-x, \-\-fsluuid=\fIuuid\fP"
-Specifies the FSL UUID to insert into the new FSL record.
-If the
-.B -x
-option is not specified, the
-.BR nsdb-create-fsl (8)
-command fails.
-.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
-Specifies the FSN UUID to insert into the new FSL record.
-If the
-.B -u
-option is not specified,
-or an FSN record for this FSN UUID does not already exist
-on the specified NSDB, the
-.BR nsdb-create-fsl (8)
-command fails.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints an
+Displays
 .BR nsdb-create-fsl (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
-Specifies a distinguished name of an entity used to bind to this LDAP server.
-If the
-.B -D
+Specifies a distinguished name of an entity used to bind to the LDAP server
+where the NSDB resides.  If the
+.B \-\-binddn
 option is not specified,
 the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
 If this variable is not set,
@@ -137,10 +135,10 @@ of the server's DIT, the
 .BR nsdb-create-fsl (8)
 command fails.
 .IP "\fB-e, \-\-nce=\fINSDB-container-entry-distinguished-name\fP"
-Specifies the distinguished name of the NSDB container entry
+Specifies the distinguished name of the NSDB Container Entry
 under which this FSL record is to be created.
 If the
-.B -e
+.B \-\-nce
 option is not specified,
 the value of the FEDFS_NSDB_NCE environment variable is consulted.
 If this variable is not set,
@@ -151,48 +149,34 @@ command fails.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
 Specifies the hostname of the NSDB where the new FSL record should reside.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-create-fsl (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the IP port of the NSDB where the new FSL record should reside.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
-.IP "\fB\-s, \-\-servername=\fIfile-server-hostname\fP"
-Specifies the hostname of the file server a client should mount to access
-this fileset location.
-If the
-.B -s
-option is not specified, the
-.BR nsdb-create-fsl (8)
-command fails.
-.IP "\fB\-p, \-\-serverpath=\fIserver-export-path\fP"
-Specifies the export path a client should mount to access this fileset location.
-If the
-.B -p
-option is not specified, the
-.BR nsdb-create-fsl (8)
-command fails.
 .IP "\fB\-o, \-\-serverport=\fIfile-server-port\fP"
 Specifies the IP port of the file server a client should mount to access
 this fileset location.
 The default value if this option is not specified is 2049.
 .IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to this LDAP server.
+Specifies the password used for simple authentication to the LDAP server
+where the NSDB resides.
 If the
-.B -w
+.B \-\-bindpw
 option is not specified,
 the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
 If the variable is not set and the
-.B -w
+.B \-\-bindpw
 option is not specified, the
 .BR nsdb-create-fsl (8)
 command asks for a password on
@@ -307,28 +291,28 @@ The new FSN looks like:
 .sp
 	FSN UUID: 8e246ddc-7b46-11e0-8252-000c297fd679
 .br
-	NSDB: ldap.example.net:389
+	NSDB: nsdb.example.net:389
 .sp
 .RE
 Further suppose the NSDB
-.I ldap.example.net:389
-has an NSDB container entry whose distinguished name is
+.I nsdb.example.net:389
+has an NSDB Container Entry whose distinguished name is
 .IR o=fedfs ,
 and that an FSN record for the above UUID already exists.
 Finally, a replica of this fileset exists at
-.IR fileserver.example.net:/path .
+.IR fileserver.example.net:/export/path .
 To create a corresponding FSL record, you might use:
 .RS
 .sp
 $ nsdb-create-fsl -D cn=Manager -e o=fedfs \\
 .br
-	-u 8e246ddc-7b46-11e0-8252-000c297fd679
+	-l nsdb.example.net \\
 .br
-	-x 323c5068-7c11-11e0-8d38-000c297fd679
+	8e246ddc-7b46-11e0-8252-000c297fd679 \\
 .br
-	-l ldap.example.net
+	323c5068-7c11-11e0-8d38-000c297fd679 \\
 .br
-	-s fileserver.example.net -p path
+	fileserver.example.net /export/path
 .br
 Enter NSDB password:
 .br
@@ -338,7 +322,7 @@ Successfully created FSL record
 .sp
 .RE
 A new unpopulated NFS FSL record is created on
-.I ldap.example.net:389
+.I nsdb.example.net:389
 as a child of the FSN record with a distinguished name of
 .RS
 .sp
@@ -352,7 +336,7 @@ or
 To update individual attributes in the new FSL record, use
 .BR nsdb-update-fsl (8).
 .SH SECURITY
-Modify access to the LDAP's DIT is required to create a new FSL record.
+Permission to modify the LDAP's DIT is required to create a new FSL record.
 The
 .BR nsdb-create-fsl (8)
 command must bind as an entity permitted to modify the DIT

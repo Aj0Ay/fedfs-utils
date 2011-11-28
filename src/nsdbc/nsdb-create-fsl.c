@@ -50,7 +50,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_create_fsl_opts[] = "?dD:e:l:o:p:r:s:w:u:x:";
+static const char nsdb_create_fsl_opts[] = "?dD:e:l:o:r:w:";
 
 /**
  * Long form command line options
@@ -58,14 +58,10 @@ static const char nsdb_create_fsl_opts[] = "?dD:e:l:o:p:r:s:w:u:x:";
 static const struct option nsdb_create_fsl_longopts[] = {
 	{ "binddn", 1, NULL, 'D', },
 	{ "debug", 0, NULL, 'd', },
-	{ "fsluuid", 1, NULL, 'x', },
-	{ "fsnuuid", 1, NULL, 'u', },
 	{ "help", 0, NULL, '?', },
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "servername", 1, NULL, 's', },
-	{ "serverpath", 1, NULL, 'p', },
 	{ "serverport", 1, NULL, 'o', },
 	{ "bindpw", 1, NULL, 'w', },
 	{ NULL, 0, NULL, 0, },
@@ -82,8 +78,8 @@ nsdb_create_fsl_usage(const char *progname)
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
-			"-u fsn-uuid -x fsl-uuid -s servername "
-			"[ -o serverport ] -p serverpath\n\n",
+			"[ -o serverport ] "
+			"fsn-uuid fsl-uuid servername serverpath\n\n",
 			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
@@ -91,13 +87,9 @@ nsdb_create_fsl_usage(const char *progname)
 	fprintf(stderr, "\t-D, --binddn         Bind DN\n");
 	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
-	fprintf(stderr, "\t-p, --serverpath     File server export path\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-s, --servername     File server hostname to set\n");
 	fprintf(stderr, "\t-o, --serverport     File server port to set\n");
 	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
-	fprintf(stderr, "\t-u, --fsnuuid        FSN UUID of FSL's parent\n");
-	fprintf(stderr, "\t-x, --fsluuid        New FSL UUID\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -120,7 +112,6 @@ main(int argc, char **argv)
 	unsigned int ldap_err;
 	FedFsStatus retval;
 	nsdb_t host;
-	uuid_t uu;
 	int arg;
 
 	(void)umask(S_IRWXO);
@@ -146,7 +137,6 @@ main(int argc, char **argv)
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &bindpw);
 
 	serverport = 0;
-	fsn_uuid = fsl_uuid = servername = serverpath = NULL;
 	while ((arg = getopt_long(argc, argv, nsdb_create_fsl_opts,
 			nsdb_create_fsl_longopts, NULL)) != -1) {
 		switch (arg) {
@@ -169,9 +159,6 @@ main(int argc, char **argv)
 				nsdb_create_fsl_usage(progname);
 			}
 			break;
-		case 'p':
-			serverpath = optarg;
-			break;
 		case 'r':
 			if (!nsdb_parse_port_string(optarg, &nsdbport)) {
 				fprintf(stderr, "Bad port number: %s\n",
@@ -179,25 +166,8 @@ main(int argc, char **argv)
 				nsdb_create_fsl_usage(progname);
 			}
 			break;
-		case 's':
-			servername = optarg;
-			break;
 		case 'w':
 			bindpw = optarg;
-			break;
-		case 'u':
-			if (uuid_parse(optarg, uu) == -1) {
-				fprintf(stderr, "Invalid FSN UUID: %s\n", optarg);
-				nsdb_create_fsl_usage(progname);
-			}
-			fsn_uuid = optarg;
-			break;
-		case 'x':
-			if (uuid_parse(optarg, uu) == -1) {
-				fprintf(stderr, "Invalid FSL UUID: %s\n", optarg);
-				nsdb_create_fsl_usage(progname);
-			}
-			fsl_uuid = optarg;
 			break;
 		default:
 			fprintf(stderr, "Invalid command line "
@@ -206,13 +176,31 @@ main(int argc, char **argv)
 			nsdb_create_fsl_usage(progname);
 		}
 	}
-	if (optind != argc) {
-		fprintf(stderr, "Unrecognized command line argument\n");
+	if (argc == optind + 4) {
+		uuid_t uu;
+		fsn_uuid = argv[optind];
+		if (uuid_parse(fsn_uuid, uu) == -1) {
+			fprintf(stderr, "Invalid FSN UUID was specified\n");
+			nsdb_create_fsl_usage(progname);
+		}
+		fsl_uuid = argv[optind + 1];
+		if (uuid_parse(fsl_uuid, uu) == -1) {
+			fprintf(stderr, "Invalid FSL UUID was specified\n");
+			nsdb_create_fsl_usage(progname);
+		}
+		servername = argv[optind + 2];
+		if (!nsdb_is_hostname_utf8(servername)) {
+			fprintf(stderr, "NSDB name %s is "
+				"not a UTF-8 hostname\n", servername);
+			nsdb_create_fsl_usage(progname);
+		}
+		serverpath = argv[optind + 3];
+	} else {
+		fprintf(stderr, "Ambiguous positional parameters\n");
 		nsdb_create_fsl_usage(progname);
 	}
-	if (nce == NULL || fsn_uuid == NULL || fsl_uuid == NULL ||
-	    nsdbname == NULL || servername == NULL || serverpath == NULL) {
-		fprintf(stderr, "Missing required command line argument\n");
+	if (nsdbname == NULL) {
+		fprintf(stderr, "No NSDB hostname was specified\n");
 		nsdb_create_fsl_usage(progname);
 	}
 
@@ -230,9 +218,19 @@ main(int argc, char **argv)
 			nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
-
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
+	if (binddn == NULL) {
+		fprintf(stderr, "No NDSB bind DN was specified\n");
+		goto out_free;
+	}
+	if (nce == NULL)
+		nce = (char *)nsdb_default_nce(host);
+	if (nce == NULL) {
+		fprintf(stderr, "No NCE was specified\n");
+		goto out_free;
+	}
+
 	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
@@ -256,8 +254,6 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
-	if (nce == NULL)
-		nce = (char *)nsdb_default_nce(host);
 	retval = nsdb_create_fsl_s(host, nce, fsn_uuid, fsl_uuid, nsdbname, nsdbport,
 					servername, serverport, serverpath, &ldap_err);
 	switch (retval) {

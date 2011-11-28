@@ -39,14 +39,10 @@ nsdb-update-fsl \- update attributes of a fileset location (FSL) record
 .IR nsdbport ]
 .RB [ \-w
 .IR bindpw ]
-.B \-u
-.I fsn-uuid
-.B \-x
-.I fsl-uuid
-.B \-a
-.I attribute
 .RB [ \-v
 .IR value ]
+.I fsl-uuid
+.I attribute
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
@@ -70,8 +66,8 @@ about file sets contained in a FedFS domain name space.
 .SH DESCRIPTION
 The
 .BR nsdb-update-fsl (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the NSDB protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the NSDB protocol or for use in scripts.
 This command modifies attributes contained in
 .I fileset location
 (FSL) records on an NSDB.
@@ -90,11 +86,12 @@ Replicas of these records can exist on more than one LDAP server.
 The
 .BR nsdb-update-fsl (8)
 command can modify certain attributes of an FSL record.
-It does not create FSL records;
-to create FSL records, use
-.BR nsdb-create-fsl (8).
-It does not update base FSL attributes, such as the servername;
-to modify those attributes, a new FSL record must be created.
+It does not create FSL records.
+To create FSL records, use the
+.BR nsdb-create-fsl (8)
+command.
+It does not update base FSL attributes, such as the servername.
+To modify those attributes, a new FSL record must be created.
 .P
 The
 .IR fedfsAnnotation " and"
@@ -103,42 +100,28 @@ attributes are multi-value attributes.
 To modify them, use
 .BR nsdb-annotate "(8) and"
 .BR nsdb-describe "(8), respectively."
+.P
+This command has two positional parameters.
+The first parameter specifies the UUID of the FSL record to modify.
+If a record for this FSL does not already exist, the
+.BR nsdb-update-fsl (8)
+command fails.
+The second parameter specifies the name of the attribute to update.
+If that attribute does not already exist,
+it is added to the target FSL record.
 .SH OPTIONS
-.IP "\fB-a, \-\-attribute=\fILDAP-attribute\fP"
-Specifies which attribute to update.
-If the
-.B -a
-option is not specified, the
-.BR nsdb-update-fsl (8)
-command fails.
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
-.IP "\fB\-x, \-\-fsluuid=\fIuuid\fP"
-Specifies the FSL UUID of the FSL record to update.
-If the
-.B -x
-option is not specified, the
-.BR nsdb-update-fsl (8)
-command fails.
-.IP "\fB\-u, \-\-fsnuuid=\fIuuid\fP"
-Specifies the FSN UUID under which the FSL record resides.
-If the
-.B -u
-option is not specified,
-or an FSN record for this FSN UUID does not already exist
-on the specified NSDB, the
-.BR nsdb-update-fsl (8)
-command fails.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints an
+Displays
 .BR nsdb-update-fsl (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr.
 .IP "\fB-D, \-\-binddn=\fIbind-distinguished-name\fP"
-Specifies a distinguished name of an entity used to bind to this LDAP server.
+Specifies a distinguished name of an entity used to bind to the LDAP server
+where the NSDB resides.
 If the
-.B -D
+.B \-\-binddn
 option is not specified,
 the value of the FEDFS_NSDB_ADMIN environment variable is consulted.
 If this variable is not set,
@@ -152,7 +135,7 @@ command fails.
 Specifies the distinguished name of the NSDB container entry
 under which the specified FSL record resides.
 If the
-.B -e
+.B \-\-nce
 option is not specified,
 the value of the FEDFS_NSDB_NCE environment variable is consulted.
 If this variable is not set,
@@ -163,18 +146,18 @@ command fails.
 .IP "\fB\-l, \-\-nsdbname=\fINSDB-hostname\fP"
 Specifies the hostname of the NSDB where the specified FSL record resides.
 If the
-.B -l
+.B \-\-nsdbname
 option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR nsdb-update-fsl (8)
 command fails.
 .IP "\fB\-r, \-\-nsdbport=\fINSDB-port\fP"
 Specifies the IP port of the NSDB where the specified FSL record resides.
 If the
-.B -r
+.B \-\-nsdbport
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
@@ -184,18 +167,19 @@ If the specified attribute does not exist, it is created and assigned
 the specified value.
 Otherwise the existing value is replaced.
 If the
-.B -v
+.B \-\-value
 option is not specified, the
 .BR nsdb-update-fsl (8)
 command attempts to delete the specified attribute.
 .IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to this LDAP server.
+Specifies the password used for simple authentication to the LDAP server
+where the NSDB resides.
 If the
-.B -w
+.B \-\-bindpw
 option is not specified,
 the value of the FEDFS_NSDB_PASSWD environment variable is consulted.
 If the variable is not set and the
-.B -w
+.B \-\-bindpw
 option is not specified, the
 .BR nsdb-update-fsl (8)
 command asks for a password on
@@ -310,11 +294,11 @@ The new FSN looks like:
 .sp
 	FSN UUID: 8e246ddc-7b46-11e0-8252-000c297fd679
 .br
-	NSDB: ldap.example.net:389
+	NSDB: nsdb.example.net:389
 .sp
 .RE
 Further suppose the NSDB
-.I ldap.example.net:389
+.I nsdb.example.net:389
 has an NSDB container entry whose distinguished name is
 .IR o=fedfs ,
 and that an FSL child record with the UUID
@@ -327,13 +311,13 @@ from zero to one, you might use:
 .sp
 $ nsdb-update-fsl -D cn=Manager -e o=fedfs \\
 .br
-	-u 8e246ddc-7b46-11e0-8252-000c297fd679
+	-x 323c5068-7c11-11e0-8d38-000c297fd679 \\
 .br
-	-x 323c5068-7c11-11e0-8d38-000c297fd679
+	-l nsdb.example.net \\
 .br
-	-l ldap.example.net
+	8e246ddc-7b46-11e0-8252-000c297fd679 \\
 .br
-	-a fedfsNfsMinorVer -v 1
+	fedfsNfsMinorVer -v 1
 .br
 Enter NSDB password:
 .br
@@ -345,7 +329,7 @@ Successfully updated FSL record
 To see the contents of the updated FSL record, use
 .BR nsdb-resolve-fsn (8).
 .SH SECURITY
-Modify access to the LDAP's DIT is required to update an FSL record.
+Permission to modify the LDAP's DIT is required to update an FSL record.
 The
 .BR nsdb-update-fsl (8)
 command must bind as an entity permitted to modify the DIT
