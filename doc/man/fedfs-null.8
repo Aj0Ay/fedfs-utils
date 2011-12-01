@@ -51,22 +51,21 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-null (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_NULL request to a remote
 FedFS ADMIN protocol service.
 .P
-This request performs a simple ping operation that determines if
-there is an operational FedFS ADMIN service on the remote server.
+The FEDFS_NULL request performs a simple ping operation that determines
+if there is an operational FedFS ADMIN service on the remote server.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-null (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -97,7 +96,7 @@ The remote server does not support the specified procedure.
 Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain and that you want to know if the FedFS ADMIN service
-on the remote server
+on the file server
 .IR fs.example.net
 is operational.  Use:
 .RS

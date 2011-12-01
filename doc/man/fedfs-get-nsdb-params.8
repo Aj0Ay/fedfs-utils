@@ -55,24 +55,20 @@ on remote FedFS-enabled file servers.
 .SH DESCRIPTION
 The
 .BR fedfs-get-nsdb-params (8)
-command is part of a collection of low-level single-use programs that are
-intended for testing the FedFS ADMIN protocol or for use in scripts.
+command is part of a collection of low-level single-use programs
+that is intended for testing the FedFS ADMIN protocol or for use in scripts.
 It sends a single FEDFS_GET_NSDB_PARAMS request to a remote
 FedFS ADMIN protocol service.
 .P
-This request retrieves NSDB connection parameter information stored
-on a remote file server.
-The NSDB hostname and the port number (see below)
+The FEDFS_GET_NSDB_PARAMS request retrieves
+NSDB connection parameter information stored on a remote server.
+For more on the specification and use of NSDB connection parameters, see
+.BR nsdbparams "(8) or"
+.BR fedfs (7).
+.P
+An NSDB hostname and port number (see below)
 are used as the primary key to identify an entry
 in the remote server's NSDB connection parameter database.
-The
-.BR fedfs-get-nsdb-params (8)
-command requires that an NSDB hostname is specified,
-either via the
-.I -l
-option or via an environment variable.
-The NSDB port number assumes a default value, and thus is optional.
-.P
 The NSDB connection parameter database
 matches NSDB hostnames and ports by exact value.
 In other words,
@@ -82,13 +78,12 @@ they are still considered separate entries
 in the local NSDB connection parameter database.
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
-Specifies that debugging messages be produced during operation.
+Enables debugging messages during operation.
 .IP "\fB\-?, \-\-help"
-Prints a
+Displays
 .BR fedfs-get-nsdb-params (8)
-version and usage message on
-.IR stderr ,
-then exits.
+version information and a usage message on
+.IR stderr .
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
@@ -111,7 +106,7 @@ Specifies the hostname of the NSDB to insert into the new FedFS junction.
 If this option is not specified,
 the value of the FEDFS_NSDB_HOST environment variable is consulted.
 If the variable is not set and the
-.B -l
+.B \-\-nsdbname
 option is not specified, the
 .BR fedfs-get-nsdb-params (8)
 command fails.
@@ -209,7 +204,7 @@ Suppose you are the FedFS administrator of the
 .I example.net
 FedFS domain and that your domain's NSDB hostname is
 .IR nsdb.example.net .
-If the remote server
+If the file server
 .IR fs.example.net
 already knows about your domain's NSDB, you can query it with:
 .RS
@@ -230,6 +225,7 @@ RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .BR fedfs (7),
 .BR rpc.fedfsd (8),
 .BR fedfs-get-nsdb-limited-params (8),
+.BR nsdbparams (8),
 .BR rpc (3t)
 .sp
 RFC 5716 for FedFS requirements and overview
