@@ -289,6 +289,7 @@ getsrvinfo(const char *srvname, const char *domainname, struct srvinfo **si)
 
 		new->si_target = strdup(exp_dn);
 		if (new->si_target == NULL) {
+			free(new);
 			status = ESI_MEMORY;
 			goto out;
 		}
