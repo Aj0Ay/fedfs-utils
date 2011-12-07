@@ -483,6 +483,7 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			sloppy = true;
+			break;
 		case 'v':
 			++verbose;
 			break;
