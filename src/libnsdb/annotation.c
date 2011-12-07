@@ -101,7 +101,7 @@
  * Check for UTF-8 cleanliness and provide proper escaping
  *
  * @param in NUL-terminated C string containing string to sanitize
- * @param out OUT: dynamically allocated C string containing cleansed string
+ * @param out OUT: NUL-terminated C string containing cleansed value
  * @return a FedFsStatus code
  *
  * Caller must free "out" with free(3)
@@ -114,7 +114,7 @@ nsdb_sanitize_annotation(const char *in, char **out)
 
 	/* Assume worst case: every input character must be escaped */
 	len = strlen(in);
-	result = malloc(len * 2);
+	result = malloc(len * 2 + 1);
 	if (result == NULL) {
 		xlog(D_GENERAL, "%s: Failed to allocate output buffer",
 			__func__);
@@ -128,6 +128,7 @@ nsdb_sanitize_annotation(const char *in, char **out)
 
 		result[j++] = in[i];
 	}
+	result[j] = '\0';
 
 	*out = result;
 	xlog(D_CALL, "%s: out_len = %zu, out = \"%s\"",
