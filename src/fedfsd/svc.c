@@ -377,10 +377,8 @@ fedfsd_pathwalk(const FedFsPathName fpath, char **pathname)
 
 	tmp = nsdb_normalize_path(result);
 	free(result);
-	if (tmp == NULL) {
-		free(result);
+	if (tmp == NULL)
 		return FEDFS_ERR_SVRFAULT;
-	}
 
 	retval = fedfsd_pathwalk_check_term(tmp);
 	switch (retval) {
