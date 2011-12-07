@@ -316,10 +316,12 @@ fedfsd_pathwalk(const FedFsPathName fpath, char **pathname)
 		xlog(D_CALL, "%s: Zero-component pathname", __func__);
 		strcat(result, "/");
 		retval = fedfsd_pathwalk_check_term(result);
-		if (retval != FEDFS_OK)
+		if (retval != FEDFS_OK) {
 			free(result);
+			return retval;
+		}
 		*pathname = result;
-		return retval;
+		return FEDFS_OK;
 	}
 
 	for (i = 0; i < fpath.FedFsPathName_len; i++) {
