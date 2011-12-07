@@ -494,6 +494,7 @@ nsdb_read_certfile(const char *pathname, char **certdata,
 	if (fd == -1) {
 		xlog(D_GENERAL, "%s: Failed to open %s: %m",
 			__func__, pathname);
+		free(buf);
 		goto out;
 	}
 
