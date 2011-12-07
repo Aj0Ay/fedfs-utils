@@ -781,6 +781,8 @@ nsdb_resolve_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
 	if (retval != FEDFS_OK) {
 		xlog(D_CALL, "%s: parsing failed: %s",
 			__func__, nsdb_display_fedfsstatus(retval));
+		free(new->fl_dn);
+		free(new);
 		return retval;
 	}
 
