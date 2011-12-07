@@ -384,7 +384,7 @@ try_mount(const char *source, const char *target, const char *text_options)
 	} else {
 		char *tmp;
 
-		tmp = malloc(strlen(remaining + 1));
+		tmp = malloc(strlen(remaining) + 1);
 		if (tmp == NULL) {
 			fprintf(stderr, _("%s: No memory\n"), progname);
 			remaining = NULL;
