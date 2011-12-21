@@ -144,7 +144,8 @@ static void
 fedfs_lookup_replication_print_nfs_fsl(FedFsNfsFsl fsl)
 {
 	FedFsStatus status;
-	char *pathname;
+	char **path_array;
+	unsigned int i;
 
 	fedfs_lookup_replication_print_uuid("Fsl UUID", fsl.fslUuid);
 	if (fsl.hostname.utf8string_val == NULL)
@@ -154,13 +155,21 @@ fedfs_lookup_replication_print_nfs_fsl(FedFsNfsFsl fsl)
 			fsl.hostname.utf8string_len,
 			fsl.hostname.utf8string_val,
 			fsl.port);
-	status = nsdb_fedfspathname_to_posix(fsl.path, &pathname);
+	status = nsdb_fedfspathname_to_path_array(fsl.path, &path_array);
 	if (status != FEDFS_OK)
 		printf("Returned NFS export pathname was invalid: %s\n",
 			nsdb_display_fedfsstatus(status));
 	else {
-		printf("FSL NFS pathname: %s\n", pathname);
-		free(pathname);
+		if (path_array[0] == NULL)
+			printf(" FSL NFS pathname: /\n");
+		else {
+			printf(" FSL NFS pathname: ");
+			for (i = 0; path_array[i] != NULL; i++)
+				printf("/%s", path_array[i]);
+			printf("\n");
+		}
+
+		nsdb_free_string_array(path_array);
 	}
 }
 
@@ -221,8 +230,9 @@ fedfs_lookup_replication_call(const char *hostname, const char *nettype,
 		const char *path, const char *resolvetype)
 {
 	FedFsLookupRes result;
-	FedFsLookupArgs arg;
 	enum clnt_stat status;
+	FedFsLookupArgs arg;
+	char **path_array;
 	CLIENT *client;
 
 	memset(&arg, 0, sizeof(arg));
@@ -230,11 +240,18 @@ fedfs_lookup_replication_call(const char *hostname, const char *nettype,
 	if (!fedfs_lookup_replication_get_resolvetype(resolvetype, &arg.resolve))
 		return FEDFS_ERR_INVAL;
 	arg.path.type = FEDFS_PATH_SYS;
-	result.status = nsdb_posix_to_fedfspathname(path,
+	result.status = nsdb_posix_to_path_array(path, &path_array);
+	if (result.status != FEDFS_OK) {
+		fprintf(stderr, "Failed to encode pathname: %s",
+			nsdb_display_fedfsstatus(result.status));
+		return result.status;
+	}
+	result.status = nsdb_path_array_to_fedfspathname(path_array,
 						&arg.path.FedFsPath_u.adminPath);
 	if (result.status != FEDFS_OK) {
 		fprintf(stderr, "Failed to encode pathname: %s",
 			nsdb_display_fedfsstatus(result.status));
+		nsdb_free_string_array(path_array);
 		return result.status;
 	}
 
@@ -263,6 +280,7 @@ fedfs_lookup_replication_call(const char *hostname, const char *nettype,
 
 out:
 	nsdb_free_fedfspathname(&arg.path.FedFsPath_u.adminPath);
+	nsdb_free_string_array(path_array);
 	return result.status;
 }
 

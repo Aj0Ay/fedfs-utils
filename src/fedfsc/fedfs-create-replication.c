@@ -95,6 +95,7 @@ fedfs_create_replication_call(const char *hostname, const char *nettype,
 	FedFsCreateArgs arg;
 	enum clnt_stat status;
 	FedFsStatus result;
+	char **path_array;
 	CLIENT *client;
 	uuid_t uu;
 	int res;
@@ -113,11 +114,18 @@ fedfs_create_replication_call(const char *hostname, const char *nettype,
 	arg.fsn.nsdbName.port = nsdbport;
 
 	arg.path.type = FEDFS_PATH_SYS;
-	result = nsdb_posix_to_fedfspathname(path,
+	result = nsdb_posix_to_path_array(path, &path_array);
+	if (result != FEDFS_OK) {
+		fprintf(stderr, "Failed to encode pathname: %s",
+			nsdb_display_fedfsstatus(result));
+		return result;
+	}
+	result = nsdb_path_array_to_fedfspathname(path_array,
 				&arg.path.FedFsPath_u.adminPath);
 	if (result != FEDFS_OK) {
 		fprintf(stderr, "Failed to encode pathname: %s",
 			nsdb_display_fedfsstatus(result));
+		nsdb_free_string_array(path_array);
 		return result;
 	}
 
@@ -143,6 +151,7 @@ fedfs_create_replication_call(const char *hostname, const char *nettype,
 
 out:
 	nsdb_free_fedfspathname(&arg.path.FedFsPath_u.adminPath);
+	nsdb_free_string_array(path_array);
 	return result;
 }
 
