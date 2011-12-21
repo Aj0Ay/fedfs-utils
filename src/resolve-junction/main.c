@@ -188,8 +188,14 @@ _display_bool(const _Bool value)
 static void
 resolve_junction_display_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 {
-	fprintf(stdout, "fli_rootpath_len: %zu\n", strlen(nfsl->fn_path));
-	fprintf(stdout, "fli_rootpath: %s\n", nfsl->fn_path);
+	char *rootpath;
+
+	if (nsdb_path_array_to_posix(nfsl->fn_nfspath, &rootpath) != FEDFS_OK)
+		return;
+	fprintf(stdout, "fli_rootpath_len: %zu\n", strlen(rootpath));
+	fprintf(stdout, "fli_rootpath: %s\n", rootpath);
+	free(rootpath);
+
 	fprintf(stdout, "major version: %d\n", nfsl->fn_majorver);
 	fprintf(stdout, "minor version: %d\n", nfsl->fn_minorver);
 	fprintf(stdout, "fls_currency: %d\n", nfsl->fn_currency);

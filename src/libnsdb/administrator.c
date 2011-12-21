@@ -624,7 +624,7 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 	sprintf(ttybuf, "%d", fsl->fl_fslttl);
 	nsdb_init_add_attribute(attrs[i++], "fedfsFslTTL", ttyvals, ttybuf);
 
-	retval = nsdb_posix_path_to_xdr(nfsfsl->fn_path, &xdr_path);
+	retval = nsdb_path_array_to_xdr(nfsfsl->fn_nfspath, &xdr_path);
 	if (retval != FEDFS_OK)
 		return retval;
 	xdrpathvals[0] = &xdr_path;
@@ -714,7 +714,7 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 	retval = FEDFS_OK;
 
 out:
-	free(xdr_path.bv_val);
+	ber_memfree(xdr_path.bv_val);
 	return retval;
 }
 

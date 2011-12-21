@@ -59,7 +59,7 @@ struct fedfs_secdata {
  * the NSDB protocol draft, chapter 4, section 2.2.4
  */
 struct fedfs_nfs_fsl {
-	char			 *fn_path;
+	char			**fn_nfspath;
 	int			  fn_majorver;
 	int			  fn_minorver;
 	int			  fn_currency;

@@ -692,7 +692,7 @@ fedfsd_fill_in_fedfsfsl(const struct fedfs_fsl *fsl, FedFsFsl *new)
 		goto out_free;
 	}
 
-	retval = nsdb_posix_to_fedfspathname(fsl->fl_u.fl_nfsfsl.fn_path,
+	retval = nsdb_path_array_to_fedfspathname(fsl->fl_u.fl_nfsfsl.fn_nfspath,
 					&new->FedFsFsl_u.nfsFsl.path);
 	if (retval != FEDFS_OK)
 		goto out_free;

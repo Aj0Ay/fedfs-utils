@@ -108,7 +108,14 @@ _display_bool(const _Bool value)
 static void
 nsdb_resolve_fsn_display_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 {
-	printf(" NFS fli_rootpath:\t\t%s\n", nfsl->fn_path);
+	FedFsStatus status;
+	char *rootpath;
+
+	status = nsdb_path_array_to_posix(nfsl->fn_nfspath, &rootpath);
+	if (status != FEDFS_OK)
+		return;
+	printf(" NFS fli_rootpath:\t\t%s\n", rootpath);
+	free(rootpath);
 	printf(" NFS major version:\t\t%d\n", nfsl->fn_majorver);
 	printf(" NFS minor version:\t\t%d\n", nfsl->fn_minorver);
 	printf(" NFS fls_currency:\t\t%d\n", nfsl->fn_currency);

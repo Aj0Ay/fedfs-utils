@@ -215,9 +215,10 @@ main(int argc, char **argv)
 	strcpy(fsl->fl_fsnuuid, fsn_uuid);
 	strcpy(fsl->fl_nsdbname, nsdbname);
 	strcpy(fsl->fl_fslhost, servername);
-	fsl->fl_u.fl_nfsfsl.fn_path = strdup(serverpath);
-	if (fsl->fl_u.fl_nfsfsl.fn_path == NULL) {
-		fprintf(stderr, "Failed to allocate serverpath\n");
+	retval = nsdb_posix_to_path_array(serverpath,
+						&fsl->fl_u.fl_nfsfsl.fn_nfspath);
+	if (retval != FEDFS_OK) {
+		fprintf(stderr, "Failed to encode serverpath\n");
 		goto out;
 	}
 	fsl->fl_nsdbport = nsdbport;

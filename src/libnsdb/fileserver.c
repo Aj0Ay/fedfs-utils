@@ -58,7 +58,7 @@ nsdb_free_fedfs_fsl(struct fedfs_fsl *fsl)
 {
 	switch (fsl->fl_type) {
 	case FEDFS_NFS_FSL:
-		free(fsl->fl_u.fl_nfsfsl.fn_path);
+		nsdb_free_string_array(fsl->fl_u.fl_nfsfsl.fn_nfspath);
 		break;
 	default:
 		xlog(L_ERROR, "%s: Unrecognized FSL type", __func__);
@@ -753,7 +753,7 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 
 	else if (strcasecmp(attr, "fedfsNfsPath") == 0)
 		retval = nsdb_parse_singlevalue_xdrpath(attr, values,
-					&nfsl->fn_path);
+					&nfsl->fn_nfspath);
 	else if (strcasecmp(attr, "fedfsNfsMajorVer") == 0)
 		retval = nsdb_parse_singlevalue_int(attr, values,
 				&nfsl->fn_majorver);
