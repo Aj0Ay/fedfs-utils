@@ -619,7 +619,7 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 				servernamevals, fsl->fl_fslhost);
 	if (fsl->fl_fslport != 0) {
 		sprintf(serverportbuf, "%d", fsl->fl_fslport);
-		nsdb_init_add_attribute(attrs[i++], "fedfsNsdbPort",
+		nsdb_init_add_attribute(attrs[i++], "fedfsFslPort",
 					serverportvals, serverportbuf);
 	}
 	sprintf(ttybuf, "%d", fsl->fl_fslttl);
