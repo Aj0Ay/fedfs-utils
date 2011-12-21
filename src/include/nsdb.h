@@ -395,4 +395,17 @@ FedFsStatus	 nsdb_posix_path_to_xdr(const char *pathname,
 FedFsStatus	 nsdb_xdr_to_posix_path(struct berval *xdr_path,
 				char **pathname);
 
+FedFsStatus	 nsdb_path_array_to_xdr(char * const *path_array,
+				struct berval *xdr_path);
+FedFsStatus	 nsdb_xdr_to_path_array(const struct berval *xdr_path,
+				char ***path_array);
+FedFsStatus	 nsdb_path_array_to_posix(char * const *path_array,
+				char **pathname);
+FedFsStatus	 nsdb_posix_to_path_array(const char *pathname,
+				char ***path_array);
+FedFsStatus	 nsdb_path_array_to_fedfspathname(char * const *path_array,
+				FedFsPathName *fpath);
+FedFsStatus	 nsdb_fedfspathname_to_path_array(FedFsPathName fpath,
+				char ***path_array);
+
 #endif	/* !_FEDFS_NSDB_H_ */

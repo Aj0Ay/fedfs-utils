@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright 2010 Oracle.  All rights reserved.
+ * Copyright 2010, 2011 Oracle.  All rights reserved.
  *
  * This file is part of fedfs-utils.
  *
@@ -55,9 +55,46 @@
  * @return equivalent number of XDR 4-octet units
  */
 static inline unsigned int
-nsdb_quadlen(const unsigned int bytes)
+nsdb_quadlen(unsigned int bytes)
 {
 	return (bytes + 3) >> 2;
+}
+
+/**
+ * Bounded search for a character inside a string
+ *
+ * @param haystack C string to search
+ * @param needle character to find
+ * @param size number of character in "haystack" to search
+ * @return pointer to "needle" in "haystack," or NULL
+ */
+static const char *
+nsdb_strnchr(const char *haystack, char needle, size_t size)
+{
+	size_t i;
+
+	for (i = 0; i < size; i++)
+		if (haystack[i] == needle)
+			return &haystack[i];
+	return NULL;
+}
+
+static FedFsStatus
+nsdb_alloc_zero_component_pathname(char ***path_array)
+{
+	char **result;
+
+	xlog(D_GENERAL, "%s: Zero-component pathname", __func__);
+
+	result = (char **)calloc(1, sizeof(char *));
+	if (result == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate array",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+	result[0] = NULL;
+	*path_array = result;
+	return FEDFS_OK;
 }
 
 /**
@@ -379,6 +416,8 @@ nsdb_free_fedfspathname(FedFsPathName *fpath)
 	for (i = 0; i < fpath->FedFsPathName_len; i++)
 		nsdb_free_component(&fpath->FedFsPathName_val[i]);
 	free(fpath->FedFsPathName_val);
+	fpath->FedFsPathName_val = NULL;
+	fpath->FedFsPathName_len = 0;
 }
 
 /**
@@ -501,7 +540,7 @@ nsdb_fedfspathname_to_posix(const FedFsPathName fpath, char **pathname)
 			return FEDFS_ERR_NAMETOOLONG;
 		}
 
-		if (strchr(component, '/') != NULL) {
+		if (nsdb_strnchr(component, '/', len) != NULL) {
 			xlog(D_GENERAL, "%s: Local separator "
 				"character found in component",
 				__func__);
@@ -530,5 +569,473 @@ nsdb_fedfspathname_to_posix(const FedFsPathName fpath, char **pathname)
 	free(result);
 	if (*pathname == NULL)
 		return FEDFS_ERR_SVRFAULT;
+	return FEDFS_OK;
+}
+
+/**
+ * XDR encode an array of component strings
+ *
+ * @param path_array array of pointers to NUL-terminated C strings
+ * @param xdr_path OUT: berval set up with XDR-encoded binary path
+ * @return a FedFsStatus code
+ *
+ * Caller must free "xdr_path.bval" with ber_memfree(3t).
+ */
+FedFsStatus
+nsdb_path_array_to_xdr(char * const *path_array, struct berval *xdr_path)
+{
+	unsigned int p, count;
+	size_t len, length;
+	uint32_t *xdrbuf;
+	char *component;
+
+	if (path_array == NULL || xdr_path == NULL) {
+		xlog(L_ERROR, "%s: Invalid argument", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	for (length = XDR_UINT_BYTES, count = 0;
+	     path_array[count] != NULL;
+	     count++) {
+		component = path_array[count];
+		len = strlen(component);
+
+		if (len == 0) {
+			xlog(D_GENERAL, "%s: Zero-length component",
+				__func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (!nsdb_pathname_is_utf8(component)) {
+			xlog(D_GENERAL, "%s: Bad character in component",
+				__func__);
+			return FEDFS_ERR_BADCHAR;
+		}
+		length += XDR_UINT_BYTES + (nsdb_quadlen(len) << 2);
+	}
+
+	xdrbuf = (uint32_t *)ber_memcalloc(1, (ber_len_t)length);
+	if (xdrbuf == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate XDR buffer",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	xdrbuf[0] = htonl(count);
+	for (p = 1, count = 0; path_array[count] != NULL; count++) {
+		component = path_array[count];
+		len = strlen(component);
+
+		xdrbuf[p++] = htonl(len);
+		memcpy(&xdrbuf[p], component, len);
+		p += nsdb_quadlen(len);
+	}
+
+	xdr_path->bv_val = (char *)xdrbuf;
+	xdr_path->bv_len = (ber_len_t)(length);
+	return FEDFS_OK;
+}
+
+/**
+ * XDR decode an XDR byte stream into an array of component strings
+ *
+ * @param xdr_path berval with XDR-encoded binary path
+ * @param path_array OUT: pointer to array of pointers to NUL-terminated C strings
+ * @return a FedFsStatus code
+ *
+ * Caller must free "path_array" with nsdb_free_string_array().
+ *
+ * NB: The use of fixed constants for NAME_MAX and PATH_MAX are required
+ *     here because, on the client side, the pathname likely does not
+ *     exist, so pathconf(3) cannot be used.
+ */
+FedFsStatus
+nsdb_xdr_to_path_array(const struct berval *xdr_path, char ***path_array)
+{
+	uint32_t *xdrbuf = (uint32_t *)xdr_path->bv_val;
+	unsigned int len, i, p, count, length;
+	char **result;
+
+	if (xdr_path == NULL || path_array == NULL) {
+		xlog(L_ERROR, "%s: Invalid argument", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+	length = nsdb_quadlen((unsigned int)xdr_path->bv_len);
+	xlog(D_CALL, "%s: Received %u XDR'd quads", __func__, length);
+
+	p = 0;
+	count = ntohl(xdrbuf[p]);
+	if (count == 0)
+		return nsdb_alloc_zero_component_pathname(path_array);
+
+	result = (char **)calloc(count + 1, sizeof(char *));
+	if (result == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate array",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	p = 1;
+	for (i = 0; i < count; i++) {
+		len = ntohl(xdrbuf[p++]);
+		if (len > NAME_MAX) {
+			nsdb_free_string_array(result);
+			xlog(L_ERROR, "%s: Component too long", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (p + nsdb_quadlen(len) > length) {
+			nsdb_free_string_array(result);
+			xlog(L_ERROR, "%s: XDR buffer overflow", __func__);
+			return FEDFS_ERR_BADXDR;
+		}
+
+		result[i] = strndup((char *)&xdrbuf[p], len);
+		if (result[i] == NULL) {
+			nsdb_free_string_array(result);
+			xlog(L_ERROR, "%s: Failed to allocate component string",
+				__func__);
+			return FEDFS_ERR_SVRFAULT;
+		}
+
+		if (!nsdb_pathname_is_utf8(result[i])) {
+			nsdb_free_string_array(result);
+			xlog(D_GENERAL, "%s: Bad character in pathname", __func__);
+			return FEDFS_ERR_BADCHAR;
+		}
+		p += nsdb_quadlen(len);
+	}
+
+	*path_array = result;
+	return FEDFS_OK;
+}
+
+/**
+ * Construct a local POSIX-style pathname from an array of component strings
+ *
+ * @param path_array array of pointers to NUL-terminated C strings
+ * @param pathname OUT: pointer to NUL-terminated UTF-8 C string containing a POSIX-style path
+ * @return a FedFsStatus code
+ *
+ * Caller must free the returned pathname with free(3).
+ */
+FedFsStatus
+nsdb_path_array_to_posix(char * const *path_array, char **pathname)
+{
+	char *component, *result;
+	unsigned int i, count;
+	size_t length, len;
+
+	if (path_array == NULL || pathname == NULL) {
+		xlog(L_ERROR, "%s: Invalid argument", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (path_array[0] == NULL) {
+		xlog(D_GENERAL, "%s: Zero-component pathname", __func__);
+		result = strdup("/");
+		if (result == NULL) {
+			xlog(D_GENERAL, "%s: Failed to allocate buffer for result",
+				__func__);
+			return FEDFS_ERR_SVRFAULT;
+		}
+		*pathname = result;
+		return FEDFS_OK;
+	}
+
+	for (length = 0, count = 0;
+	     path_array[count] != NULL;
+	     count++) {
+		component = path_array[count];
+		len = strlen(component);
+
+		if (len == 0) {
+			xlog(D_GENERAL, "%s: Zero-length component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (len > NAME_MAX) {
+			xlog(D_GENERAL, "%s: Component length too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+		if (strchr(component, '/') != NULL) {
+			xlog(D_GENERAL, "%s: Local separator character "
+					"found in component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (!nsdb_pathname_is_utf8(component)) {
+			xlog(D_GENERAL, "%s: Bad character in component",
+				__func__);
+			return FEDFS_ERR_BADCHAR;
+		}
+
+		length += STRLEN_SLASH + len;
+
+		if (length > PATH_MAX) {
+			xlog(D_GENERAL, "%s: Pathname too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+	}
+
+	result = calloc(1, length + 1);
+	if (result == NULL) {
+		xlog(D_GENERAL, "%s: Failed to allocate buffer for result",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	for (i = 0; i < count; i++) {
+		strcat(result, "/");
+		strcat(result, path_array[i]);
+	}
+	*pathname = nsdb_normalize_path(result);
+	free(result);
+	if (*pathname == NULL)
+		return FEDFS_ERR_SVRFAULT;
+	return FEDFS_OK;
+}
+
+/**
+ * Construct an array of component strings from a local POSIX-style pathname
+ *
+ * @param pathname NUL-terminated C string containing a POSIX-style pathname
+ * @param path_array OUT: pointer to array of pointers to NUL-terminated C strings
+ * @return a FedFsStatus code
+ *
+ * Caller must free "path_array" with nsdb_free_string_array().
+ */
+FedFsStatus
+nsdb_posix_to_path_array(const char *pathname, char ***path_array)
+{
+	char *normalized, *component, **result;
+	unsigned int i, count;
+	size_t length;
+
+	if (pathname == NULL || path_array == NULL) {
+		xlog(L_ERROR, "%s: Invalid argument", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (!nsdb_pathname_is_utf8(pathname)) {
+		xlog(D_GENERAL, "%s: Bad character in pathname", __func__);
+		return FEDFS_ERR_BADCHAR;
+	}
+
+	normalized = nsdb_normalize_path(pathname);
+	if (normalized == NULL)
+		return FEDFS_ERR_SVRFAULT;
+
+	if (!nsdb_count_components(normalized, &length, &count)) {
+		free(normalized);
+		return FEDFS_ERR_BADNAME;
+	}
+
+	if (count == 0) {
+		free(normalized);
+		return nsdb_alloc_zero_component_pathname(path_array);
+	}
+
+	result = (char **)calloc(count + 1, sizeof(char *));
+	if (result == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate array",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	component = normalized;
+	for (i = 0; ; i++) {
+		char *next;
+
+		if (*component == '/')
+			component++;
+		if (*component == '\0')
+			break;
+		next = strchrnul(component, '/');
+		length = next - component;
+
+		result[i] = strndup(component, length);
+		if (result[i] == NULL) {
+			xlog(D_GENERAL, "%s: Failed to allocate "
+					"new pathname component", __func__);
+			nsdb_free_string_array(result);
+			return FEDFS_ERR_SVRFAULT;
+		}
+
+		if (*next == '\0')
+			break;
+		component = next;
+	}
+
+	*path_array = result;
+	free(normalized);
+	return FEDFS_OK;
+}
+
+/**
+ * Construct a FedFsPathName from an array of component strings
+ *
+ * @param path_array array of pointers to NUL-terminated C strings
+ * @param fpath OUT: pointer to FedFsPathName in which to construct path
+ * @return a FedFsStatus code
+ *
+ * Caller must free "fpath" with nsdb_free_fedfspathname().
+ */
+FedFsStatus
+nsdb_path_array_to_fedfspathname(char * const *path_array, FedFsPathName *fpath)
+{
+	unsigned int i, count;
+	size_t length, len;
+	char *component;
+
+	if (path_array == NULL || fpath == NULL) {
+		xlog(L_ERROR, "%s: Invalid argument", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	/* The path "/" MUST be encoded as an array with zero components. */
+	if (path_array[0] == NULL) {
+		xlog(D_GENERAL, "%s: Zero-component pathname", __func__);
+		fpath->FedFsPathName_val = NULL;
+		fpath->FedFsPathName_len = 0;
+		return FEDFS_OK;
+	}
+
+	for (length = 0, count = 0;
+	     path_array[count] != NULL;
+	     count++) {
+		component = path_array[count];
+		len = strlen(component);
+
+		if (len == 0) {
+			xlog(D_GENERAL, "%s: Zero-length component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (len > NAME_MAX) {
+			xlog(D_GENERAL, "%s: Component length too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+		if (strchr(component, '/') != NULL) {
+			xlog(D_GENERAL, "%s: Local separator character "
+					"found in component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (!nsdb_pathname_is_utf8(component)) {
+			xlog(D_GENERAL, "%s: Bad character in component",
+				__func__);
+			return FEDFS_ERR_BADCHAR;
+		}
+
+		length += STRLEN_SLASH + len;
+
+		if (length > PATH_MAX) {
+			xlog(D_GENERAL, "%s: Pathname too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+	}
+
+	fpath->FedFsPathName_val = calloc(count + 1, sizeof(FedFsPathComponent));
+	if (fpath->FedFsPathName_val == NULL) {
+		return FEDFS_ERR_SVRFAULT;
+	}
+	fpath->FedFsPathName_len = count;
+
+	for (i = 0; i < count; i++) {
+		component = path_array[i];
+		len = strlen(component);
+
+		if (!nsdb_new_component(component, len,
+					&fpath->FedFsPathName_val[i])) {
+			xlog(D_GENERAL, "%s: Failed to allocate "
+					"new pathname component", __func__);
+			nsdb_free_fedfspathname(fpath);
+			return FEDFS_ERR_SVRFAULT;
+		}
+	}
+
+	return FEDFS_OK;
+}
+
+/**
+ * Construct an array of component strings from a FedFsPathName
+ *
+ * @param fpath FedFsPathName from which to construct path
+ * @param path_array OUT: pointer to array of pointers to NUL-terminated C strings
+ * @return a FedFsStatus code
+ *
+ * Caller must free "path_array" with nsdb_free_string_array().
+ *
+ * NB: The use of fixed constants for NAME_MAX and PATH_MAX are required
+ *     here because, on the client side, the pathname likely does not
+ *     exist, so pathconf(3) cannot be used.
+ */
+FedFsStatus
+nsdb_fedfspathname_to_path_array(FedFsPathName fpath, char ***path_array)
+{
+	char *component, **result;
+	FedFsPathComponent fcomp;
+	unsigned int i, len;
+	size_t length;
+
+	if (path_array == NULL) {
+		xlog(L_ERROR, "%s: Invalid argument", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (fpath.FedFsPathName_len == 0)
+		return nsdb_alloc_zero_component_pathname(path_array);
+
+	length = 0;
+	for (i = 0; i < fpath.FedFsPathName_len; i++) {
+		fcomp = fpath.FedFsPathName_val[i];
+		len = fcomp.utf8string_len;
+		component = fcomp.utf8string_val;
+
+		if (len == 0) {
+			xlog(D_GENERAL, "%s: Zero-length component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (len > NAME_MAX) {
+			xlog(D_GENERAL, "%s: Component length too long",
+				__func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+		if (nsdb_strnchr(component, '/', len) != NULL) {
+			xlog(D_GENERAL, "%s: Local separator "
+				"character found in component",
+				__func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (!nsdb_pathname_is_utf8(component)) {
+			xlog(D_GENERAL, "%s: Bad character in component",
+				__func__);
+			return FEDFS_ERR_BADCHAR;
+		}
+
+		length += STRLEN_SLASH + len;
+		if (length > PATH_MAX) {
+			xlog(D_GENERAL, "%s: FedFsPathName too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+	}
+
+	result = (char **)calloc(fpath.FedFsPathName_len + 1, sizeof(char *));
+	if (result == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate array",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	for (i = 0; i < fpath.FedFsPathName_len; i++) {
+		fcomp = fpath.FedFsPathName_val[i];
+		len = fcomp.utf8string_len;
+		component = fcomp.utf8string_val;
+
+		result[i] = strndup(component, (size_t)len);
+		if (result[i] == NULL) {
+			xlog(D_GENERAL, "%s: Failed to allocate "
+					"new pathname component", __func__);
+			nsdb_free_string_array(result);
+			return FEDFS_ERR_SVRFAULT;
+		}
+	}
+
+	*path_array = result;
 	return FEDFS_OK;
 }
