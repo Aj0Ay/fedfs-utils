@@ -838,7 +838,7 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 		if (result.status != FEDFS_OK)
 			break;
 		result.status = fedfsd_prepare_fedfsfsl_array(fsls, resok);
-		nsdb_free_fsls(fsls);
+		nsdb_free_fedfs_fsls(fsls);
 		break;
 	default:
 		result.status = FEDFS_ERR_SVRFAULT;

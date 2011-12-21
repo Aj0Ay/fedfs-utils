@@ -314,7 +314,7 @@ main(int argc, char **argv)
 	case FEDFS_OK:
 		printf("For FSN UUID %s:\n\n", fsn_uuid);
 		nsdb_resolve_fsn_display_fsls(fsls);
-		nsdb_free_fsls(fsls);
+		nsdb_free_fedfs_fsls(fsls);
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)

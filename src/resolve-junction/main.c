@@ -294,7 +294,7 @@ resolve_junction(const char *pathname)
 	switch (status) {
 	case FEDFS_OK:
 		result = resolve_junction_display_results(fsls);
-		nsdb_free_fsls(fsls);
+		nsdb_free_fedfs_fsls(fsls);
 		break;
 	case FEDFS_ERR_NSDB_NOFSL:
 		fprintf(stdout, "No results\n");

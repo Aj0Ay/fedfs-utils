@@ -108,6 +108,28 @@ struct fedfs_fsl {
 };
 
 /**
+ ** API to manage struct fedfs_fsl objects
+ **/
+
+/**
+ * Allocate a fresh struct fedfs_fsl and init its fields to standard defaults
+ */
+__attribute_malloc__
+struct fedfs_fsl *
+		 nsdb_new_fedfs_fsl(FedFsFslType type);
+
+/**
+ * Release a struct fedfs_fsl
+ */
+void		 nsdb_free_fedfs_fsl(struct fedfs_fsl *fsl);
+
+/**
+ * Release a list of struct fedfs_fsls
+ */
+void		 nsdb_free_fedfs_fsls(struct fedfs_fsl *fsls);
+
+
+/**
  ** API to manage NSDB objects and the associated X.509 cert store
  **/
 
@@ -321,7 +343,6 @@ FedFsStatus	 nsdb_split_nce_dn_s(nsdb_t host, const char *nce,
 FedFsStatus	 nsdb_resolve_fsn_s(nsdb_t host, const char *nce,
 				const char *fsn_uuid, struct fedfs_fsl **fsls,
 				unsigned int *ldap_err);
-void		 nsdb_free_fsls(struct fedfs_fsl *fsls);
 
 /**
  ** NSDB fileserver operations defined by this implementation

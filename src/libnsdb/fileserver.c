@@ -51,12 +51,20 @@ static struct timeval nsdb_ldap_timeout = { 5, 0 };
 /**
  * Free a single struct fedfs_fsl
  *
- * @param fsl pointer to fsl to free
+ * @param fsl pointer to struct fedfs_fsl to free
  */
-static void
-nsdb_free_fsl(struct fedfs_fsl *fsl)
+void
+nsdb_free_fedfs_fsl(struct fedfs_fsl *fsl)
 {
-	free(fsl->fl_u.fl_nfsfsl.fn_path);
+	switch (fsl->fl_type) {
+	case FEDFS_NFS_FSL:
+		free(fsl->fl_u.fl_nfsfsl.fn_path);
+		break;
+	default:
+		xlog(L_ERROR, "%s: Unrecognized FSL type", __func__);
+		return;
+	}
+
 	nsdb_free_string_array(fsl->fl_description);
 	nsdb_free_string_array(fsl->fl_annotations);
 	free(fsl->fl_dn);
@@ -65,18 +73,99 @@ nsdb_free_fsl(struct fedfs_fsl *fsl)
 
 /**
  * Free a list of fedfs_fsl structures
+ *
  * @param fsls pointer to first element of a list of struct fedfs_fsl
  */
 void
-nsdb_free_fsls(struct fedfs_fsl *fsls)
+nsdb_free_fedfs_fsls(struct fedfs_fsl *fsls)
 {
 	struct fedfs_fsl *fsl;
 
 	while (fsls != NULL) {
 		fsl = fsls;
 		fsls = fsl->fl_next;
-		nsdb_free_fsl(fsl);
+		nsdb_free_fedfs_fsl(fsl);
 	}
+}
+
+/**
+ * Allocate a new struct fedfs_fsl
+ *
+ * @return a malloc'd struct fedfs_fsl, or NULL
+ *
+ * Caller must free the returned memory with free(3)
+ */
+__attribute_malloc__
+static struct fedfs_fsl *
+nsdb_alloc_fedfs_fsl(void)
+{
+	return calloc(1, sizeof(struct fedfs_fsl));
+}
+
+/**
+ * Initialize an NFS FSL to recommended defaults
+ *
+ * @param fsl pointer to struct fedfs_fsl
+ *
+ * See NSDB protocol draft Section 5.1.3.2.
+ */
+static void
+nsdb_init_fedfs_nfs_fsl(struct fedfs_fsl *fsl)
+{
+	struct fedfs_nfs_fsl *nfsfsl = &fsl->fl_u.fl_nfsfsl;
+
+	nfsfsl->fn_majorver = 4;
+	nfsfsl->fn_minorver = 0;
+	nfsfsl->fn_currency = -1;
+	nfsfsl->fn_gen_writable = false;
+	nfsfsl->fn_gen_going = false;
+	nfsfsl->fn_gen_split = true;
+	nfsfsl->fn_trans_rdma = true;
+	nfsfsl->fn_class_simul = 0;
+	nfsfsl->fn_class_handle = 0;
+	nfsfsl->fn_class_fileid = 0;
+	nfsfsl->fn_class_writever = 0;
+	nfsfsl->fn_class_change = 0;
+	nfsfsl->fn_class_readdir = 0;
+	nfsfsl->fn_readrank = 0;
+	nfsfsl->fn_readorder = 0;
+	nfsfsl->fn_writerank = 0;
+	nfsfsl->fn_writeorder = 0;
+	nfsfsl->fn_varsub = false;
+	nfsfsl->fn_validfor = 0;
+}
+
+/**
+ * Allocate a new struct fedfs_fsl and initialize its fields
+ *
+ * @return a malloc'd struct fedfs_fsl, or NULL
+ *
+ * Caller must free the returned memory with nsdb_free_fedfs_fsl()
+ */
+__attribute_malloc__
+struct fedfs_fsl *
+nsdb_new_fedfs_fsl(FedFsFslType type)
+{
+	struct fedfs_fsl *new;
+
+	new = nsdb_alloc_fedfs_fsl();
+	if (new == NULL)
+		return NULL;
+
+	switch (type) {
+	case FEDFS_NFS_FSL:
+		nsdb_init_fedfs_nfs_fsl(new);
+		break;
+	default:
+		xlog(L_ERROR, "%s: Unrecognized FSL type", __func__);
+		free(new);
+		return NULL;
+	}
+
+	new->fl_nsdbport = LDAP_PORT;
+	new->fl_type = type;
+	new->fl_fslttl = 300;
+	return new;
 }
 
 /**
@@ -755,12 +844,11 @@ nsdb_resolve_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
 
 	xlog(D_CALL, "%s: parsing entry", __func__);
 
-	new = calloc(1, sizeof(struct fedfs_fsl));
+	new = nsdb_alloc_fedfs_fsl();
 	if (new == NULL) {
 		xlog(L_ERROR, "%s: Failed to allocate new fsl", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
-	new->fl_type = (FedFsFslType) -1;
 
 	dn = ldap_get_dn(ld, entry);
 	if (dn != NULL ) {
@@ -893,7 +981,7 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		xlog(D_CALL, "%s: returning fsls", __func__);
 		*fsls = tmp;
 	} else
-		nsdb_free_fsls(tmp);
+		nsdb_free_fedfs_fsls(tmp);
 	return retval;
 }
 
@@ -909,7 +997,7 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
  *
  * If caller did not provide an NCE, discover one by querying the NSDB.
  *
- * Caller must free the list returned in "fsls" using nsdb_free_fsls().
+ * Caller must free the list returned in "fsls" using nsdb_free_fedfs_fsls().
  */
 FedFsStatus
 nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,

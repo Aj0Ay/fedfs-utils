@@ -116,7 +116,7 @@ nsdb_list_resolve_and_display_fsn(nsdb_t host, const char *nce, const char *fsn_
 	switch (retval) {
 	case FEDFS_OK:
 		nsdb_list_display_fsls(fsls);
-		nsdb_free_fsls(fsls);
+		nsdb_free_fedfs_fsls(fsls);
 		break;
 	case FEDFS_ERR_NSDB_NOFSL:
 		printf("    No FSL entries found\n");
