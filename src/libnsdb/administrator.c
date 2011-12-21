@@ -1001,14 +1001,14 @@ nsdb_update_fsl_remove_attribute_s(LDAP *ld, const char *dn,
  */
 static FedFsStatus
 nsdb_update_fsl_update_attribute_s(LDAP *ld, const char *dn,
-		const char *attribute, const char *value,
+		const char *attribute, const void *value,
 		unsigned int *ldap_err)
 {
 	struct berval newval;
 	FedFsStatus retval;
 
 	if (strcasecmp(attribute, "fedfsNfsPath") == 0) {
-		retval = nsdb_posix_path_to_xdr(value, &newval);
+		retval = nsdb_path_array_to_xdr((char * const *)value, &newval);
 		if (retval != FEDFS_OK)
 			return retval;
 	} else {
@@ -1020,6 +1020,8 @@ nsdb_update_fsl_update_attribute_s(LDAP *ld, const char *dn,
 
 	retval = nsdb_modify_attribute_s(ld, dn, attribute,
 						&newval, ldap_err);
+	if (strcasecmp(attribute, "fedfsNfsPath") == 0)
+		ber_memfree(newval.bv_val);
 	if (retval != FEDFS_OK)
 		return retval;
 
@@ -1046,7 +1048,7 @@ nsdb_update_fsl_update_attribute_s(LDAP *ld, const char *dn,
  */
 FedFsStatus
 nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
-		const char *attribute, const char *value,
+		const char *attribute, const void *value,
 		unsigned int *ldap_err)
 {
 	FedFsStatus retval;

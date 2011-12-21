@@ -279,7 +279,7 @@ FedFsStatus	 nsdb_delete_fsl_s(nsdb_t host, const char *nce,
 FedFsStatus	 nsdb_update_fsl_s(nsdb_t host, const char *nce,
 				const char *fsl_uuid,
 				const char *attribute,
-				const char *value,
+				const void *value,
 				unsigned int *ldap_err);
 
 /**

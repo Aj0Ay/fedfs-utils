@@ -192,6 +192,17 @@ main(int argc, char **argv)
 		nsdb_update_fsl_usage(progname);
 	}
 
+	if (strcasecmp(attribute, "fedfsNfsPath") == 0) {
+		char **path_array;
+		retval = nsdb_posix_to_path_array(value, &path_array);
+		if (retval != FEDFS_OK) {
+			fprintf(stderr, "Bad path: %s\n",
+				nsdb_display_fedfsstatus(retval));
+			goto out;
+		}
+		value = (char *)path_array;
+	}
+
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (retval) {
 	case FEDFS_OK:
@@ -265,6 +276,8 @@ main(int argc, char **argv)
 
 out_free:
 	nsdb_free_nsdb(host);
+	if (strcasecmp(attribute, "fedfsNfsPath") == 0)
+		nsdb_free_string_array((char **)value);
 
 out:
 	exit((int)retval);
