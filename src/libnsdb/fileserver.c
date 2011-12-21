@@ -687,34 +687,34 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 		retval = nsdb_parse_singlevalue_bool(attr, values,
 				&nfsl->fn_trans_rdma);
 	else if (strcasecmp(attr, "fedfsNfsClassSimul") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_class_simul);
 	else if (strcasecmp(attr, "fedfsNfsClassHandle") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_class_handle);
 	else if (strcasecmp(attr, "fedfsNfsClassFileid") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_class_fileid);
 	else if (strcasecmp(attr, "fedfsNfsClassWritever") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_class_writever);
 	else if (strcasecmp(attr, "fedfsNfsClassChange") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_class_change);
 	else if (strcasecmp(attr, "fedfsNfsClassReaddir") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_class_readdir);
 	else if (strcasecmp(attr, "fedfsNfsReadRank") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_readrank);
 	else if (strcasecmp(attr, "fedfsNfsReadOrder") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_readorder);
 	else if (strcasecmp(attr, "fedfsNfsWriteRank") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_readrank);
 	else if (strcasecmp(attr, "fedfsNfsWriteOrder") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
+		retval = nsdb_parse_singlevalue_uchar(attr, values,
 				&nfsl->fn_readorder);
 	else if (strcasecmp(attr, "fedfsNfsVarSub") == 0)
 		retval = nsdb_parse_singlevalue_bool(attr, values,

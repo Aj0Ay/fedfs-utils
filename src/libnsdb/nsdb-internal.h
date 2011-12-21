@@ -63,6 +63,8 @@ void		 nsdb_init_del_attribute(LDAPMod *mod,
 
 FedFsStatus	 nsdb_parse_singlevalue_bool(char *attr,
 				struct berval **values, _Bool *result);
+FedFsStatus	 nsdb_parse_singlevalue_uchar(char *attr,
+				struct berval **values, unsigned char *result);
 FedFsStatus	 nsdb_parse_singlevalue_int(char *attr,
 				struct berval **values, int *result);
 FedFsStatus	 nsdb_parse_singlevalue_str(char *attr,

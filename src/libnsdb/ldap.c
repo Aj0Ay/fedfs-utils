@@ -207,6 +207,41 @@ nsdb_parse_singlevalue_bool(char *attr, struct berval **values, _Bool *result)
 }
 
 /**
+ * Parse the value of a single-value unsigned char attribute
+ *
+ * @param attr a NUL-terminated C string containing the name of an attribute
+ * @param values a NULL-terminated array of pointers to bervals
+ * @param result OUT: unsigned char into which to copy the value
+ * @return a FedFsStatus code
+ */
+FedFsStatus
+nsdb_parse_singlevalue_uchar(char *attr, struct berval **values,
+		unsigned char *result)
+{
+	char *endptr;
+	long tmp;
+
+	if (values[1] != NULL) {
+		xlog(L_ERROR, "%s: Expecting only one value for attribute %s",
+			__func__, attr);
+		return FEDFS_ERR_NSDB_RESPONSE;
+	}
+
+	errno = 0;
+	tmp = strtol(values[0]->bv_val, &endptr, 10);
+	if (errno != 0 || *endptr != '\0' || tmp < 0 || tmp > 255) {
+		xlog(D_CALL, "%s: Attribute %s contains out-of-range value %.*s",
+			__func__, attr, values[0]->bv_len, values[0]->bv_val);
+		return FEDFS_ERR_NSDB_RESPONSE;
+	}
+
+	*result = (unsigned char)tmp;
+	xlog(D_CALL, "%s: Attribute %s contains value %d",
+		__func__, attr, *result);
+	return FEDFS_OK;
+}
+
+/**
  * Parse the value of a single-value integer attribute
  *
  * @param attr a NUL-terminated C string containing the name of an attribute
