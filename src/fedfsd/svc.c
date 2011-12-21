@@ -173,6 +173,25 @@ fedfsd_nsdb_to_nsdbname(const nsdb_t host, FedFsNsdbName *name)
 }
 
 /*
+ * Bounded search for a character inside a string
+ *
+ * @param haystack C string to search
+ * @param needle character to find
+ * @param size number of character in "haystack" to search
+ * @return pointer to "needle" in "haystack," or NULL
+ */
+static const char *
+fedfsd_strnchr(const char *haystack, char needle, size_t size)
+{
+	size_t i;
+
+	for (i = 0; i < size; i++)
+		if (haystack[i] == needle)
+			return &haystack[i];
+	return NULL;
+}
+
+/*
  * "pathname" refers to a non-terminal component
  *
  * If it does not exist, return FEDFS_ERR_INVAL
@@ -328,8 +347,8 @@ fedfsd_pathwalk(const FedFsPathName fpath, char **pathname)
 		char *component = fcomp.utf8string_val;
 		unsigned int len = fcomp.utf8string_len;
 
-		xlog(D_CALL, "%s: Visiting component '%s'",
-			__func__, component);
+		xlog(D_CALL, "%s: Visiting component '%.*s'",
+			__func__, len, component);
 
 		if ((long)len > NAME_MAX) {
 			xlog(D_GENERAL, "%s: Component too long",
@@ -339,7 +358,7 @@ fedfsd_pathwalk(const FedFsPathName fpath, char **pathname)
 		}
 
 		if (len != 0) {
-			if (strchr(component, '/') != NULL) {
+			if (fedfsd_strnchr(component, '/', len) != NULL) {
 				xlog(D_GENERAL, "%s: Component contains local "
 					"pathname separator character", __func__);
 				free(result);
@@ -352,7 +371,7 @@ fedfsd_pathwalk(const FedFsPathName fpath, char **pathname)
 				return FEDFS_ERR_NAMETOOLONG;
 			}
 			strcat(result, "/");
-			strcat(result, component);
+			strncat(result, component, len);
 		} else {
 			xlog(D_GENERAL, "%s: Zero-length component", __func__);
 			free(result);
