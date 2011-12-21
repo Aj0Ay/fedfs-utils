@@ -507,116 +507,20 @@ nsdb_construct_fsl_dn(const char *nce, const char *fsn_uuid, const char *fsl_uui
 	return dn;
 }
 
+static const char *nsdb_ldap_true	= "TRUE";
+static const char *nsdb_ldap_false	= "FALSE";
+
 /**
- * Add a new FSL entry under "nce"
+ * Add a new NFS FSN entry under "nce"
  *
  * @param ld an initialized LDAP server descriptor
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param fsl_uuid a NUL-terminated C string containing FSL UUID
- * @param nsdbname a NUL-terminated C string containing DNS hostname of NSDB server
- * @param nsdbport port number of NSDB server
- * @param servername a NUL-terminated C string containing DNS hostname of file server
- * @param serverport port number of file server
- * @param ldap_err OUT: possibly an LDAP error code
- * @return a FedFsStatus code
- *
- * LDIF equivalent:
- *
- * @verbatim
-
-   dn: fedfsFslUuid="fsl_uuid",fedfsFsnUuid="fsn_uuid","nce"
-   changeType: add
-   objectClass: fedfsFsl
-   fedfsFslUuid: "fsl_uuid"
-   fedfsFsnUuid: "fsn_uuid"
-   fedfsNsdbName: "nsdbname"
-   fedfsNsdbPort: "nsdbport"
-   fedfsFslHost: "serverhost"
-   fedfsFslPort: "serverport"
-   fedfsFslTTL: 300
-   @endverbatim
- */
-static FedFsStatus
-nsdb_create_fsl_add_entry_s(LDAP *ld, const char *nce,
-		const char *fsn_uuid, const char *fsl_uuid,
-		const char *nsdbname, const unsigned short nsdbport,
-		const char *servername, const unsigned short serverport,
-		unsigned int *ldap_err)
-{
-	char *servernamevals[2], *serverportvals[2], *ttyvals[2];
-	char *ocvals[2], *fsnuuidvals[2], *fsluuidvals[2];
-	char *nsdbnamevals[2], *nsdbportvals[2];
-	char nsdbportbuf[8], serverportbuf[8];
-	LDAPMod *attrs[10];
-	LDAPMod attr[9];
-	int i, rc;
-	char *dn;
-
-	for (i = 0; i < 9; i++)
-		attrs[i] = &attr[i];
-	i = 0;
-
-	nsdb_init_add_attribute(attrs[i++],
-				"objectClass", ocvals, "fedfsFsl");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFslUuid", fsluuidvals, fsl_uuid);
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFsnUuid", fsnuuidvals, fsn_uuid);
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbName", nsdbnamevals, nsdbname);
-	if (nsdbport != LDAP_PORT) {
-		sprintf(nsdbportbuf, "%u", nsdbport);
-		nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbPort", nsdbportvals, nsdbportbuf);
-	}
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFslHost", servernamevals, servername);
-	if (serverport != 0) {
-		sprintf(serverportbuf, "%u", serverport);
-		nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbPort", serverportvals, serverportbuf);
-	}
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFslTTL", ttyvals, "300");
-
-	attrs[i] = NULL;
-
-	dn = nsdb_construct_fsl_dn(nce, fsn_uuid, fsl_uuid);
-	if (dn == NULL)
-		return FEDFS_ERR_SVRFAULT;
-
-	rc = ldap_add_ext_s(ld, dn, attrs, NULL, NULL);
-	ber_memfree(dn);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to add new FSL entry: %s",
-			__func__, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-
-	xlog(D_CALL, "%s: Successfully added new FSL entry",
-		__func__);
-	return FEDFS_OK;
-}
-
-/**
- * Add a new NFS FSL entry under "nce"
- *
- * @param ld an initialized LDAP server descriptor
- * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param fsl_uuid a NUL-terminated C string containing FSL UUID
- * @param nsdbname a NUL-terminated C string containing DNS hostname of NSDB server
- * @param nsdbport port number of NSDB server
- * @param servername a NUL-terminated C string containing DNS hostname of file server
- * @param serverport port number of file server
- * @param xdr_path a berval containing an XDR-encoded pathname
+ * @param fsl an initialized struct fedfs_fsl of type FEDFS_NFS_FSL
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  *
  * The new entry is set up as an NFSv4.0 FSL, and can be subsequently modified
- * using the nsdb-modify-fsl tool.
+ * using the nsdb-update-fsl tool.
  *
  * LDIF equivalent:
  *
@@ -656,22 +560,37 @@ nsdb_create_fsl_add_entry_s(LDAP *ld, const char *nce,
    @endverbatim
  */
 static FedFsStatus
-nsdb_create_fsl_add_nfs_entry_s(LDAP *ld, const char *nce,
-		const char *fsn_uuid, const char *fsl_uuid,
-		const char *nsdbname, const unsigned short nsdbport,
-		const char *servername, const unsigned short serverport,
-		struct berval *xdr_path, unsigned int *ldap_err)
+nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
+		unsigned int *ldap_err)
 {
-	char *servernamevals[2], *serverportvals[2], *ttyvals[2];
-	char *ocvals[3], *fsnuuidvals[2], *fsluuidvals[2];
-	char *nsdbnamevals[2], *nsdbportvals[2];
-	char *majversvals[2], *minversvals[2], *currvals[2];
-	char *flagwvals[2], *flaggvals[2], *flagsvals[2], *flagrvals[2];
-	char *csvals[2], *chvals[2], *cfvals[2], *cwvals[2], *ccvals[2], *crvals[2];
-	char *rrankvals[2], *rordvals[2], *wrankvals[2], *wordvals[2];
-	char *varsubvals[2], *valforvals[2];
-	char nsdbportbuf[8], serverportbuf[8];
-	struct berval *xdrpathvals[2];
+	struct fedfs_nfs_fsl *nfsfsl = &fsl->fl_u.fl_nfsfsl;
+	char *ocvals[3], *fsluuidvals[2], *fsnuuidvals[2];
+	char *nsdbnamevals[2], *nsdbportvals[2], nsdbportbuf[12];
+	char *servernamevals[2], *serverportvals[2], serverportbuf[12];
+	char *ttyvals[2], ttybuf[12];
+
+	/* XXX: variables for encoding annotations and description
+	 *	attributes would go here */
+
+	struct berval *xdrpathvals[2], xdr_path;
+	char *majversvals[2], majversbuf[12];
+	char *minversvals[2], minversbuf[12];
+	char *currvals[2], currbuf[12];
+	char *flagwvals[2], *flaggvals[2], *flagsvals[2],
+		*flagrvals[2], *varsubvals[2];
+	char *csvals[2], csbuf[4];
+	char *chvals[2], chbuf[4];
+	char *cfvals[2], cfbuf[4];
+	char *cwvals[2], cwbuf[4];
+	char *ccvals[2], ccbuf[4];
+	char *crvals[2], crbuf[4];
+	char *rrankvals[2], rrankbuf[4];
+	char *rordvals[2], rordbuf[4];
+	char *wrankvals[2], wrankbuf[4];
+	char *wordvals[2], wordbuf[4];
+	char *valforvals[2], valforbuf[12];
+
+	FedFsStatus retval;
 	LDAPMod *attrs[30];
 	LDAPMod attr[29];
 	int i, rc;
@@ -681,82 +600,105 @@ nsdb_create_fsl_add_nfs_entry_s(LDAP *ld, const char *nce,
 		attrs[i] = &attr[i];
 	i = 0;
 
-	nsdb_init_add_attribute(attrs[i++],
-				"objectClass", ocvals, "fedfsFsl");
+	nsdb_init_add_attribute(attrs[i++], "objectClass", ocvals, "fedfsFsl");
 	ocvals[1] = "fedfsNfsFsl";
 	ocvals[2] = NULL;
 
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFslUuid", fsluuidvals, fsl_uuid);
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFsnUuid", fsnuuidvals, fsn_uuid);
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbName", nsdbnamevals, nsdbname);
-	if (nsdbport != LDAP_PORT) {
-		sprintf(nsdbportbuf, "%u", nsdbport);
-		nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbPort", nsdbportvals, nsdbportbuf);
+	nsdb_init_add_attribute(attrs[i++], "fedfsFslUuid",
+				fsluuidvals, fsl->fl_fsluuid);
+	nsdb_init_add_attribute(attrs[i++], "fedfsFsnUuid",
+				fsnuuidvals, fsl->fl_fsnuuid);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNsdbName",
+				nsdbnamevals, fsl->fl_nsdbname);
+	if (fsl->fl_nsdbport != LDAP_PORT) {
+		sprintf(nsdbportbuf, "%d", fsl->fl_nsdbport);
+		nsdb_init_add_attribute(attrs[i++], "fedfsNsdbPort",
+					nsdbportvals, nsdbportbuf);
 	}
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFslHost", servernamevals, servername);
-	if (serverport != 0) {
-		sprintf(serverportbuf, "%u", serverport);
-		nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbPort", serverportvals, serverportbuf);
+	nsdb_init_add_attribute(attrs[i++], "fedfsFslHost",
+				servernamevals, fsl->fl_fslhost);
+	if (fsl->fl_fslport != 0) {
+		sprintf(serverportbuf, "%d", fsl->fl_fslport);
+		nsdb_init_add_attribute(attrs[i++], "fedfsNsdbPort",
+					serverportvals, serverportbuf);
 	}
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsFslTTL", ttyvals, "300");
+	sprintf(ttybuf, "%d", fsl->fl_fslttl);
+	nsdb_init_add_attribute(attrs[i++], "fedfsFslTTL", ttyvals, ttybuf);
 
-	xdrpathvals[0] = xdr_path;
+	retval = nsdb_posix_path_to_xdr(nfsfsl->fn_path, &xdr_path);
+	if (retval != FEDFS_OK)
+		return retval;
+	xdrpathvals[0] = &xdr_path;
 	xdrpathvals[1] = NULL;
 	attr[i].mod_op = LDAP_MOD_BVALUES;
 	attr[i].mod_type = "fedfsNfsPath";
 	attr[i++].mod_bvalues = xdrpathvals;
 
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsMajorVer", majversvals, "4");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsMinorVer", minversvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsCurrency", currvals, "-1");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsGenFlagWritable", flagwvals, "FALSE");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsGenFlagGoing", flaggvals, "FALSE");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsGenFlagSplit", flagsvals, "TRUE");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsTransFlagRdma", flagrvals, "TRUE");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsClassSimul", csvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsClassHandle", chvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsClassFileid", cfvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsClassWritever", cwvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsClassChange", ccvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsClassReaddir", crvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsReadRank", rrankvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsReadOrder", rordvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsWriteRank", wrankvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsWriteOrder", wordvals, "0");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsVarSub", varsubvals, "FALSE");
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNfsValidFor", valforvals, "0");
+	sprintf(majversbuf, "%d", nfsfsl->fn_majorver);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsMajorVer",
+				majversvals, majversbuf);
+	sprintf(minversbuf, "%d", nfsfsl->fn_minorver);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsMinorVer",
+				minversvals, minversbuf);
+	sprintf(currbuf, "%d", nfsfsl->fn_currency);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsCurrency",
+				currvals, currbuf);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsGenFlagWritable",
+				flagwvals, nfsfsl->fn_gen_writable ?
+					nsdb_ldap_true : nsdb_ldap_false);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsGenFlagGoing",
+				flaggvals, nfsfsl->fn_gen_going ?
+					nsdb_ldap_true : nsdb_ldap_false);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsGenFlagSplit",
+				flagsvals, nfsfsl->fn_gen_split ?
+					nsdb_ldap_true : nsdb_ldap_false);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsTransFlagRdma",
+				flagrvals, nfsfsl->fn_trans_rdma ?
+					nsdb_ldap_true : nsdb_ldap_false);
+	sprintf(csbuf, "%u", nfsfsl->fn_class_simul);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsClassSimul",
+				csvals, csbuf);
+	sprintf(chbuf, "%u", nfsfsl->fn_class_handle);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsClassHandle",
+				chvals, chbuf);
+	sprintf(cfbuf, "%u", nfsfsl->fn_class_fileid);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsClassFileid",
+				cfvals, cfbuf);
+	sprintf(cwbuf, "%u", nfsfsl->fn_class_writever);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsClassWritever",
+				cwvals, cwbuf);
+	sprintf(ccbuf, "%u", nfsfsl->fn_class_change);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsClassChange",
+				ccvals, ccbuf);
+	sprintf(crbuf, "%u", nfsfsl->fn_class_readdir);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsClassReaddir",
+				crvals, crbuf);
+	sprintf(rrankbuf, "%u", nfsfsl->fn_readrank);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsReadRank",
+				rrankvals, rrankbuf);
+	sprintf(rordbuf, "%u", nfsfsl->fn_readorder);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsReadOrder",
+				rordvals, rordbuf);
+	sprintf(wrankbuf, "%u", nfsfsl->fn_writerank);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsWriteRank",
+				wrankvals, wrankbuf);
+	sprintf(wordbuf, "%u", nfsfsl->fn_writeorder);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsWriteOrder",
+				wordvals, wordbuf);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsVarSub",
+				varsubvals, nfsfsl->fn_varsub ?
+					nsdb_ldap_true : nsdb_ldap_false);
+	sprintf(valforbuf, "%u", nfsfsl->fn_validfor);
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsValidFor",
+				valforvals, valforbuf);
 
 	attrs[i] = NULL;
 
-	dn = nsdb_construct_fsl_dn(nce, fsn_uuid, fsl_uuid);
-	if (dn == NULL)
-		return FEDFS_ERR_SVRFAULT;
+	dn = nsdb_construct_fsl_dn(nce, fsl->fl_fsnuuid, fsl->fl_fsluuid);
+	if (dn == NULL) {
+		retval = FEDFS_ERR_SVRFAULT;
+		goto out;
+	}
 
 	rc = ldap_add_ext_s(ld, dn, attrs, NULL, NULL);
 	ber_memfree(dn);
@@ -764,101 +706,81 @@ nsdb_create_fsl_add_nfs_entry_s(LDAP *ld, const char *nce,
 		xlog(D_GENERAL, "%s: Failed to add new FSL entry: %s\n",
 			__func__, ldap_err2string(rc));
 		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
+		retval = FEDFS_ERR_NSDB_LDAP_VAL;
+		goto out;
 	}
 
 	xlog(D_CALL, "%s: Successfully added new FSL entry",
 		__func__);
-	return FEDFS_OK;
-}
-
-/**
- * Add either a new FSN or a new NFS FSN entry under "nce"
- *
- * @param ld an initialized LDAP server descriptor
- * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param fsl_uuid a NUL-terminated C string containing FSL UUID
- * @param nsdbname a NUL-terminated C string containing DNS hostname of NSDB server
- * @param nsdbport port number of NSDB server
- * @param servername a NUL-terminated C string containing DNS hostname of file server
- * @param serverport port number of file server
- * @param serverpath a NUL-terminated C string containing export pathname to add
- * @param ldap_err OUT: possibly an LDAP error code
- * @return a FedFsStatus code
- *
- * If caller did not provide a serverpath, create a simple fedfsFsl entry.
- * Otherwise, create a full-on fedfsNfsFsl entry.
- */
-static FedFsStatus
-nsdb_create_fsl_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
-		const char *fsl_uuid, const char *nsdbname,
-		const unsigned short nsdbport, const char *servername,
-		const unsigned short serverport, const char *serverpath,
-		unsigned int *ldap_err)
-{
-	FedFsStatus retval;
-	struct berval xdr_path;
-
-	if (serverpath == NULL) {
-		retval = nsdb_create_fsl_add_entry_s(ld, nce, fsn_uuid, fsl_uuid,
-							nsdbname, nsdbport,
-							servername, serverport,
-							ldap_err);
-		goto out;
-	}
-
-	retval = nsdb_posix_path_to_xdr(serverpath, &xdr_path);
-	if (retval != FEDFS_OK)
-		return retval;
-
-	retval = nsdb_create_fsl_add_nfs_entry_s(ld, nce, fsn_uuid, fsl_uuid,
-						nsdbname, nsdbport,
-						servername, serverport,
-						&xdr_path, ldap_err);
-	free(xdr_path.bv_val);
+	retval = FEDFS_OK;
 
 out:
+	free(xdr_path.bv_val);
 	return retval;
 }
 
 /**
- * Create either a new FSN or a new NFS FSN entry under "nce" (Chapter 5, section 1.3)
+ * Create new FSN records under "nce" (Chapter 5, section 1.3)
  *
  * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
- * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param fsl_uuid a NUL-terminated C string containing FSL UUID
- * @param nsdbname a NUL-terminated C string containing DNS hostname of NSDB server
- * @param nsdbport port number of NSDB server
- * @param servername a NUL-terminated C string containing DNS hostname of file server
- * @param serverport port number of file server
- * @param serverpath a NUL-terminated C string containing export pathname to add
+ * @param fsls a list of one or more initialized struct fedfs_fsls
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
+ *
+ * If creating one of the FSLs fails, we attempt to clean up by
+ * deleting the FSLs that have already been created.
  */
 FedFsStatus
-nsdb_create_fsl_s(nsdb_t host, const char *nce, const char *fsn_uuid,
-		const char *fsl_uuid, const char *nsdbname,
-		const unsigned short nsdbport, const char *servername,
-		const unsigned short serverport, const char *serverpath,
+nsdb_create_fsls_s(nsdb_t host, const char *nce, struct fedfs_fsl *fsls,
 		unsigned int *ldap_err)
 {
+	struct fedfs_fsl *fsl, *progress;
+	FedFsStatus retval;
+
 	if (host->fn_ldap == NULL) {
-		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		xlog(D_GENERAL, "%s: NSDB not open", __func__);
 		return FEDFS_ERR_INVAL;
 	}
 
-	if (nce == NULL || fsn_uuid == NULL || fsl_uuid == NULL ||
-	    nsdbname == NULL || servername == NULL ||
-	    serverpath == NULL || ldap_err == NULL) {
-		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+	if (nce == NULL || fsls == NULL) {
+		xlog(D_GENERAL, "%s: Invalid parameter", __func__);
 		return FEDFS_ERR_INVAL;
 	}
 
-	return nsdb_create_fsl_entry_s(host->fn_ldap, nce, fsn_uuid, fsl_uuid,
-						nsdbname, nsdbport, servername,
-						serverport, serverpath, ldap_err);
+	for (fsl = fsls, progress = NULL;
+	     fsl != NULL;
+	     progress = fsl, fsl = fsl->fl_next) {
+		switch (fsl->fl_type) {
+		case FEDFS_NFS_FSL:
+			retval = nsdb_create_nfs_fsl_entry_s(host->fn_ldap, nce,
+								fsl, ldap_err);
+			break;
+		default:
+			xlog(D_GENERAL, "%s: Unrecognized FSL type", __func__);
+			retval = FEDFS_ERR_INVAL;
+		}
+		if (retval != FEDFS_OK)
+			goto out_delete;
+	}
+
+	return retval;
+
+out_delete:
+	if (progress != NULL) {
+		for (fsl = fsls; fsl != NULL; fsl = fsl->fl_next) {
+			unsigned int dummy_ldap_err;
+			FedFsStatus status;
+			status = nsdb_delete_fsl_s(host, nce, fsl->fl_fsluuid,
+							&dummy_ldap_err);
+			if (status != FEDFS_OK)
+				xlog(D_GENERAL, "%s: Recovery deletion of %s failed",
+					__func__, fsl->fl_fsluuid);
+			if (fsl == progress)
+				break;
+		}
+	}
+	return retval;
 }
 
 /**

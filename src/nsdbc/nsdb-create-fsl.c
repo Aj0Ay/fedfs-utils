@@ -109,6 +109,7 @@ main(int argc, char **argv)
 	char *nce, *fsn_uuid, *fsl_uuid, *servername, *serverpath;
 	char *progname, *binddn, *bindpw, *nsdbname;
 	unsigned short nsdbport, serverport;
+	struct fedfs_fsl *fsl;
 	unsigned int ldap_err;
 	FedFsStatus retval;
 	nsdb_t host;
@@ -204,6 +205,24 @@ main(int argc, char **argv)
 		nsdb_create_fsl_usage(progname);
 	}
 
+	retval = FEDFS_ERR_SVRFAULT;
+	fsl = nsdb_new_fedfs_fsl(FEDFS_NFS_FSL);
+	if (fsl == NULL) {
+		fprintf(stderr, "Failed to allocate FSL\n");
+		goto out;
+	}
+	strcpy(fsl->fl_fsluuid, fsl_uuid);
+	strcpy(fsl->fl_fsnuuid, fsn_uuid);
+	strcpy(fsl->fl_nsdbname, nsdbname);
+	strcpy(fsl->fl_fslhost, servername);
+	fsl->fl_u.fl_nfsfsl.fn_path = strdup(serverpath);
+	if (fsl->fl_u.fl_nfsfsl.fn_path == NULL) {
+		fprintf(stderr, "Failed to allocate serverpath\n");
+		goto out;
+	}
+	fsl->fl_nsdbport = nsdbport;
+	fsl->fl_fslport = serverport;
+
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (retval) {
 	case FEDFS_OK:
@@ -254,8 +273,7 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
-	retval = nsdb_create_fsl_s(host, nce, fsn_uuid, fsl_uuid, nsdbname, nsdbport,
-					servername, serverport, serverpath, &ldap_err);
+	retval = nsdb_create_fsls_s(host, nce, fsl, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		printf("Successfully created FSL record for %s under %s\n",
@@ -281,6 +299,7 @@ main(int argc, char **argv)
 
 out_free:
 	nsdb_free_nsdb(host);
+	nsdb_free_fedfs_fsl(fsl);
 
 out:
 	exit((int)retval);

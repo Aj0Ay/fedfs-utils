@@ -260,15 +260,10 @@ FedFsStatus	 nsdb_delete_fsn_s(nsdb_t host, const char *nce,
 				unsigned int *ldap_err);
 
 /**
- * Create an FSL (5.1.3)
+ * Create one or more FSLs (5.1.3)
  */
-FedFsStatus	 nsdb_create_fsl_s(nsdb_t host, const char *nce,
-				const char *fsn_uuid, const char *fsl_uuid,
-				const char *nsdbname,
-				const unsigned short nsdbport,
-				const char *servername,
-				const unsigned short serverport,
-				const char *serverpath,
+FedFsStatus	 nsdb_create_fsls_s(nsdb_t host, const char *nce,
+				struct fedfs_fsl *fsls,
 				unsigned int *ldap_err);
 
 /**
