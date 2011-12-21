@@ -43,7 +43,6 @@
 
 #include "nsdb.h"
 #include "junction.h"
-#include "path.h"
 #include "nsdb-internal.h"
 #include "xlog.h"
 

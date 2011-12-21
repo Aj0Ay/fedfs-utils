@@ -30,7 +30,6 @@ LDADD			= $(LIBLDAP) $(LIBLBER) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
 			  $(top_builddir)/src/libnsdb/libnsdb.a \
 			  $(top_builddir)/src/libjunction/libjunction.a \
-			  $(top_builddir)/src/libpath/libpath.a \
 			  $(top_builddir)/src/libxlog/libxlog.a
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~

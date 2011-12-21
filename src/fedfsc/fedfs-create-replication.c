@@ -40,7 +40,6 @@
 #include "fedfs_admin.h"
 #include "nsdb.h"
 #include "junction.h"
-#include "path.h"
 #include "xlog.h"
 #include "gpl-boiler.h"
 

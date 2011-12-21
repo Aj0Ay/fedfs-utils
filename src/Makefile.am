@@ -24,7 +24,7 @@
 ##
 
 SUBDIRS			= include libxlog libadmin libnsdb libjunction \
-			  libparser libpath libsi \
+			  libparser libsi \
 			  fedfsc fedfsd nsdbc nsdbparams resolve-junction \
 			  mount
 

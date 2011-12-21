@@ -1,5 +1,5 @@
 /**
- * @file src/libpath/path.c
+ * @file src/libnsdb/path.c
  * @brief Encode and decode FedFS pathnames
  */
 
@@ -39,8 +39,8 @@
 
 #include <netinet/in.h>
 
+#include "nsdb.h"
 #include "junction.h"
-#include "path.h"
 #include "xlog.h"
 
 #define STRLEN_SLASH	((size_t)1)	/* strlen("/") */

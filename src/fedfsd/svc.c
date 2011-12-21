@@ -49,7 +49,6 @@
 #include "nsdb.h"
 #include "fedfsd.h"
 #include "junction.h"
-#include "path.h"
 #include "xlog.h"
 
 /**

@@ -162,7 +162,6 @@ AC_CONFIG_FILES([Makefile
                  src/libjunction/Makefile
                  src/libnsdb/Makefile
                  src/libparser/Makefile
-                 src/libpath/Makefile
                  src/libsi/Makefile
                  src/libxlog/Makefile
                  src/mount/Makefile

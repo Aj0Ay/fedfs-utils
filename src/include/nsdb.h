@@ -377,4 +377,22 @@ FedFsStatus	 nsdb_construct_annotation(const char *keyword,
 FedFsStatus	 nsdb_parse_annotation(const char *annotation, size_t len,
 				char **keyword, char **value);
 
+/**
+ ** Pathname parsing utilities
+ **/
+__attribute_malloc__
+char		*nsdb_normalize_path(const char *pathname);
+_Bool		 nsdb_pathname_is_utf8(const char *pathname);
+
+FedFsStatus	 nsdb_fedfspathname_to_posix(const FedFsPathName fpath,
+				char **pathname);
+FedFsStatus	 nsdb_posix_to_fedfspathname(const char *pathname,
+				FedFsPathName *fpath);
+void		 nsdb_free_fedfspathname(FedFsPathName *fpath);
+
+FedFsStatus	 nsdb_posix_path_to_xdr(const char *pathname,
+				struct berval *xdr_path);
+FedFsStatus	 nsdb_xdr_to_posix_path(struct berval *xdr_path,
+				char **pathname);
+
 #endif	/* !_FEDFS_NSDB_H_ */
