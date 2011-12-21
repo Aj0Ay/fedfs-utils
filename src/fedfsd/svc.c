@@ -107,7 +107,7 @@ out_unknown:
   	"name" was too long, or port number was not valid
    @endverbatim
  */
-FedFsStatus
+static FedFsStatus
 fedfsd_nsdbname(const FedFsNsdbName name, char **hostname,
 		unsigned short *port)
 {
@@ -159,7 +159,7 @@ fedfsd_nsdbname(const FedFsNsdbName name, char **hostname,
   	memory was not available
    @endverbatim
  */
-FedFsStatus
+static FedFsStatus
 fedfsd_nsdb_to_nsdbname(const nsdb_t host, FedFsNsdbName *name)
 {
 	name->hostname.utf8string_val = strdup(nsdb_hostname(host));
@@ -315,7 +315,7 @@ out_err:
  *  alter the "pathname" argument.  Most particularly, we MUST ensure
  *  that no component of "pathname" is a junction.
  */
-FedFsStatus
+static FedFsStatus
 fedfsd_pathwalk(const FedFsPathName fpath, char **pathname)
 {
 	FedFsStatus retval;
