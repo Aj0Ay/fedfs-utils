@@ -39,4 +39,6 @@ FedFsStatus	 fedfs_is_junction(const char *pathname);
 FedFsStatus	 fedfs_save_mode(const char *pathname);
 FedFsStatus	 fedfs_restore_mode(const char *pathname);
 
+FedFsStatus	 junction_flush_exports_cache(void);
+
 #endif	/* !_FEDFS_JUNCTION_H_ */

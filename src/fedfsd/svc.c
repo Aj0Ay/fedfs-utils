@@ -538,14 +538,15 @@ fedfsd_svc_create_junction_1(SVCXPRT *xprt)
 	}
 
 	result = fedfs_store_fsn(pathname, fsn_uuid, host);
-	if (result != FEDFS_OK)
+	if (result != FEDFS_OK) {
 		xlog(D_GENERAL, "%s: fedfs_store_fsn", __func__);
-	else {
-		xlog(D_CALL, "%s: uuid: %s",
-			__func__, fsn_uuid);
-		xlog(D_CALL, "%s: nsdb: %s:%u",
-			__func__, nsdb_hostname(host), nsdb_port(host));
+		goto out;
 	}
+
+	(void)junction_flush_exports_cache();
+	xlog(D_CALL, "%s: uuid: %s", __func__, fsn_uuid);
+	xlog(D_CALL, "%s: nsdb: %s:%u",
+			__func__, nsdb_hostname(host), nsdb_port(host));
 
 out:
 	xlog(D_CALL, "%s: Replying with %s",
@@ -643,6 +644,7 @@ fedfsd_svc_delete_junction_1(SVCXPRT *xprt)
 		goto out;
 
 	fedfsd_rmdir(pathname);
+	(void)junction_flush_exports_cache();
 	result = FEDFS_OK;
 
 out:
@@ -800,9 +802,11 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 	result.status = FEDFS_ERR_BADXDR;
 	switch (args.resolve) {
 	case FEDFS_RESOLVE_NONE:
-	case FEDFS_RESOLVE_CACHE:
 	case FEDFS_RESOLVE_NSDB:
 		break;
+	case FEDFS_RESOLVE_CACHE:
+		result.status = FEDFS_ERR_UNKNOWN_CACHE;
+		goto out;
 	default:
 		goto out;
 	}
@@ -839,7 +843,6 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 
 	switch (args.resolve) {
 	case FEDFS_RESOLVE_NONE:
-	case FEDFS_RESOLVE_CACHE:
 		break;
 	case FEDFS_RESOLVE_NSDB:
 		result.status = nsdb_open_nsdb(host, NULL, NULL, &ldap_err);
@@ -857,6 +860,12 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 			break;
 		result.status = fedfsd_prepare_fedfsfsl_array(fsls, resok);
 		nsdb_free_fedfs_fsls(fsls);
+		if (result.status != FEDFS_OK)
+			break;
+		result.status = junction_flush_exports_cache();
+		if (result.status != FEDFS_OK &&
+		    result.status != FEDFS_ERR_NO_CACHE_UPDATE)
+			result.status = FEDFS_OK;
 		break;
 	default:
 		result.status = FEDFS_ERR_SVRFAULT;

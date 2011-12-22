@@ -24,7 +24,7 @@
 ##
 
 noinst_LTLIBRARIES	= libjunction.la
-libjunction_la_SOURCES	= junction.c
+libjunction_la_SOURCES	= export-cache.c junction.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
