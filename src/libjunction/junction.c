@@ -360,7 +360,7 @@ fedfs_remove_xattr(int fd, const char *pathname, const char *name)
  *
  * @note Access to trusted attributes requires CAP_SYS_ADMIN.
  */
-FedFsStatus
+static FedFsStatus
 fedfs_remove_fsn(const char *pathname)
 {
 	FedFsStatus retval;
@@ -394,15 +394,12 @@ out:
  * @param host an initialized nsdb_t object
  * @return a FedFsStatus code
  */
-FedFsStatus
+static FedFsStatus
 fedfs_store_fsn(const char *pathname, const char *fsn_uuid, const nsdb_t host)
 {
 	FedFsStatus retval;
 	char buf[20];
 	int fd, len;
-
-	if (fsn_uuid == NULL || host == NULL)
-		return FEDFS_ERR_INVAL;
 
 	retval = fedfs_open_path(pathname, &fd);
 	if (retval != FEDFS_OK)
@@ -411,32 +408,24 @@ fedfs_store_fsn(const char *pathname, const char *fsn_uuid, const nsdb_t host)
 	retval = fedfs_set_xattr(fd, pathname, FEDFSD_XATTR_NAME_TYPE,
 			FEDFSD_XATTR_NAME_TYPE, sizeof(FEDFSD_XATTR_NAME_TYPE));
 	if (retval != FEDFS_OK)
-		goto out_err;
+		goto out;
 
 	retval = fedfs_set_xattr(fd, pathname, FEDFSD_XATTR_NAME_FSNUUID,
 			fsn_uuid, strlen(fsn_uuid) + 1);
 	if (retval != FEDFS_OK)
-		goto out_err;
+		goto out;
 
 	retval = fedfs_set_xattr(fd, pathname, FEDFSD_XATTR_NAME_NSDB,
 			nsdb_hostname(host), nsdb_hostname_len(host) + 1);
 	if (retval != FEDFS_OK)
-		goto out_err;
+		goto out;
 
 	len = snprintf(buf, sizeof(buf), "%u", nsdb_port(host));
 	retval = fedfs_set_xattr(fd, pathname, FEDFSD_XATTR_NAME_PORT, buf, len + 1);
-	if (retval != FEDFS_OK)
-		goto out_err;
-
-	retval = fedfs_set_sticky_bit(fd, pathname);
 
 out:
 	(void)close(fd);
 	return retval;
-
-out_err:
-	(void)fedfs_remove_fsn(pathname);
-	goto out;
 }
 
 /**
@@ -645,6 +634,7 @@ FedFsStatus
 fedfs_save_mode(const char *pathname)
 {
 	FedFsStatus retval;
+	unsigned int mode;
 	struct stat stb;
 	char buf[16];
 	int fd;
@@ -659,10 +649,26 @@ fedfs_save_mode(const char *pathname)
 		return FEDFS_ERR_ACCESS;
 	}
 
-	(void)snprintf(buf, sizeof(buf), "%o", ALLPERMS & stb.st_mode);
-
-	return fedfs_set_xattr(fd, pathname, FEDFSD_XATTR_NAME_MODE,
+	mode = ALLPERMS & stb.st_mode;
+	(void)snprintf(buf, sizeof(buf), "%o", mode);
+	retval = fedfs_set_xattr(fd, pathname, FEDFSD_XATTR_NAME_MODE,
 				buf, strlen(buf));
+	if (retval != FEDFS_OK)
+		goto out;
+
+	retval = fedfs_set_sticky_bit(fd, pathname);
+	if (retval != FEDFS_OK) {
+		(void)fedfs_remove_xattr(fd, pathname,
+						FEDFSD_XATTR_NAME_MODE);
+		goto out;
+	}
+
+	xlog(D_CALL, "%s: saved mode %o to %s", __func__, mode, pathname);
+	retval = FEDFS_OK;
+
+out:
+	(void)close(fd);
+	return retval;
 }
 
 /**
@@ -702,10 +708,74 @@ fedfs_restore_mode(const char *pathname)
 		goto out;
 	}
 
+	xlog(D_CALL, "%s: restored mode %o to %s", __func__, mode, pathname);
 	retval = FEDFS_OK;
 
 out:
 	free(buf);
 	(void)close(fd);
 	return retval;
+}
+
+/**
+ * Add FedFS junction information to a pre-existing object
+ *
+ * @param pathname NUL-terminated C string containing pathname of a junction
+ * @param fsn_uuid NUL-terminated C string containing FSN UUID to store
+ * @param host an initialized nsdb_t object
+ * @return a FedFsStatus code
+ *
+ * An error occurs if the object referred to by "pathname" does not
+ * exist or contains existing FedFS junction data.
+ */
+FedFsStatus
+fedfs_add_junction(const char *pathname, const char *fsn_uuid, const nsdb_t host)
+{
+	FedFsStatus retval;
+
+	if (fsn_uuid == NULL || host == NULL)
+		return FEDFS_ERR_INVAL;
+
+	retval = fedfs_is_prejunction(pathname);
+	if (retval != FEDFS_ERR_NOTJUNCT)
+		return retval;
+
+	retval = fedfs_store_fsn(pathname, fsn_uuid, host);
+	if (retval != FEDFS_OK)
+		goto out_err;
+
+	retval = fedfs_save_mode(pathname);
+	if (retval != FEDFS_OK)
+		goto out_err;
+
+	return retval;
+
+out_err:
+	(void)fedfs_remove_fsn(pathname);
+	return retval;
+}
+
+/**
+ * Remove FedFS junction information from an object
+ *
+ * @param pathname NUL-terminated C string containing pathname of a directory
+ * @return a FedFsStatus code
+ *
+ * An error occurs if the object referred to by "pathname" does not
+ * exist or does not contain FedFS junction data.
+ */
+FedFsStatus
+fedfs_delete_junction(const char *pathname)
+{
+	FedFsStatus retval;
+
+	retval = fedfs_is_junction(pathname);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = fedfs_restore_mode(pathname);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	return fedfs_remove_fsn(pathname);
 }

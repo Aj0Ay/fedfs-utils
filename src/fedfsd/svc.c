@@ -531,13 +531,7 @@ fedfsd_svc_create_junction_1(SVCXPRT *xprt)
 		goto out;
 	}
 
-	result = fedfs_save_mode(pathname);
-	if (result != FEDFS_OK) {
-		xlog(D_GENERAL, "%s: fedfs_save_mode", __func__);
-		goto out;
-	}
-
-	result = fedfs_store_fsn(pathname, fsn_uuid, host);
+	result = fedfs_add_junction(pathname, fsn_uuid, host);
 	if (result != FEDFS_OK) {
 		xlog(D_GENERAL, "%s: fedfs_store_fsn", __func__);
 		goto out;
@@ -635,11 +629,7 @@ fedfsd_svc_delete_junction_1(SVCXPRT *xprt)
 		goto out;
 	}
 
-	result = fedfs_restore_mode(pathname);
-	if (result != FEDFS_OK)
-		goto out;
-
-	result = fedfs_remove_fsn(pathname);
+	result = fedfs_delete_junction(pathname);
 	if (result!= FEDFS_OK)
 		goto out;
 

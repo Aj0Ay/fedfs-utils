@@ -28,16 +28,13 @@
 
 #include "nsdb.h"
 
-FedFsStatus	 fedfs_remove_fsn(const char *pathname);
-FedFsStatus	 fedfs_store_fsn(const char *pathname, const char *uuid,
+FedFsStatus	 fedfs_delete_junction(const char *pathname);
+FedFsStatus	 fedfs_add_junction(const char *pathname, const char *uuid,
 				const nsdb_t host);
 FedFsStatus	 fedfs_get_fsn(const char *pathname, char **uuid,
 				nsdb_t *host);
 FedFsStatus	 fedfs_is_prejunction(const char *pathname);
 FedFsStatus	 fedfs_is_junction(const char *pathname);
-
-FedFsStatus	 fedfs_save_mode(const char *pathname);
-FedFsStatus	 fedfs_restore_mode(const char *pathname);
 
 FedFsStatus	 junction_flush_exports_cache(void);
 
