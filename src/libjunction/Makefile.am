@@ -23,8 +23,10 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
+noinst_HEADERS		= junction-internal.h
+
 noinst_LTLIBRARIES	= libjunction.la
-libjunction_la_SOURCES	= export-cache.c junction.c
+libjunction_la_SOURCES	= export-cache.c fedfs.c junction.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
