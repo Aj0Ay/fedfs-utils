@@ -27,7 +27,7 @@ noinst_HEADERS		= privilege.h
 
 sbin_PROGRAMS		= resolve-junction
 resolve_junction_SOURCES = main.c privilege.c privilege.h
-LDADD			= $(LIBLDAP) $(LIBLBER) \
+LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
 			  $(top_builddir)/src/libadmin/libadmin.la \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \

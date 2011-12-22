@@ -30,7 +30,7 @@ sbin_PROGRAMS		= fedfs-null \
 			  fedfs-lookup-junction \
 			  fedfs-create-replication fedfs-delete-replication \
 			  fedfs-lookup-replication
-LDADD			= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) \
+LDADD			= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
 			  $(top_builddir)/src/libadmin/libadmin.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \

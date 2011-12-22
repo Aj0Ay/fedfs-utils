@@ -118,6 +118,11 @@ AC_CHECK_LIB([resolv], [__res_querydomain],
 		 AC_DEFINE([HAVE_LIBRESOLV], [1],
 			   [Define if you have libresolv])],
 		[AC_MSG_ERROR([libresolv not found.])])
+AC_CHECK_LIB([xml2], [xmlParseFile],
+		[AC_SUBST([LIBXML2], ["-lxml2"])
+		 AC_DEFINE([HAVE_LIBXML2], [1],
+			   [Define if you have libxml2])],
+		[AC_MSG_ERROR([libxml2 not found.])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h langinfo.h locale.h memory.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h syslog.h termios.h unistd.h wchar.h])

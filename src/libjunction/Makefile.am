@@ -26,7 +26,7 @@
 noinst_HEADERS		= junction-internal.h
 
 noinst_LTLIBRARIES	= libjunction.la
-libjunction_la_SOURCES	= export-cache.c fedfs.c junction.c
+libjunction_la_SOURCES	= export-cache.c fedfs.c junction.c xml.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
@@ -34,4 +34,5 @@ DISTCLEANFILES		= Makefile.in
 AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC \
 			  -Wall -Wextra -pedantic -Wformat=2 \
 			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
-AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include
+AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include \
+			  -I/usr/include/libxml2

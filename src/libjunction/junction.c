@@ -47,12 +47,6 @@
 #include "xlog.h"
 
 /**
- * Name of extended attribute containing saved mode bits
- */
-#define JUNCTION_XATTR_NAME_MODE	"trusted.junction.mode"
-
-
-/**
  * Open a file system object
  *
  * @param pathname NUL-terminated C string containing pathname of an object
@@ -468,6 +462,59 @@ junction_restore_mode(const char *pathname)
 
 out:
 	free(buf);
+	(void)close(fd);
+	return retval;
+}
+
+/**
+ * Add the TYPE xattr
+ *
+ * @param pathname NUL-terminated C string containing pathname of a directory
+ * @param type NUL-terminated C string containing the contents of the new xattr
+ * @return a FedFsStatus code
+ *
+ * @note Access to trusted attributes requires CAP_SYS_ADMIN.
+ *
+ * The TYPE xattr is read by local file servers to know when they should
+ * perform junction resolution.
+ */
+FedFsStatus
+junction_add_type(const char *pathname, const char *type)
+{
+	FedFsStatus retval;
+	int fd;
+
+	retval = junction_open_path(pathname, &fd);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = junction_set_xattr(fd, pathname, JUNCTION_XATTR_NAME_TYPE,
+						type, strlen(type) + 1);
+
+	(void)close(fd);
+	return retval;
+}
+
+/**
+ * Remove the TYPE xattr
+ *
+ * @param pathname NUL-terminated C string containing pathname of a directory
+ * @return a FedFsStatus code
+ *
+ * @note Access to trusted attributes requires CAP_SYS_ADMIN.
+ */
+FedFsStatus
+junction_remove_type(const char *pathname)
+{
+	FedFsStatus retval;
+	int fd;
+
+	retval = junction_open_path(pathname, &fd);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = junction_remove_xattr(fd, pathname, JUNCTION_XATTR_NAME_TYPE);
+
 	(void)close(fd);
 	return retval;
 }

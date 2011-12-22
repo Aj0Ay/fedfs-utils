@@ -28,7 +28,7 @@ sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
 			  nsdb-delete-nsdb \
 			  nsdb-create-fsn nsdb-delete-fsn nsdb-resolve-fsn \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl
-LDADD			= $(LIBLDAP) $(LIBLBER) \
+LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libxlog/libxlog.la \

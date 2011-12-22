@@ -26,6 +26,48 @@
 #ifndef _FEDFS_JUNCTION_INTERNAL_H_
 #define _FEDFS_JUNCTION_INTERNAL_H_
 
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+
+/**
+ ** Names of extended attributes that store junction data
+ **/
+
+/**
+ * Name of extended attribute containing saved mode bits
+ */
+#define JUNCTION_XATTR_NAME_MODE	"trusted.junction.mode"
+
+/**
+ * Name of extended attribute containing junction type
+ */
+#define JUNCTION_XATTR_NAME_TYPE	"trusted.junction.type"
+
+/**
+ * Name of extended attribute containing NFS-related junction data
+ */
+#define JUNCTION_XATTR_NAME_NFS		"trusted.junction.nfs"
+
+
+/**
+ ** Names of XML elements and attributes that represent junction data
+ **/
+
+/**
+ * Tag name of root element of a junction XML document
+ */
+#define JUNCTION_XML_ROOT_TAG		(const xmlChar *)"junction"
+
+/**
+ * Tag name of fileset element of a junction XML document
+ */
+#define JUNCTION_XML_FILESET_TAG	(const xmlChar *)"fileset"
+
+
+/**
+ ** Junction helper functions
+ **/
+
 FedFsStatus	 junction_open_path(const char *pathname, int *fd);
 FedFsStatus	 junction_is_directory(int fd, const char *path);
 FedFsStatus	 junction_is_sticky_bit_set(int fd, const char *path);
@@ -42,5 +84,24 @@ FedFsStatus	 junction_remove_xattr(int fd, const char *pathname,
 			const char *name);
 FedFsStatus	 junction_save_mode(const char *pathname);
 FedFsStatus	 junction_restore_mode(const char *pathname);
+FedFsStatus	 junction_add_type(const char *pathname, const char *type);
+FedFsStatus	 junction_remove_type(const char *pathname);
+
+
+/**
+ ** XML helper functions
+ **/
+
+_Bool		 junction_xml_is_empty(const xmlChar *content);
+_Bool		 junction_xml_match_node_name(xmlNodePtr node,
+			const xmlChar *name);
+_Bool		 junction_xml_get_int_attribute(xmlNodePtr node,
+			const xmlChar *attrname, int *value);
+void		 junction_xml_set_int_attribute(xmlNodePtr node,
+			const xmlChar *attrname, int value);
+FedFsStatus	 junction_xml_parse(const char *pathname, const char *name,
+			xmlDocPtr *doc);
+FedFsStatus	 junction_xml_write(const char *pathname, const char *name,
+			xmlDocPtr doc);
 
 #endif	/* !_FEDFS_JUNCTION_INTERNAL_H_ */
