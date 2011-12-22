@@ -65,6 +65,110 @@ junction_xml_match_node_name(xmlNodePtr node, const xmlChar *name)
 }
 
 /**
+ * Find a first-level child of "parent" named "name"
+ *
+ * @param parent pointer to node whose children are to be searched
+ * @param name NUL-terminated C string containing name to match
+ * @return pointer to child of "parent" whose name is "name"
+ */
+xmlNodePtr
+junction_xml_find_child_by_name(xmlNodePtr parent, const xmlChar *name)
+{
+	xmlNodePtr node;
+
+	for (node = parent->children; node != NULL; node = node->next)
+		if (junction_xml_match_node_name(node, name))
+			return node;
+	return NULL;
+}
+
+/**
+ * Read attribute into a boolean
+ *
+ * @param node pointer to a node in an XML parse tree
+ * @param attrname NUL-terminated C string containing attribute name
+ * @param value OUT: attribute's value converted to an integer 
+ * @return true if attribute "attrname" has a valid boolean value
+ */
+_Bool
+junction_xml_get_bool_attribute(xmlNodePtr node, const xmlChar *attrname,
+		_Bool *value)
+{
+	xmlChar *prop;
+	_Bool retval;
+
+	retval = false;
+	prop = xmlGetProp(node, attrname);
+	if (prop == NULL)
+		goto out;
+
+	if (xmlStrcmp(prop, (const xmlChar *)"true") == 0) {
+		*value = true;
+		retval = true;
+		goto out;
+	}
+
+	if (xmlStrcmp(prop, (const xmlChar *)"false") == 0) {
+		*value = false;
+		retval = true;
+		goto out;
+	}
+
+out:
+	xmlFree(prop);
+	return retval;
+}
+
+/**
+ * Set attribute to a boolean
+ *
+ * @param node pointer to a node in an XML parse tree
+ * @param attrname NUL-terminated C string containing attribute name
+ * @param value boolean value to set
+ */
+void
+junction_xml_set_bool_attribute(xmlNodePtr node, const xmlChar *attrname,
+					_Bool value)
+{
+	xmlSetProp(node, attrname, (const xmlChar *)(value ? "true" : "false"));
+}
+
+/**
+ * Read attribute into an uint8_t
+ *
+ * @param node pointer to a node in an XML parse tree
+ * @param attrname NUL-terminated C string containing attribute name
+ * @param value OUT: attribute's value converted to an uint8_t
+ * @return true if attribute "attrname" has a valid uint8_t value
+ */
+_Bool
+junction_xml_get_u8_attribute(xmlNodePtr node, const xmlChar *attrname,
+		uint8_t *value)
+{
+	char *endptr;
+	_Bool retval;
+	char *prop;
+	long tmp;
+
+	retval = false;
+	prop = (char *)xmlGetProp(node, attrname);
+	if (prop == NULL)
+		goto out;
+
+	errno = 0;
+	tmp = strtol(prop, &endptr, 10);
+	if (errno != 0 || *endptr != '\0' || tmp > 255 || tmp < 0)
+		goto out;
+
+	*value = (uint8_t)tmp;
+	retval = true;
+
+out:
+	xmlFree(prop);
+	return retval;
+}
+
+/**
  * Read attribute into an integer
  *
  * @param node pointer to a node in an XML parse tree
@@ -105,7 +209,6 @@ out:
  * @param node pointer to a node in an XML parse tree
  * @param attrname NUL-terminated C string containing attribute name
  * @param value integer value to set
- * @return true if attribute "attrname" has a valid integer value
  */
 void
 junction_xml_set_int_attribute(xmlNodePtr node, const xmlChar *attrname,
@@ -115,6 +218,56 @@ junction_xml_set_int_attribute(xmlNodePtr node, const xmlChar *attrname,
 
 	snprintf(buf, sizeof(buf), "%d", value);
 	xmlSetProp(node, attrname, (const xmlChar *)buf);
+}
+
+/**
+ * Read node content into an integer
+ *
+ * @param node pointer to a node in an XML parse tree
+ * @param value OUT: node's content converted to an integer 
+ * @return true if "node" has valid integer content
+ */
+_Bool
+junction_xml_get_int_content(xmlNodePtr node, int *value)
+{
+	xmlChar *content;
+	char *endptr;
+	_Bool retval;
+	long tmp;
+
+	retval = false;
+	content = xmlNodeGetContent(node);
+	if (content == NULL)
+		goto out;
+
+	errno = 0;
+	tmp = strtol((const char *)content, &endptr, 10);
+	if (errno != 0 || *endptr != '\0' || tmp > INT32_MAX || tmp < INT32_MIN)
+		goto out;
+
+	*value = (int)tmp;
+	retval = true;
+
+out:
+	xmlFree(content);
+	return retval;
+}
+
+/**
+ * Add a child node with integer content
+ *
+ * @param parent  pointer to a node in an XML parse tree
+ * @param name NUL-terminated C string containing name of child to add
+ * @param value set node content to this value
+ * @return pointer to new child node
+ */
+xmlNodePtr
+junction_xml_set_int_content(xmlNodePtr parent, const xmlChar *name, int value)
+{
+	char buf[16];
+
+	snprintf(buf, sizeof(buf), "%d", value);
+	return xmlNewTextChild(parent, NULL, name, (const xmlChar *)buf);
 }
 
 /**

@@ -26,7 +26,8 @@
 noinst_HEADERS		= junction-internal.h
 
 noinst_LTLIBRARIES	= libjunction.la
-libjunction_la_SOURCES	= export-cache.c fedfs.c junction.c xml.c
+libjunction_la_SOURCES	= export-cache.c fedfs.c junction.c \
+			  locations.c nfs.c xml.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

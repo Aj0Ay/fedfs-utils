@@ -95,10 +95,21 @@ FedFsStatus	 junction_remove_type(const char *pathname);
 _Bool		 junction_xml_is_empty(const xmlChar *content);
 _Bool		 junction_xml_match_node_name(xmlNodePtr node,
 			const xmlChar *name);
+xmlNodePtr	 junction_xml_find_child_by_name(xmlNodePtr parent,
+			const xmlChar *name);
+_Bool		 junction_xml_get_bool_attribute(xmlNodePtr node,
+			const xmlChar *attrname, _Bool *value);
+void		 junction_xml_set_bool_attribute(xmlNodePtr node,
+			const xmlChar *attrname, _Bool value);
+_Bool		 junction_xml_get_u8_attribute(xmlNodePtr node,
+			const xmlChar *attrname, uint8_t *value);
 _Bool		 junction_xml_get_int_attribute(xmlNodePtr node,
 			const xmlChar *attrname, int *value);
 void		 junction_xml_set_int_attribute(xmlNodePtr node,
 			const xmlChar *attrname, int value);
+_Bool		 junction_xml_get_int_content(xmlNodePtr node, int *value);
+xmlNodePtr	 junction_xml_set_int_content(xmlNodePtr parent,
+			const xmlChar *name, int value);
 FedFsStatus	 junction_xml_parse(const char *pathname, const char *name,
 			xmlDocPtr *doc);
 FedFsStatus	 junction_xml_write(const char *pathname, const char *name,
