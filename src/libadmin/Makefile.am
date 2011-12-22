@@ -23,12 +23,12 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
-noinst_LIBRARIES	= libadmin.a
-libadmin_a_SOURCES	= fedfs_admin_clnt.c fedfs_admin_svc.c fedfs_admin_xdr.c
+noinst_LTLIBRARIES	= libadmin.la
+libadmin_la_SOURCES	= fedfs_admin_clnt.c fedfs_admin_svc.c fedfs_admin_xdr.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 # Squelch compiler warnings for rpcgen-produced source code
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie
+AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include -I/usr/include/tirpc

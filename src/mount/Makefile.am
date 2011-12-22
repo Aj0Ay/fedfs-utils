@@ -28,17 +28,16 @@ root_sbin_PROGRAMS	= mount.fedfs
 sbin_PROGRAMS		= fedfs-map-nfs4
 fedfs_map_nfs4_SOURCES	= fedfs-map-nfs4.c
 fedfs_map_nfs4_LDADD	= $(LIBRESOLV) \
-			  $(top_builddir)/src/libsi/libsi.a
+			  $(top_builddir)/src/libsi/libsi.la
 mount_fedfs_SOURCES	= main.c
 # mount.fedfs must never link against libraries in /usr
 mount_fedfs_LDADD	= $(LIBRESOLV) \
-			  $(top_builddir)/src/libsi/libsi.a
+			  $(top_builddir)/src/libsi/libsi.la
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \
-			  -pedantic -Wformat=2 -Wstrict-aliasing=2 \
-			  -Wp,-D_FORTIFY_SOURCE=2
+AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIE \
+			  -Wall -Wextra -pedantic -Wformat=2 \
+			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include
-AM_LDFLAGS		= -fPIC

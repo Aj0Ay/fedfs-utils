@@ -23,13 +23,13 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
-noinst_LIBRARIES	= libxlog.a
-libxlog_a_SOURCES	= xlog.c
+noinst_LTLIBRARIES	= libxlog.la
+libxlog_la_SOURCES	= xlog.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \
-			  -pedantic -Wformat=2 -Wstrict-aliasing=2 \
-			  -Wp,-D_FORTIFY_SOURCE=2
+AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC \
+			  -Wall -Wextra -pedantic -Wformat=2 \
+			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I $(top_srcdir)/src/include

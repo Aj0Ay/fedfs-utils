@@ -30,15 +30,14 @@ sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl
 LDADD			= $(LIBLDAP) $(LIBLBER) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
-			  $(top_builddir)/src/libnsdb/libnsdb.a \
-			  $(top_builddir)/src/libxlog/libxlog.a \
-			  $(top_builddir)/src/libjunction/libjunction.a
+			  $(top_builddir)/src/libnsdb/libnsdb.la \
+			  $(top_builddir)/src/libxlog/libxlog.la \
+			  $(top_builddir)/src/libjunction/libjunction.la
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \
-			  -pedantic -Wformat=2 -Wstrict-aliasing=2 \
-			  -Wp,-D_FORTIFY_SOURCE=2
+AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIE \
+			  -Wall -Wextra -pedantic -Wformat=2 \
+			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I$(top_srcdir)/src/include -I/usr/include/tirpc
-AM_LDFLAGS		= -fPIC

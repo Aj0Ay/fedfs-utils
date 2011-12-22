@@ -24,14 +24,15 @@
 ##
 
 noinst_HEADERS		= nsdb-internal.h
-noinst_LIBRARIES	= libnsdb.a
-libnsdb_a_SOURCES	= administrator.c annotation.c display.c fileserver.c \
+
+noinst_LTLIBRARIES	= libnsdb.la
+libnsdb_la_SOURCES	= administrator.c annotation.c display.c fileserver.c \
 			  ldap.c nsdb.c path.c sqlite.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \
-			  -pedantic -Wformat=2 -Wstrict-aliasing=2 \
-			  -Wp,-D_FORTIFY_SOURCE=2
+AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC \
+			  -Wall -Wextra -pedantic -Wformat=2 \
+			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include

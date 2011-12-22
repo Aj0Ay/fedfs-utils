@@ -6,6 +6,8 @@ ChangeLog
 Doxygen/
 .*.swp
 *.o
+*.lo
+*.la
 src/fedfsd/fedfsd
 src/resolve-junction/resolve-junction
 src/nsdbparams/nsdbparams
@@ -64,4 +66,5 @@ libtool
 stamp-h1
 depcomp
 .deps/
+.libs/
 .stgit*

@@ -23,13 +23,13 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
-noinst_LIBRARIES	= libsi.a
-libsi_a_SOURCES		= getsrvinfo.c
+noinst_LTLIBRARIES	= libsi.la
+libsi_la_SOURCES	= getsrvinfo.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fpie -Wall -Wextra \
-			  -pedantic -Wformat=2 -Wstrict-aliasing=2 \
-			  -Wp,-D_FORTIFY_SOURCE=2
+AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC \
+			  -Wall -Wextra -pedantic -Wformat=2 \
+			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include
