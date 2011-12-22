@@ -32,6 +32,8 @@ FedFsStatus	 junction_is_sticky_bit_set(int fd, const char *path);
 FedFsStatus	 junction_set_sticky_bit(int fd, const char *path);
 FedFsStatus	 junction_is_xattr_present(int fd, const char *path,
 				const char *name);
+FedFsStatus	 junction_read_xattr(int fd, const char *path, const char *name,
+				char **contents);
 FedFsStatus	 junction_get_xattr(int fd, const char *path, const char *name,
 				void **contents, size_t *contentlen);
 FedFsStatus	 junction_set_xattr(int fd, const char *path, const char *name,

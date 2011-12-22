@@ -221,6 +221,54 @@ junction_is_xattr_present(int fd, const char *path, const char *name)
 }
 
 /**
+ * Read the contents of xattr "name"
+ *
+ * @param fd an open file descriptor
+ * @param path NUL-terminated C string containing pathname of a directory
+ * @param name NUL-terminated C string containing name of xattr to retrieve
+ * @param contents OUT: NUL-terminated C string containing contents of xattr
+ * @return a FedFsStatus code
+ *
+ * If junction_read_xattr() returns FEDFS_OK, the caller must free "*contents"
+ * with free(3).
+ *
+ * @note Access to trusted attributes requires CAP_SYS_ADMIN.
+ */
+FedFsStatus
+junction_read_xattr(int fd, const char *path, const char *name, char **contents)
+{
+	char *xattrbuf = NULL;
+	ssize_t len;
+
+	len = fgetxattr(fd, name, xattrbuf, 0);
+	if (len == -1) {
+		xlog(D_GENERAL, "%s: failed to get size of xattr %s on %s: %m",
+			__func__, name, path);
+		return FEDFS_ERR_ACCESS;
+	}
+
+	xattrbuf = malloc(len + 1);
+	if (xattrbuf == NULL) {
+		xlog(D_GENERAL, "%s: failed to get buffer for xattr %s on %s",
+			__func__, name, path);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	if (fgetxattr(fd, name, xattrbuf, len) == -1) {
+		xlog(D_GENERAL, "%s: failed to get xattr %s on %s: %m",
+			__func__, name, path);
+		free(xattrbuf);
+		return FEDFS_ERR_ACCESS;
+	}
+	xattrbuf[len] = '\0';
+
+	xlog(D_CALL, "%s: read xattr %s from path %s",
+			__func__, name, path);
+	*contents = xattrbuf;
+	return FEDFS_OK;
+}
+
+/**
  * Retrieve the contents of xattr "name"
  *
  * @param fd an open file descriptor
@@ -229,6 +277,9 @@ junction_is_xattr_present(int fd, const char *path, const char *name)
  * @param contents OUT: opaque byte array containing contents of xattr
  * @param contentlen OUT: size of "contents"
  * @return a FedFsStatus code
+ *
+ * If junction_get_xattr() returns FEDFS_OK, the caller must free "*contents"
+ * with free(3).
  *
  * @note Access to trusted attributes requires CAP_SYS_ADMIN.
  */
@@ -386,17 +437,15 @@ FedFsStatus
 junction_restore_mode(const char *pathname)
 {
 	FedFsStatus retval;
+	char *buf = NULL;
 	mode_t mode;
-	size_t len;
-	void *buf;
 	int fd;
 
 	retval = junction_open_path(pathname, &fd);
 	if (retval != FEDFS_OK)
 		return retval;
 
-	retval = junction_get_xattr(fd, pathname, JUNCTION_XATTR_NAME_MODE,
-					&buf, &len);
+	retval = junction_read_xattr(fd, pathname, JUNCTION_XATTR_NAME_MODE, &buf);
 	if (retval != FEDFS_OK)
 		goto out;
 
