@@ -23,6 +23,7 @@
 ##	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ##
 
+include_HEADERS		= nfs-plugin.h
 noinst_HEADERS		= fedfs_admin.h fedfs.h getsrvinfo.h gpl-boiler.h \
 			  junction.h list.h nsdb.h parse_opt.h \
 			  token.h xlog.h

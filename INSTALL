@@ -121,9 +121,9 @@ FedFS file server
   o Install kernel with patches to do export cache upcalls when
     encountering a junction
 
-  o Install resolve-junction program
+  o Install junction resolution plug-in
 
-  o Install mountd with patches to resolve junctions
+  o Install mountd with patches to invoke the plug-in
 
   o Install the nfsref program
 
@@ -177,3 +177,22 @@ FedFS admin client
 In addition to these tasks, you should choose one of the FedFS-enabled
 file servers on which to host the domain root directory, and set up a
 DNS SRV record to allow FedFS file system clients to find it.
+
+
+Configuring the junction resolution plug-in
+
+By default, the junction resolution plug-in library is installed in
+/usr/local/lib.  Mountd's junction plug-in support searches the default
+library path for this plug-in, but mountd's library path does not
+normally contain /usr/local/lib.
+
+There are several options:
+
+  o Specify an LD_LIBRARY_PATH when starting mountd that includes
+    /usr/local/lib,
+
+  o Move the installed plug-in files to a directory that is included
+    in mountd's existing library path, or
+
+  o Use the --libdir= command line option on fedfs-utils's ./configure
+    to change the installed location of the plug-in library.
