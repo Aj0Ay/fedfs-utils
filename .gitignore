@@ -11,6 +11,7 @@ Doxygen/
 src/fedfsd/fedfsd
 src/resolve-junction/resolve-junction
 src/nsdbparams/nsdbparams
+src/nfsref/nfsref
 src/mount/mount.fedfs
 src/mount/fedfs-map-nfs4
 libadmin.a

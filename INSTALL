@@ -125,6 +125,8 @@ FedFS file server
 
   o Install mountd with patches to resolve junctions
 
+  o Install the nfsref program
+
   o Set up a fedfs user ID and group ID
 
   o Create /var/lib/fedfs and set its user and group to the fedfs

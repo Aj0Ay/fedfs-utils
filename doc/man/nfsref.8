@@ -1,0 +1,283 @@
+.\"@(#)nfsref.8"
+.\"
+.\" @file doc/man/nfsref.8
+.\" @brief man page for nfsref command
+.\"
+
+.\"
+.\" Copyright 2011 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH NFSREF 8 "@publication-date@"
+.SH NAME
+nfsref \- manage NFS referrals
+.SH SYNOPSIS
+.B nfsref
+.RB [ \-?d ]
+.RB [ \-t
+.IB type ]
+.B add
+.I pathname server export
+.RI [ " server"
+.IR export " ... ]"
+.P
+.B nfsref
+.RB [ \-?d ]
+.RB [ \-t
+.IB type ]
+.B remove
+.I pathname
+.P
+.B nfsref
+.RB [ \-?d ]
+.RB [ \-t
+.IB type ]
+.B lookup
+.I pathname
+.SH INTRODUCTION
+NFS version 4 introduces the concept of
+.I file system referrals
+to NFS.
+A file system referral is like a server-side symbolic link
+to another file system share, possibly on another file server.
+On an NFS client, a referral behaves like an automounted directory.
+The client, under the server's direction, mounts a new NFS export
+automatically when an application first accesses that directory.
+.P
+Referrals are typically used to construct a single file name space
+across multiple file servers.
+Because file servers control the shape of the name space,
+no client configuration is required,
+and all clients see the same referral information.
+.P
+The Linux NFS server supports NFS version 4 referrals.
+Administrators can specify the
+.B refer=
+export option in
+.I /etc/exports
+to configure a list of exports from which the client can choose.
+See
+.BR exports (5)
+for details.
+.P
+The
+.BR nfsref (8)
+command provides an alternate way to configure NFS referrals.
+This command stores referral information
+as metadata within a leaf directory in an exported file system.
+The metadata it stores can contain one of two types of information:
+.IP "\fIA list of Fileset Locations\fP"
+A set of server name and export path pairs which are returned
+verbatim to clients during an NFS referral event.
+This is known as an
+.IR "NFS basic junction" .
+.IP "\fIA Fileset Name\fP"
+The name of an LDAP record which contains information to return
+to clients during an NFS referral event.
+This is known as a
+.IR "FedFS junction" .
+.P
+A directory can hold either an NFS basic junction or a FedFS junction,
+but not both.
+When a directory acts as a junction, its regular contents remain,
+but are no longer visible to NFS clients.
+.P
+By storing the location information in an LDAP directory,
+FedFS junctions on multiple file servers can refer to
+the same copy of location information.
+This common locations metadata can be updated
+via a single administrative operation,
+altering the file name space consistently across all servers.
+The
+.BR fedfs (7)
+man page has more information.
+.SH DESCRIPTION
+The
+.BR nfsref (8)
+command is a simple way to get started managing junction metadata.
+Other administrative commands provide richer access to junction information.
+.SS Subcommands
+Valid
+.BR nfsref (8)
+subcommands are:
+.IP "\fBadd\fP"
+Adds junction information to the directory named by
+.IR pathname .
+The named directory must already exist,
+and must not already contain junction information.
+Regular directory contents are obscured to NFS clients by this operation.
+.IP
+A list of one or more file server and export path pairs
+is also specified on the command line.
+When creating an NFS basic junction, this list is
+stored in an extended attribute of the directory.
+.IP
+When creating a FedFS junction, FedFS records containing the
+file server and export path pairs are created on an LDAP server,
+and a pointer to the new FedFS records is
+stored in an extended attribute of the directory.
+Fresh FSN and FSL UUIDs are generated during this operation.
+.IP
+If junction creation is successful, the
+.BR nfsref (8)
+command flushes the kernel's export cache
+to remove previously cached junction information.
+.IP "\fBremove\fP"
+Removes junction information from the directory named by
+.IR pathname .
+The named directory must exist,
+and must contain junction information.
+Regular directory contents are made visible to NFS clients again by this operation.
+.IP
+When removing a FedFS junction,
+existing FedFS records remain on the LDAP server.
+They can be removed by other means if it is known
+that no other junction refers to these records.
+.IP
+If junction deletion is successful, the
+.BR nfsref (8)
+command flushes the kernel's export cache
+to remove previously cached junction information.
+.IP "\fBlookup\fP"
+Displays junction information stored in the directory named by
+.IR pathname .
+The named directory must exist,
+and must contain junction information.
+.IP
+When looking up an NFS basic junction, the junction information
+in the directory is listed on
+.IR stdout .
+When looking up a FedFS junction, junction information is
+retrieved from the LDAP server listed in the junction
+and listed on
+.IR stdout .
+.P
+When creating a new FedFS junction, the
+.BR nfsref (8)
+command reads the following environment variables:
+.IP "\fBFEDFS_NSDB_HOST\fP"
+Specifies the hostname of the LDAP server where new FedFS records
+should reside.  If this variable is not set, the
+.BR nfsref (8)
+command fails.
+The LDAP server specified by this variable
+must be registered with the local NSDB connection
+parameter database before the
+.BR nfsref (8)
+command can communicate with it.  See
+.BR nsdbparams (8)
+for more information.
+.IP "\fBFEDFS_NSDB_PORT\fP"
+Specifies the IP port of the LDAP server where new FedFS records
+should reside.  The default value if this variable is not set is 389.
+.IP "\fBFEDFS_NSDB_NCE\fP"
+Specifies the distinguished name of the NSDB Container Entry
+under which new FedFS records should reside.
+If this variable is not set, the local NSDB connection parameter
+database is searched for a default NCE for the hostname specified by
+.BR FEDFS_NSDB_HOST .
+If neither of these is specified, the
+.BR nfsref (8)
+command fails.
+.IP "\fBFEDFS_NSDB_ADMIN\fP"
+Specifies a distinguished name of an entity used to bind
+to the LDAP server where new FedFS records should reside.
+If this variable is not set, the local NSDB connection parameter
+database is searched for a default bind DN for the hostname
+specified by
+.BR FEDFS_NSDB_HOST .
+If neither of these is specified, or if this entity does not have
+permission to modify the LDAP server's DIT, the
+.BR nfsref (8)
+command fails.
+.IP "\fBFEDFS_NSDB_PASSWD\fP"
+Specifies the password used for simple authentication
+to the LDAP server where new FedFS records should reside.
+If this variable is not set, the
+.BR nfsref (8)
+command asks for a password on
+.IR stdin .
+Standard password blanking techniques are used to obscure the
+password on the user's terminal.
+.SS Command line options
+.IP "\fB\-d, \-\-debug"
+Enables debugging messages during operation.
+.IP "\fB\-t, \-\-type=\fIjunction-type\fP"
+Specifies the junction type for the operation.  Valid values for
+.I junction-type
+are
+.B nfs-basic
+or
+.BR nfs-fedfs .
+.IP
+For the
+.B add
+subcommand, the default value if this option is not specified is
+.BR nfs-basic .
+For the
+.B remove
+and
+.B lookup
+subcommands, the
+.B \-\-type
+option is not required.  The
+.BR nfsref (8)
+command operates on whatever junction contents are available.
+.SH EXAMPLES
+Suppose you have two file servers,
+.I top.example.net
+and
+.IR home.example.net .
+You want all your clients to mount
+.I top.example.net:/
+and then see the files under
+.I home.example.net:/
+automatically in
+.IR top:/home .
+.P
+On
+.IR top.example.net ,
+you might issue this command as root:
+.RS
+.sp
+# mkdir /home
+.br
+# nfsref --type=nfs-basic add /home home.example.net /
+.br
+Created junction /home.
+.sp
+.RE
+.SH FILES
+.TP
+.I /etc/exports
+NFS server export table
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR nsdbparams (8),
+.BR exports (5)
+.sp
+RFC 3530 for a description of NFS version 4 referrals
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://oss.oracle.com/projects/fedfs-utils .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

@@ -170,6 +170,7 @@ AC_CONFIG_FILES([Makefile
                  src/libsi/Makefile
                  src/libxlog/Makefile
                  src/mount/Makefile
+                 src/nfsref/Makefile
                  src/nsdbc/Makefile
                  src/nsdbparams/Makefile
                  src/resolve-junction/Makefile])
