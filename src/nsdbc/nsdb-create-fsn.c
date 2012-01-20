@@ -198,6 +198,7 @@ main(int argc, char **argv)
 			nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
+	retval = FEDFS_ERR_INVAL;
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
 	if (binddn == NULL) {
