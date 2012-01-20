@@ -173,6 +173,5 @@ AC_CONFIG_FILES([Makefile
                  src/nfsref/Makefile
                  src/nsdbc/Makefile
                  src/nsdbparams/Makefile
-                 src/plug-ins/Makefile
-                 src/resolve-junction/Makefile])
+                 src/plug-ins/Makefile])
 AC_OUTPUT

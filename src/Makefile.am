@@ -26,7 +26,7 @@
 SUBDIRS			= include libxlog libadmin libnsdb libjunction \
 			  libparser libsi \
 			  fedfsc fedfsd mount nfsref nsdbc nsdbparams \
-			  plug-ins resolve-junction
+			  plug-ins
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
