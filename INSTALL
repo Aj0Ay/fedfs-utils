@@ -118,12 +118,11 @@ FedFS file server
   o Install various distribution pre-requisites, such as libtirpc,
     an LDAP client library, and libsqlite3
 
-  o Install kernel with patches to do export cache upcalls when
-    encountering a junction
+  o Install kernel 3.2 or later, and configure NFSD
 
   o Install junction resolution plug-in
 
-  o Install mountd with patches to invoke the plug-in
+  o Install nfs-utils 1.2.6 or later
 
   o Install the nfsref program
 
