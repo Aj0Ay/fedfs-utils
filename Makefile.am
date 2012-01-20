@@ -30,7 +30,7 @@ EXTRA_DIST		= ChangeLog COPYING README INSTALL doxy.cfg .gitignore
 ACLOCAL_AMFLAGS		= -I m4
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
-DISTCLEANFILES		= Makefile.in ChangeLog
+DISTCLEANFILES		= Makefile.in ChangeLog fedfs-utils*.tar.gz
 
 ChangeLog:
 	git log > ChangeLog
