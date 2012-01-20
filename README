@@ -36,6 +36,31 @@ compatible with the next release of this package, nor with
 implementations from other vendors.
 
 
+Intellectual Property Disclaimer
+------------ -------- ----------
+
+The implementation in this package is copyright 2010 and 2011, Oracle.
+The code in this package is covered by version 2 of the GNU General
+Public License.  See the COPYING file for details.  A few parts are
+also covered by the IETF's code license, which is a simplified BSD
+license that is compatible with GPLv2.
+
+See also IPR disclosure 1362 (http://datatracker.ietf.org/ipr/1362)
+which discloses coverage of the FedFS NSDB architecture by US Patent
+#5,842,214: "Distributed file system providing a unified name space
+with efficient name resolution," filed by Microsoft Corporation on
+September 24, 1997 but never assigned.
+
+See also IPR disclosure 1634 (http://datatracker.ietf.org/ipr/1634)
+which discloses coverage of technology in this package by US Patent
+#7,933,921: "Referent-controlled location resolution of resources in a
+federated distributed system," filed on November 29, 2006 and assigned
+to NetApp on April 26, 2011.  NetApp has publicly stated its intent to
+release the patent via a Royalty-Free, Reasonable and
+Non-discriminatory Licence to All Implementers, via the usual IETF
+process.
+
+
 Package Synopsis
 ------- --------
 
@@ -43,11 +68,6 @@ This package contains an implementation of the Federated Filesystem
 (FedFS) proposed standard for Linux.  For an introduction to FedFS,
 see RFC 5716, or read the fedfs(7) man page provided in the doc/man
 directory.
-
-This package is copyright 2010 and 2011, Oracle. It's use is covered
-by version 2 of the GNU General Public License.  See the COPYING file
-for details.  A few parts are also covered by the IETF's code license,
-which is a simplified BSD license that is compatible with GPLv2.
 
 Packagers and distributors should review this entire README document
 to understand what is in this package, it's pre-requisites, and any
