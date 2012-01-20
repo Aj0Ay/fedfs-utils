@@ -63,16 +63,21 @@ Especially:
 
 See also Documentation/CodingStyle in the Linux kernel source tree.
 
+Please ensure you have the right to submit the patches you send.  If
+you create changes at work, your employer may own the patch.
+Submitted patches fall under the GPLv2 once they are merged.
+
 
 Review
 ------
 
 This is an open source project, so design and code review are a key part
 of the development process.  Patches are posted for review on
-<fedfs-utils-devel@oss.oracle.com>.
+<fedfs-utils-devel@oss.oracle.com> and can be tracked via a patchwork
+repository at http://patchwork.ozlabs.org/project/fedfs-utils/list/ .
 
 Before commits become a permanent part of the source control history,
-time-limited review is performed on the mailing list.
+time-limited review is performed on the above mailing list.
 
 
 Per-commit acceptance tests
@@ -93,6 +98,9 @@ bisecting to be useful.
 Note that to preserve bisectability, the tree MUST build after each
 commit.
 
+Try to maintain documentation coherency with code.  Check code against
+man pages and the INSTALL and README documents.
+
 At some point, we'd like:
  1.  Automated checking of coding style and white space
  2.  fortify, sparse, or splint testing
@@ -112,6 +120,9 @@ Per-release
  with the same major version number.
 
  While we are in alpha, that last rule may be bent somewhat.
+
+ Maintenance releases are generally for bug fixes and security patches.
+ New feature development occurs in major and minor releases.
 
  Release candidate:
 
