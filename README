@@ -9,7 +9,7 @@ SCM:		git://oss.oracle.com/git/fedfs-utils.git
 Bugzilla:	https://oss.oracle.com/bugzilla
 
 
-Release notes for fedfs-utils-0.8-devel
+Release notes for fedfs-utils-0.8.0
 
 
 Release Quality Statement
