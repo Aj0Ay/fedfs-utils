@@ -28,6 +28,7 @@
  *
  * <?xml version="1.0" encoding="UTF-8"?>
  * <junction>
+ *   <savedmode bits="1777" />
  *   <fileset>
  *     <name fsnuuid="d2b09895-98ff-415e-ac73-565fad7b429b"
  *           nsdbname="nsdb.example.net"
@@ -175,6 +176,38 @@ fedfs_fileset_xml(const char *pathname, xmlNodePtr root,
 }
 
 /**
+ * Construct a "savedmode" element
+ *
+ * @param pathname NUL-terminated C string containing pathname of a junction
+ * @param root root element of XML document tree
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+fedfs_savedmode_xml(const char *pathname, xmlNodePtr root)
+{
+	xmlNodePtr savedmode;
+	FedFsStatus retval;
+	mode_t mode;
+	char buf[8];
+
+	retval = junction_get_mode(pathname, &mode);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	savedmode = xmlNewTextChild(root, NULL, JUNCTION_XML_SAVEDMODE_TAG, NULL);
+	if (savedmode == NULL) {
+		xlog(D_GENERAL, "%s: Failed to add savedmode element for %s\n",
+			__func__, pathname);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	(void)snprintf(buf, sizeof(buf), "%o", ALLPERMS & mode);
+	xmlSetProp(savedmode, JUNCTION_XML_MODEBITS_ATTR, (const xmlChar *)buf);
+
+	return FEDFS_OK;
+}
+
+/**
  * Construct FedFS junction XML document
  *
  * @param pathname NUL-terminated C string containing pathname of a junction
@@ -189,6 +222,7 @@ fedfs_build_xml(const char *pathname, xmlDocPtr doc,
 		const char *fsn_uuid, const char *nsdb_name,
 		unsigned short nsdb_port)
 {
+	FedFsStatus retval;
 	xmlNodePtr root;
 
 	root = xmlNewNode(NULL, JUNCTION_XML_ROOT_TAG);
@@ -198,6 +232,10 @@ fedfs_build_xml(const char *pathname, xmlDocPtr doc,
 		return FEDFS_ERR_SVRFAULT;
 	}
 	(void)xmlDocSetRootElement(doc, root);
+
+	retval = fedfs_savedmode_xml(pathname, root);
+	if (retval != FEDFS_OK)
+		return retval;
 
 	return fedfs_fileset_xml(pathname, root, fsn_uuid, nsdb_name, nsdb_port);
 }

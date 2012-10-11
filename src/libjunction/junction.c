@@ -374,18 +374,17 @@ junction_remove_xattr(int fd, const char *pathname, const char *name)
 }
 
 /**
- * Save the object's mode in an xattr.  Saved mode is human-readable.
+ * Retrieve object's mode bits.
  *
  * @param pathname NUL-terminated C string containing pathname of a directory
+ * @param mode OUT: mode bits
  * @return a FedFsStatus code
  */
 FedFsStatus
-junction_save_mode(const char *pathname)
+junction_get_mode(const char *pathname, mode_t *mode)
 {
 	FedFsStatus retval;
-	unsigned int mode;
 	struct stat stb;
-	char buf[16];
 	int fd;
 
 	retval = junction_open_path(pathname, &fd);
@@ -398,8 +397,38 @@ junction_save_mode(const char *pathname)
 		return FEDFS_ERR_ACCESS;
 	}
 
-	mode = ALLPERMS & stb.st_mode;
-	(void)snprintf(buf, sizeof(buf), "%o", mode);
+	(void)close(fd);
+
+	xlog(D_CALL, "%s: pathname %s has mode %o",
+		__func__, pathname, stb.st_mode);
+	*mode = stb.st_mode;
+	return FEDFS_OK;
+
+}
+
+/**
+ * Save the object's mode in an xattr.  Saved mode is human-readable.
+ *
+ * @param pathname NUL-terminated C string containing pathname of a directory
+ * @return a FedFsStatus code
+ */
+FedFsStatus
+junction_save_mode(const char *pathname)
+{
+	FedFsStatus retval;
+	mode_t mode;
+	char buf[8];
+	int fd;
+
+	retval = junction_get_mode(pathname, &mode);
+	if (retval != FEDFS_OK)
+		return retval;
+	(void)snprintf(buf, sizeof(buf), "%o", ALLPERMS & mode);
+
+	retval = junction_open_path(pathname, &fd);
+	if (retval != FEDFS_OK)
+		return retval;
+
 	retval = junction_set_xattr(fd, pathname, JUNCTION_XATTR_NAME_MODE,
 				buf, strlen(buf));
 	if (retval != FEDFS_OK)

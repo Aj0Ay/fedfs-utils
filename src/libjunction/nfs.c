@@ -29,6 +29,7 @@
  *
  * <?xml version="1.0" encoding="UTF-8"?>
  * <junction>
+ *   <savedmode bits="1777" />
  *   <fileset>
  *     <location>
  *       <host name="fileserver.example.net" port="2049" />
@@ -708,6 +709,38 @@ nfs_fileset_xml(const char *pathname, xmlNodePtr root,
 }
 
 /**
+ * Construct a "savedmode" element
+ *
+ * @param pathname NUL-terminated C string containing pathname of a junction
+ * @param root root element of XML document tree
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nfs_savedmode_xml(const char *pathname, xmlNodePtr root)
+{
+	xmlNodePtr savedmode;
+	FedFsStatus retval;
+	mode_t mode;
+	char buf[8];
+
+	retval = junction_get_mode(pathname, &mode);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	savedmode = xmlNewTextChild(root, NULL, JUNCTION_XML_SAVEDMODE_TAG, NULL);
+	if (savedmode == NULL) {
+		xlog(D_GENERAL, "%s: Failed to add savedmode element for %s\n",
+			__func__, pathname);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	(void)snprintf(buf, sizeof(buf), "%o", ALLPERMS & mode);
+	xmlSetProp(savedmode, JUNCTION_XML_MODEBITS_ATTR, (const xmlChar *)buf);
+
+	return FEDFS_OK;
+}
+
+/**
  * Construct NFS junction XML document from list of NFS locations
  *
  * @param pathname NUL-terminated C string containing pathname of a junction
@@ -719,6 +752,7 @@ static FedFsStatus
 nfs_junction_xml(const char *pathname, xmlDocPtr doc,
 		struct nfs_fsloc *fslocs)
 {
+	FedFsStatus retval;
 	xmlNodePtr root;
 
 	root = xmlNewNode(NULL, JUNCTION_XML_ROOT_TAG);
@@ -728,6 +762,10 @@ nfs_junction_xml(const char *pathname, xmlDocPtr doc,
 		return FEDFS_ERR_SVRFAULT;
 	}
 	(void)xmlDocSetRootElement(doc, root);
+
+	retval = nfs_savedmode_xml(pathname, root);
+	if (retval != FEDFS_OK)
+		return retval;
 
 	return nfs_fileset_xml(pathname, root, fslocs);
 }

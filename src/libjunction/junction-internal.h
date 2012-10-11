@@ -58,6 +58,15 @@
  */
 #define JUNCTION_XML_FILESET_TAG	(const xmlChar *)"fileset"
 
+/**
+ * Tag name of savedmode element of a junction XML document
+ */
+#define JUNCTION_XML_SAVEDMODE_TAG	(const xmlChar *)"savedmode"
+
+/**
+ * Name of mode bits attribute on a savedmode element
+ */
+#define JUNCTION_XML_MODEBITS_ATTR	(const xmlChar *)"bits"
 
 /**
  ** Junction helper functions
@@ -77,6 +86,7 @@ FedFsStatus	 junction_set_xattr(int fd, const char *path, const char *name,
 			const void *contents, const size_t contentlen);
 FedFsStatus	 junction_remove_xattr(int fd, const char *pathname,
 			const char *name);
+FedFsStatus	 junction_get_mode(const char *pathname, mode_t *mode);
 FedFsStatus	 junction_save_mode(const char *pathname);
 FedFsStatus	 junction_restore_mode(const char *pathname);
 
