@@ -21,6 +21,7 @@ libparser.a
 libpath.a
 libsi.a
 libxlog.a
+display-junction
 fedfs-create-junction
 fedfs-create-replication
 fedfs-delete-junction
