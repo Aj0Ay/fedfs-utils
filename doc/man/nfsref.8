@@ -144,10 +144,9 @@ The named directory must exist,
 and must contain junction information.
 Regular directory contents are made visible to NFS clients again by this operation.
 .IP
-When removing a FedFS junction,
-existing FedFS records remain on the LDAP server.
-They can be removed by other means if it is known
-that no other junction refers to these records.
+When removing a FedFS junction, the
+.BR nfsref (8)
+command also removes FSN and FSL records referred to in the junction.
 .IP
 If junction deletion is successful, the
 .BR nfsref (8)

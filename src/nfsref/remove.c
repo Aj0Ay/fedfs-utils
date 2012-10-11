@@ -108,6 +108,114 @@ nfsref_remove_nfs_basic(const char *junct_path)
 }
 
 /**
+ * Delete the FSN in a FedFS-style junction
+ *
+ * @param junct_path NUL-terminated C string containing pathname of junction
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nfsref_remove_delete_fsn(const char *junct_path)
+{
+	char *binddn, *nce, *bindpw;
+	char *fsn_uuid = NULL;
+	unsigned int ldap_err;
+	FedFsStatus retval;
+	nsdb_t host;
+
+	retval = fedfs_get_fsn(junct_path, &fsn_uuid, &host);
+	switch (retval) {
+	case FEDFS_OK:
+		xlog(D_CALL, "%s: FSN UUID is %s", __func__, fsn_uuid);
+		break;
+	case FEDFS_ERR_NOTJUNCT:
+		xlog(L_ERROR, "%s is not an nfs-fedfs junction", junct_path);
+		goto out;
+	default:
+		xlog(L_ERROR, "Failed to read %s: %s",
+			junct_path, nsdb_display_fedfsstatus(retval));
+		goto out;
+	}
+
+	nsdb_env(NULL, NULL, &binddn, &nce, &bindpw);
+
+	retval = FEDFS_ERR_INVAL;
+	if (binddn == NULL)
+		binddn = (char *)nsdb_default_binddn(host);
+	if (binddn == NULL) {
+		fprintf(stderr, "No NDSB bind DN was specified\n");
+		goto out_free;
+	}
+	if (nce == NULL)
+		nce = (char *)nsdb_default_nce(host);
+	if (nce == NULL) {
+		fprintf(stderr, "No NCE was specified\n");
+		goto out_free;
+	}
+
+	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_CONN:
+		fprintf(stderr, "Failed to connect to NSDB %s:%u\n",
+			nsdb_hostname(host), nsdb_port(host));
+		goto out_free;
+	case FEDFS_ERR_NSDB_AUTH:
+		fprintf(stderr, "Failed to authenticate to NSDB %s:%u\n",
+			nsdb_hostname(host), nsdb_port(host));
+		goto out_free;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		fprintf(stderr, "Failed to authenticate to NSDB %s:%u: %s\n",
+			nsdb_hostname(host), nsdb_port(host),
+			ldap_err2string(ldap_err));
+		goto out_free;
+	default:
+		fprintf(stderr, "Failed to bind to NSDB %s:%u: %s\n",
+			nsdb_hostname(host), nsdb_port(host),
+			nsdb_display_fedfsstatus(retval));
+		goto out_free;
+	}
+
+	retval = nsdb_delete_fsn_s(host, nce, fsn_uuid, true, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		printf("Successfully deleted FSL records for FSN %s under %s\n",
+			fsn_uuid, nce);
+		break;
+	case FEDFS_ERR_NSDB_NONCE:
+		if (nce == NULL)
+			fprintf(stderr, "NSDB %s:%u has no NCE\n",
+				nsdb_hostname(host), nsdb_port(host));
+		else
+			fprintf(stderr, "NCE %s does not exist\n", nce);
+		break;
+	case FEDFS_ERR_NSDB_NOFSN:
+		fprintf(stderr, "NSDB %s:%u has no such FSN %s\n",
+			nsdb_hostname(host), nsdb_port(host), fsn_uuid);
+		break;
+	case FEDFS_ERR_NSDB_NOFSL:
+		fprintf(stderr, "FSN %s still has FSL entries\n", fsn_uuid);
+		break;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		/* XXX: "Operation not allowed on non-leaf" means
+		 *	this FSN still has children FSLs. */
+		fprintf(stderr, "Failed to delete FSN %s: %s\n",
+			fsn_uuid, ldap_err2string(ldap_err));
+		break;
+	default:
+		fprintf(stderr, "Failed to delete FSN %s: %s\n",
+			fsn_uuid, nsdb_display_fedfsstatus(retval));
+	}
+
+	nsdb_close_nsdb(host);
+out_free:
+	free(fsn_uuid);
+	nsdb_free_nsdb(host);
+out:
+	return retval;
+}
+
+/**
  * Remove a FedFS-style junction
  *
  * @param junct_path NUL-terminated C string containing pathname of junction
@@ -121,6 +229,8 @@ nfsref_remove_nfs_fedfs(const char *junct_path)
 
 	xlog(D_GENERAL, "%s: Removing FedFS junction from %s",
 		__func__, junct_path);
+
+	nfsref_remove_delete_fsn(junct_path);
 
 	retval = fedfs_delete_junction(junct_path);
 	switch (retval) {
