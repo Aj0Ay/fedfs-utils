@@ -4,8 +4,8 @@
 
 Maintainer:	Chuck Lever <chuck.lever@oracle.com>
 Mailing list:	<fedfs-utils-devel@oss.oracle.com>
-Web site:	http://oss.oracle.com/projects/fedfs-utils
-SCM:		git://oss.oracle.com/git/fedfs-utils.git
+Web site:	http://wiki.linux-nfs.org/wiki/index.php/FedFsUtilsProject
+SCM:		git://git.linux-nfs.org/projects/cel/fedfs-utils.git
 Bugzilla:	https://oss.oracle.com/bugzilla
 
 
