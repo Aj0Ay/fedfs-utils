@@ -23,11 +23,15 @@
  *	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
  */
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <uuid/uuid.h>
 
@@ -607,6 +611,12 @@ out:
 int
 nfsref_add(enum nfsref_type type, const char *junct_path, char **argv, int optind)
 {
+	if (mkdir(junct_path, 0755) == -1)
+		if (errno != EEXIST) {
+			xlog(L_ERROR, "Failed to create junction object: %m");
+			return EXIT_FAILURE;
+		}
+
 	switch (type) {
 	case NFSREF_TYPE_UNSPECIFIED:
 	case NFSREF_TYPE_NFS_BASIC:
