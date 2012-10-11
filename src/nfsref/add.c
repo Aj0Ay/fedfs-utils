@@ -235,7 +235,7 @@ nfsref_add_create_fedfs_fsn(nsdb_t host, const char *nce, char **fsn_uuid)
 		xlog(D_GENERAL, "%s: No memory", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
-	uuid_generate_time(uu);
+	uuid_generate_random(uu);
 	uuid_unparse(uu, fsnuuid);
 
 	retval = nsdb_create_fsn_s(host, nce, fsnuuid,
@@ -333,7 +333,7 @@ nfsref_add_build_fsl(const char *fsn_uuid, nsdb_t host, const char *server,
 		return FEDFS_ERR_SVRFAULT;
 	}
 
-	uuid_generate_time(uu);
+	uuid_generate_random(uu);
 	uuid_unparse(uu, new->fl_fsluuid);
 	strncpy(new->fl_fsnuuid, fsn_uuid, sizeof(new->fl_fsnuuid));
 	strncpy(new->fl_nsdbname, nsdb_hostname(host), sizeof(new->fl_nsdbname));
