@@ -39,11 +39,6 @@
 #define JUNCTION_XATTR_NAME_MODE	"trusted.junction.mode"
 
 /**
- * Name of extended attribute containing junction type
- */
-#define JUNCTION_XATTR_NAME_TYPE	"trusted.junction.type"
-
-/**
  * Name of extended attribute containing NFS-related junction data
  */
 #define JUNCTION_XATTR_NAME_NFS		"trusted.junction.nfs"
@@ -84,8 +79,6 @@ FedFsStatus	 junction_remove_xattr(int fd, const char *pathname,
 			const char *name);
 FedFsStatus	 junction_save_mode(const char *pathname);
 FedFsStatus	 junction_restore_mode(const char *pathname);
-FedFsStatus	 junction_add_type(const char *pathname, const char *type);
-FedFsStatus	 junction_remove_type(const char *pathname);
 
 
 /**

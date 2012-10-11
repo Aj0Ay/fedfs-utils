@@ -39,9 +39,7 @@
  * "trusted.junction.nfs".   The parent object is a directory.
  *
  * To help file servers discover junctions efficiently, the directory
- * has no execute bits, and the sticky bit is set.  In addition, an
- * extended attribute called "trusted.junction.type" is added.  The
- * contents are ignored in user space.
+ * has no execute bits, and the sticky bit is set.
  *
  * Finally, for pre-existing directories that are converted to
  * junctions, their mode bits are saved in an extended attribute called
@@ -291,11 +289,6 @@ fedfs_add_junction(const char *pathname, const char *fsn_uuid, const nsdb_t host
 	if (retval != FEDFS_OK)
 		goto out_err;
 
-	/* The content of this attribute is ignored */
-	retval = junction_add_type(pathname, "nfs");
-	if (retval != FEDFS_OK)
-		return retval;
-
 	return retval;
 
 out_err:
@@ -318,14 +311,6 @@ fedfs_delete_junction(const char *pathname)
 	FedFsStatus retval;
 
 	retval = fedfs_is_junction(pathname);
-	if (retval != FEDFS_OK)
-		return retval;
-
-	retval = junction_remove_type(pathname);
-	if (retval != FEDFS_OK)
-		return retval;
-
-	retval = junction_restore_mode(pathname);
 	if (retval != FEDFS_OK)
 		return retval;
 

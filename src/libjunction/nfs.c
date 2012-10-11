@@ -813,11 +813,6 @@ nfs_add_junction(const char *pathname, struct nfs_fsloc *fslocs)
 	if (retval != FEDFS_OK)
 		goto out_err;
 
-	/* The content of this attribute is ignored */
-	retval = junction_add_type(pathname, "nfs");
-	if (retval != FEDFS_OK)
-		return retval;
-
 	return retval;
 
 out_err:
@@ -840,14 +835,6 @@ nfs_delete_junction(const char *pathname)
 	FedFsStatus retval;
 
 	retval = nfs_is_junction(pathname);
-	if (retval != FEDFS_OK)
-		return retval;
-
-	retval = junction_remove_type(pathname);
-	if (retval != FEDFS_OK)
-		return retval;
-
-	retval = junction_restore_mode(pathname);
 	if (retval != FEDFS_OK)
 		return retval;
 
