@@ -71,7 +71,7 @@ static const struct option fedfsd_longopts[] =
  *
  * @param progname NUL-terminated C string containing name of program
  */
-void fedfsd_usage(const char *progname)
+static void fedfsd_usage(const char *progname)
 {
 	fprintf(stderr, "\nUsage: %s [options]\n\n", progname);
 
