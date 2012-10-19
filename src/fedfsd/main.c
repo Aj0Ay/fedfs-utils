@@ -219,6 +219,10 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 
 	if (!foreground) {
+		if (chdir(FEDFS_DEFAULT_STATEDIR) == -1) {
+			xlog(L_ERROR, "chdir: %m");
+			exit(EXIT_FAILURE);
+		}
 		if (daemon(0, 0) == -1) {
 			xlog(L_ERROR, "daemon: %m");
 			exit(EXIT_FAILURE);
