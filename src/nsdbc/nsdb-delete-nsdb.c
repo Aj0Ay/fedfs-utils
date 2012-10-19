@@ -46,7 +46,7 @@
 /**
  * Short form command line options
  */
-static const char nsdb_delete_nsdb_opts[] = "?dD:l:r:w:";
+static const char nsdb_delete_nsdb_opts[] = "?dD:l:r:";
 
 /**
  * Long form command line options
@@ -57,7 +57,6 @@ static const struct option nsdb_delete_nsdb_longopts[] = {
 	{ "help", 0, NULL, '?', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
-	{ "bindpw", 1, NULL, 'w', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -70,7 +69,7 @@ static void
 nsdb_delete_nsdb_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -w bindpw ] "
+	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] "
 			"[ -l nsdbname ] [ -r nsdbport ] nce\n\n",
 			progname);
 
@@ -79,7 +78,6 @@ nsdb_delete_nsdb_usage(const char *progname)
 	fprintf(stderr, "\t-D, --binddn         Bind DN\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
-	fprintf(stderr, "\t-w, --bindpw         Bind password\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -96,7 +94,7 @@ nsdb_delete_nsdb_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *bindpw, *nsdbname;
+	char *progname, *binddn, *nsdbname;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	FedFsStatus retval;
@@ -124,7 +122,6 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	bindpw = NULL;
 	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL);
 
 	while ((arg = getopt_long(argc, argv, nsdb_delete_nsdb_opts,
@@ -145,9 +142,6 @@ main(int argc, char **argv)
 					optarg);
 				nsdb_delete_nsdb_usage(progname);
 			}
-			break;
-		case 'w':
-			bindpw = optarg;
 			break;
 		default:
 			fprintf(stderr, "Invalid command line "
@@ -192,7 +186,7 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
-	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, NULL, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

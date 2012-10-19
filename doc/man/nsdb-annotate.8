@@ -39,8 +39,6 @@ nsdb-annotate \- modify the fedfsAnnotation attribute of a FedFS NSDB record
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
-.RB [ \-w
-.IR bindpw ]
 .RB [ \-v
 .IR value ]
 .I distinguished-name
@@ -204,17 +202,6 @@ option is specified and this string exists as a value of the target record's
 .B fedfsAnnotation
 attribute, it is removed.
 Otherwise the value is added.
-.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to the LDAP server
-where the NSDB resides.
-If the
-.B \-\-bindpw
-option is not specified, the
-.BR nsdb-annotate (8)
-command asks for a password on
-.IR stdin .
-Standard password blanking techniques are used
-to obscure the password on the user's terminal.
 .IP "\fB\-y, \-\-delete\fP"
 Specifies that the specified value string is deleted rather than added.
 .SH EXIT CODES
@@ -349,6 +336,12 @@ The
 .BR nsdb-annotate (8)
 command must bind as an entity permitted to modify the DIT
 to perform this operation.
+The
+.BR nsdb-annotate (8)
+command asks for a bind password on
+.IR stdin .
+Standard password blanking techniques are used
+to obscure the password on the user's terminal.
 .P
 The target LDAP server must be registered in the local NSDB connection
 parameter database.

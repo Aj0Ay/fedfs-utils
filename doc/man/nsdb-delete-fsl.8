@@ -37,8 +37,6 @@ nsdb-delete-fsl \- delete a fileset location (FSL) record from an NSDB
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
-.RB [ \-w
-.IR bindpw ]
 .I fsl-uuid
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
@@ -152,17 +150,6 @@ If the
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
-.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to the LDAP server
-where the NSDB resides.
-If the
-.B \-\-bindpw
-option is not specified, the
-.BR nsdb-delete-fsl (8)
-command asks for a password on
-.IR stdin .
-Standard password blanking techniques are used
-to obscure the password on the user's terminal.
 .SH EXIT CODES
 The NSDB returns a value that reflects the success of the requested operation.
 .TP
@@ -308,6 +295,12 @@ The
 .BR nsdb-delete-fsl (8)
 command must bind as an entity permitted to modify the DIT
 to perform this operation.
+The
+.BR nsdb-delete-fsl (8)
+command asks for a password on
+.IR stdin .
+Standard password blanking techniques are used
+to obscure the password on the user's terminal.
 .P
 The target LDAP server must be registered in the local NSDB connection
 parameter database.

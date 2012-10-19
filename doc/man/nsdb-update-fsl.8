@@ -37,8 +37,6 @@ nsdb-update-fsl \- update attributes of a fileset location (FSL) record
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
-.RB [ \-w
-.IR bindpw ]
 .RB [ \-v
 .IR value ]
 .I fsl-uuid
@@ -171,17 +169,6 @@ If the
 option is not specified, the
 .BR nsdb-update-fsl (8)
 command attempts to delete the specified attribute.
-.IP "\fB\-w, \-\-bindpw=\fIbinddn-password\fP"
-Specifies the password used for simple authentication to the LDAP server
-where the NSDB resides.
-If the
-.B \-\-bindpw
-option is not specified, the
-.BR nsdb-update-fsl (8)
-command asks for a password on
-.IR stdin .
-Standard password blanking techniques are used
-to obscure the password on the user's terminal.
 .SH EXIT CODES
 The NSDB returns a value that reflects the success of the requested operation.
 .TP
@@ -330,6 +317,12 @@ The
 .BR nsdb-update-fsl (8)
 command must bind as an entity permitted to modify the DIT
 to perform this operation.
+The
+.BR nsdb-update-fsl (8)
+command asks for a password on
+.IR stdin .
+Standard password blanking techniques are used
+to obscure the password on the user's terminal.
 .P
 The target LDAP server must be registered in the local NSDB connection
 parameter database.
