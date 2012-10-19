@@ -70,7 +70,7 @@
  */
 #define FEDFS_NFS4_EXPORTPATH_RW	"/.domainroot-write"
 
-char *progname;
+static char *progname;
 
 /**
  * Display usage message
