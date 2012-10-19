@@ -373,7 +373,7 @@ nfs_jp_resolve_fsn(const char *fsn_uuid, nsdb_t host,
 		break;
 	default:
 		nfs_jp_debug("%s: Failed to resolve FSN %s: %s\n",
-			__func__, fsn_uuid, nsdb_display_fedfsstatus(status));
+			__func__, fsn_uuid, nsdb_display_fedfsstatus(retval));
 	}
 
 	nsdb_close_nsdb(host);
