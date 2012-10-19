@@ -76,7 +76,7 @@
 
 
 /**
- * Stores pathname of directory containing fedfsd persistent state
+ * Stores pathname of directory containing FedFS persistent state
  */
 char fedfs_base_dirname[PATH_MAX + 1] =
 			FEDFS_DEFAULT_STATEDIR;
@@ -93,7 +93,7 @@ char fedfs_nsdbcerts_dirname[PATH_MAX + 1] =
 			FEDFS_DEFAULT_STATEDIR "/" FEDFS_NSDBCERT_DIR;
 
 /**
- * Stores pathname of database containing fedfsd persistent state
+ * Stores pathname of database containing FedFS persistent state
  */
 static char fedfs_db_filename[PATH_MAX] =
 			FEDFS_DEFAULT_STATEDIR "/" FEDFS_DATABASE_FILE;
@@ -115,7 +115,7 @@ nsdb_set_parentdir(const char *parentdir)
 	char *path;
 	int len;
 
-	xlog(D_CALL, "%s: Setting up %s as our fedfs directory",
+	xlog(D_CALL, "%s: Setting up %s as our FedFS state directory",
 		__func__, parentdir);
 
 	/* First: test length of name and whether it exists */
@@ -139,14 +139,14 @@ nsdb_set_parentdir(const char *parentdir)
 
 	len = snprintf(buf, sizeof(buf), "%s/%s", parentdir, FEDFS_DATABASE_FILE);
 	if (len > PATH_MAX) {
-		xlog(L_ERROR, "Fedfsd database pathname is too long");
+		xlog(L_ERROR, "FedFS database pathname is too long");
 		return false;
 	}
 	strcpy(fedfs_db_filename, buf);
 
 	len = snprintf(buf, sizeof(buf), "%s/%s", parentdir, FEDFS_NSDBCERT_DIR);
 	if (len > PATH_MAX) {
-		xlog(L_ERROR, "Fedfsd cert directory pathname is too long");
+		xlog(L_ERROR, "FedFS cert directory pathname is too long");
 		return false;
 	}
 	strcpy(fedfs_nsdbcerts_dirname, buf);
@@ -159,7 +159,7 @@ nsdb_set_parentdir(const char *parentdir)
 /**
  * Predicate: Does parent directory refer to default FedFS state directory?
  *
- * @return true if active fedfsd directory is same as default
+ * @return true if active FedFS state directory is same as default
  */
 _Bool
 nsdb_is_default_parentdir(void)
@@ -540,9 +540,7 @@ nsdb_new_certfile(const char *certdata, const unsigned int certlen,
 	/*
 	 * We require a guaranteed unique file name for each
 	 * new cert.  Use uuid_generate_time(3) to avoid
-	 * depleting the local entropy pool.  These files are
-	 * private to fedfsd, so no undue exposure of the
-	 * local time or MAC address is expected.
+	 * depleting the local entropy pool.
 	 */
 	uuid_generate_time(uu);
 	uuid_unparse(uu, uuidbuf);
