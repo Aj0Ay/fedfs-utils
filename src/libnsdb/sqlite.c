@@ -158,7 +158,8 @@ nsdb_begin_transaction(sqlite3 *db)
 	int rc;
 
 	err_msg = NULL;
-	rc = sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION;", NULL, 0, &err_msg);
+	rc = sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION;",
+					NULL, NULL, &err_msg);
 	if (rc != SQLITE_OK) {
 		xlog(L_ERROR, "Failed to start transaction: %s", err_msg);
 		sqlite3_free(err_msg);
@@ -181,7 +182,7 @@ nsdb_end_transaction(sqlite3 *db)
 	int rc;
 
 	err_msg = NULL;
-	rc = sqlite3_exec(db, "COMMIT TRANSACTION;", NULL, 0, &err_msg);
+	rc = sqlite3_exec(db, "COMMIT TRANSACTION;", NULL, NULL, &err_msg);
 	if (rc != SQLITE_OK) {
 		xlog(L_ERROR, "Failed to commit transaction: %s", err_msg);
 		sqlite3_free(err_msg);
@@ -203,7 +204,7 @@ nsdb_rollback_transaction(sqlite3 *db)
 	int rc;
 
 	err_msg = NULL;
-	rc = sqlite3_exec(db, "ROLLBACK TRANSACTION;", NULL, 0, &err_msg);
+	rc = sqlite3_exec(db, "ROLLBACK TRANSACTION;", NULL, NULL, &err_msg);
 	if (rc != SQLITE_OK) {
 		xlog(L_ERROR, "Failed to roll back transaction: %s", err_msg);
 		sqlite3_free(err_msg);

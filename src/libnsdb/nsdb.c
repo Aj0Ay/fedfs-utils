@@ -73,7 +73,7 @@
 /**
  * Stores pathname of directory containing FedFS persistent state
  */
-char fedfs_base_dirname[PATH_MAX + 1] =
+static char fedfs_base_dirname[PATH_MAX + 1] =
 			FEDFS_DEFAULT_STATEDIR;
 
 /**
@@ -84,7 +84,7 @@ char fedfs_base_dirname[PATH_MAX + 1] =
 /**
  * Stores pathname of directory containing NSDB x509v3 certs
  */
-char fedfs_nsdbcerts_dirname[PATH_MAX + 1] =
+static char fedfs_nsdbcerts_dirname[PATH_MAX + 1] =
 			FEDFS_DEFAULT_STATEDIR "/" FEDFS_NSDBCERT_DIR;
 
 /**
@@ -228,7 +228,8 @@ nsdb_init_database(void)
 	 * This provides better performance and crash robustness.
 	 */
 	err_msg = NULL;
-	rc = sqlite3_exec(db, "PRAGMA journal_mode=TRUNCATE;", NULL, 0, &err_msg);
+	rc = sqlite3_exec(db, "PRAGMA journal_mode=TRUNCATE;",
+					NULL, NULL, &err_msg);
 	if (rc != SQLITE_OK) {
 		xlog(L_ERROR, "Failed to enable persistent journaling: %s",
 				err_msg);
