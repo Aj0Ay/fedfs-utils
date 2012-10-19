@@ -89,12 +89,12 @@ enum {
 	EX_FAIL		= 32,
 };
 
-char *progname;
-int nomtab;
-int verbose;
-_Bool readonly;
-_Bool sloppy;
-_Bool fake;
+static char *progname;
+static int nomtab;
+static int verbose;
+static _Bool readonly;
+static _Bool sloppy;
+static _Bool fake;
 
 /**
  * Short form command line options
@@ -106,18 +106,18 @@ static const char fedfs_opts[] = "fhno:rsvVw";
  */
 static const struct option fedfs_longopts[] =
 {
-	{ "fake", 0, 0, 'f' },
-	{ "help", 0, 0, 'h' },
-	{ "no-mtab", 0, 0, 'n' },
-	{ "options", 1, 0, 'o' },
-	{ "read-only", 0, 0, 'r' },
-	{ "read-write", 0, 0, 'w' },
-	{ "ro", 0, 0, 'r' },
-	{ "rw", 0, 0, 'w' },
-	{ "sloppy", 0, 0, 's' },
-	{ "verbose", 0, 0, 'v' },
-	{ "version", 0, 0, 'V' },
-	{ NULL, 0, 0, 0 }
+	{ "fake", 0, NULL, 'f' },
+	{ "help", 0, NULL, 'h' },
+	{ "no-mtab", 0, NULL, 'n' },
+	{ "options", 1, NULL, 'o' },
+	{ "read-only", 0, NULL, 'r' },
+	{ "read-write", 0, NULL, 'w' },
+	{ "ro", 0, NULL, 'r' },
+	{ "rw", 0, NULL, 'w' },
+	{ "sloppy", 0, NULL, 's' },
+	{ "verbose", 0, NULL, 'v' },
+	{ "version", 0, NULL, 'V' },
+	{ NULL, 0, NULL, 0 }
 };
 
 /**
