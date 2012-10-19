@@ -50,12 +50,12 @@
 /**
  * Short form command line options
  */
-static const char fedfs_opts[] = "?dFg:o:u:";
+static const char fedfsd_opts[] = "?dFg:o:u:";
 
 /**
  * Long form command line options
  */
-static const struct option fedfs_longopts[] =
+static const struct option fedfsd_longopts[] =
 {
 	{ "debug", 0, NULL, 'd', },
 	{ "foreground", 0, NULL, 'F', },
@@ -134,8 +134,8 @@ int main(int argc, char **argv)
 				FEDFS_USER, uid, gid);
 	}
 
-	while ((arg = getopt_long(argc, argv, fedfs_opts,
-					fedfs_longopts, NULL)) != EOF) {
+	while ((arg = getopt_long(argc, argv, fedfsd_opts,
+					fedfsd_longopts, NULL)) != EOF) {
 		switch (arg) {
 		case 'd':
 			xlog_config(D_ALL, 1);
