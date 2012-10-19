@@ -524,7 +524,7 @@ nfsref_add_nfs_fedfs_junction(const char *junct_path, char **argv, int optind,
 static int
 nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 {
-	char *binddn, *bindpw, *nsdbname, *nce;
+	char *binddn, *nsdbname, *nce;
 	unsigned short nsdbport;
 	unsigned int ldap_err;
 	FedFsStatus retval;
@@ -534,7 +534,7 @@ nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 	xlog(D_GENERAL, "%s: Adding FedFS junction to %s",
 		__func__, junct_path);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &bindpw);
+	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce);
 	if (nsdbname == NULL) {
 		xlog(L_ERROR, "Cannot determine NSDB hostname");
 		return FEDFS_ERR_INVAL;
@@ -567,7 +567,7 @@ nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 		goto out_free;
 	}
 
-	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, NULL, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

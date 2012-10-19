@@ -204,15 +204,6 @@ If neither of these is specified, or if this entity does not have
 permission to modify the LDAP server's DIT, the
 .BR nfsref (8)
 command fails.
-.IP "\fBFEDFS_NSDB_PASSWD\fP"
-Specifies the password used for simple authentication
-to the LDAP server where new FedFS records should reside.
-If this variable is not set, the
-.BR nfsref (8)
-command asks for a password on
-.IR stdin .
-Standard password blanking techniques are used to obscure the
-password on the user's terminal.
 .SS Command line options
 .IP "\fB\-d, \-\-debug"
 Enables debugging messages during operation.

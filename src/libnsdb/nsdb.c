@@ -69,11 +69,6 @@
  */
 #define NSDB_NCE_ENV		"FEDFS_NSDB_NCE"
 
-/**
- * Environment variable containing default password for NSDB
- */
-#define NSDB_PASSWORD_ENV	"FEDFS_NSDB_PASSWD"
-
 
 /**
  * Stores pathname of directory containing FedFS persistent state
@@ -388,7 +383,6 @@ nsdb_follow_referrals(const nsdb_t host)
  * @param nsdbport OUT: pointer to unsigned short NSDB port number
  * @param binddn OUT: pointer to statically allocated NUL-terminated C string containing NSDB bind DN
  * @param nce OUT: pointer to statically allocated NUL-terminated C string containing NSDB container entry DN
- * @param passwd OUT: pointer to statically allocated NUL-terminated C string containing NSDB bind passwd
  *
  * Any of the returned strings can be NULL pointers, if those
  * variables do not appear in this process's environment.
@@ -396,8 +390,7 @@ nsdb_follow_referrals(const nsdb_t host)
  * variable specifies an NSDB port number.
  */
 void
-nsdb_env(char **nsdbname, unsigned short *nsdbport, char **binddn,
-		char **nce, char **passwd)
+nsdb_env(char **nsdbname, unsigned short *nsdbport, char **binddn, char **nce)
 {
 	if (nsdbname != NULL)
 		*nsdbname = getenv(NSDB_NAME_ENV);
@@ -410,8 +403,6 @@ nsdb_env(char **nsdbname, unsigned short *nsdbport, char **binddn,
 		*binddn = getenv(NSDB_BINDDN_ENV);
 	if (nce != NULL)
 		*nce = getenv(NSDB_NCE_ENV);
-	if (passwd != NULL)
-		*passwd = getenv(NSDB_PASSWORD_ENV);
 }
 
 /**

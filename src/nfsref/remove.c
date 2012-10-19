@@ -116,9 +116,9 @@ nfsref_remove_nfs_basic(const char *junct_path)
 static FedFsStatus
 nfsref_remove_delete_fsn(const char *junct_path)
 {
-	char *binddn, *nce, *bindpw;
 	char *fsn_uuid = NULL;
 	unsigned int ldap_err;
+	char *binddn, *nce;
 	FedFsStatus retval;
 	nsdb_t host;
 
@@ -136,7 +136,7 @@ nfsref_remove_delete_fsn(const char *junct_path)
 		goto out;
 	}
 
-	nsdb_env(NULL, NULL, &binddn, &nce, &bindpw);
+	nsdb_env(NULL, NULL, &binddn, &nce);
 
 	retval = FEDFS_ERR_INVAL;
 	if (binddn == NULL)
@@ -152,7 +152,7 @@ nfsref_remove_delete_fsn(const char *junct_path)
 		goto out_free;
 	}
 
-	retval = nsdb_open_nsdb(host, binddn, bindpw, &ldap_err);
+	retval = nsdb_open_nsdb(host, binddn, NULL, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

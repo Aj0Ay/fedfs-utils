@@ -133,7 +133,8 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce, &bindpw);
+	bindpw = NULL;
+	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce);
 
 	leave_fsn = false;
 	while ((arg = getopt_long(argc, argv, nsdb_delete_fsn_opts,

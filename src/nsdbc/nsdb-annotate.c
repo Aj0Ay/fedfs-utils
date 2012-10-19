@@ -137,7 +137,8 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_open(progname);
 
-	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL, &bindpw);
+	bindpw = NULL;
+	nsdb_env(&nsdbname, &nsdbport, &binddn, NULL);
 
 	delete = false;
 	keyword = value = entry = annotation = NULL;
