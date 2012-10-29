@@ -33,11 +33,6 @@
 #include "fedfs.h"
 
 /**
- * Default DN of FedFS NSDB containers
- */
-#define NSDB_DEFAULT_NCE	"o=fedfs"
-
-/**
  * Object that internally represents an NSDB
  */
 struct fedfs_nsdb;
