@@ -42,10 +42,11 @@
 #include "xlog.h"
 
 /**
- * Restore an object's mode bits
+ * Program entry point
  *
- * @param pathname NUL-terminated C string containing pathname of a directory
- * @return a FedFsStatus code
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
  */
 int
 main(int argc, char **argv)
