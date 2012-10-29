@@ -498,7 +498,7 @@ nsdb_construct_fsl_dn(const char *nce, const char *fsn_uuid, const char *fsl_uui
 				fsl_uuid, fsn_uuid, nce);
 	if (len < 0 || (size_t)len > dn_len) {
 		xlog(D_GENERAL, "%s: DN is too long", __func__);
-		free(dn);
+		ber_memfree(dn);
 		return NULL;
 	}
 
