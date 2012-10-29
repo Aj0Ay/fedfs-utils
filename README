@@ -49,16 +49,17 @@ See also IPR disclosure 1362 (http://datatracker.ietf.org/ipr/1362)
 which discloses coverage of the FedFS NSDB architecture by US Patent
 #5,842,214: "Distributed file system providing a unified name space
 with efficient name resolution," filed by Microsoft Corporation on
-September 24, 1997 but never assigned.
+September 24, 1997 but never assigned.  Microsoft has released the
+patent via a Royalty-Free, Reasonable and Non-discriminatory Licence
+to All Implementers.
 
 See also IPR disclosure 1634 (http://datatracker.ietf.org/ipr/1634)
 which discloses coverage of technology in this package by US Patent
 #7,933,921: "Referent-controlled location resolution of resources in a
 federated distributed system," filed on November 29, 2006 and assigned
-to NetApp on April 26, 2011.  NetApp has publicly stated its intent to
-release the patent via a Royalty-Free, Reasonable and
-Non-discriminatory Licence to All Implementers, via the usual IETF
-process.
+to NetApp on April 26, 2011.  NetApp has released the patent via a
+Royalty-Free, Reasonable and Non-discriminatory Licence to All
+Implementers.
 
 
 Package Synopsis
