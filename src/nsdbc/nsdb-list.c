@@ -103,6 +103,13 @@ nsdb_list_display_fsls(struct fedfs_fsl *fsls)
 	}
 }
 
+/**
+ * Resolve an FSN and display the returned FSL list
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param nce a NUL-terminated C string containing DN of NSDB container entry
+ * @param fsn_uuid a NUL-terminated C string containing FSN UUID
+ */
 static void
 nsdb_list_resolve_and_display_fsn(nsdb_t host, const char *nce, const char *fsn_uuid)
 {
