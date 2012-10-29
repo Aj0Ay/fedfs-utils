@@ -139,11 +139,6 @@ copies of a domain root can exist on multiple file servers.
 These copies are known as
 .IR "domain root replicas" .
 .P
-Two types of domain root replicas are available in a FedFS domain:
-read-only and read-write.
-By default,
-FedFS-enabled file system clients mount read-only replicas.
-.P
 Rather than using junctions and information in an NSDB,
 FedFS-enabled clients locate a domain's root by looking for
 DNS SRV records that advertise file servers exporting domain root replicas.
@@ -165,16 +160,6 @@ specifies a FedFS domain.
 Currently, the Linux FedFS implementation recognizes only
 .B nfs4
 as a valid fstype.
-.P
-If
-.I domainname
-begins with a dot (period),
-the pathname refers to a read-write replica of the domain's root.
-Otherwise, it refers to a read-only replica.
-Note this means that the read-write replicas, and all parts of the
-file system below them,
-are visible at a different point in a client's name space
-than are read-only replicas.
 .SS Globally Useful Names
 On FedFS-enabled Linux clients,
 the automounter (via a program map) or the
@@ -219,13 +204,12 @@ they can encounter both file sets to which they have
 read-only access, and file sets to which they have read-write
 access.
 To allow the server to provide proper access to both types of file sets,
-typically both domain root replica types are mounted read-write
-on FedFS clients. 
+typically the domain root is mounted read-write on FedFS clients. 
 All submounts of the domain root are then mounted read-write as well.
 .P
 For example, a domain root may contain an NFS version 4 referral to an
 export containing user home directories.
-The domain root is read-only,
+The domain root may be exported read-only so normal clients cannot update it,
 but user home directories would not be very useful if they could not be
 written to.
 The file server continues to employ user credentials to limit access
@@ -240,37 +224,31 @@ even though underneath, additional NFS mounts come and go as needed.
 .SS Creating domain roots
 For now, only NFS domain roots are considered.
 FedFS domain roots contain very little data,
-so it is safe to create them right under
-.I /
+so it is safe to create them in the root file system
 on your FedFS-enabled Linux NFS file servers.
 .P
-FedFS domain roots use a standard export path name form.
-FedFS-enabled file system clients need know only the hostname
-of an NFS server that is exporting a domain root in order to mount it.
-The export path of a read-only domain root replica
-starts with the string "/.domainroot-"
-followed by the FedFS domain name.
-.P
-For instance, the export path of the read-only domain root of the
+FedFS domain roots are mounted via a standard export pathname.
+The first component of the domain root's export pathname is always
+.IR /.domainroot .
+The second component is a FedFS domain name.
+For instance, the export pathname of the domain root of the
 .I example.net
-domain would be
-.IR /.domainroot-example.net .
+FedFS domain would be
+.IR /.domainroot/example.net .
+.P
 After creating this directory on a FedFS-enabled
 file server and making it world readable,
 an entry in /etc/exports for this export might look like:
 .RS
 .sp
-/.domainroot-example.net	*(ro)
+/.domainroot/example.net	*(ro)
 .sp
 .RE
-At this point, if
-.BR rpc.fedfs (8)
-is running on this server,
-FedFS junctions can be created in this directory
-using the FedFS administrative client tools.
+At this point, FedFS junctions can be created in the domain's root directory
+using FedFS administrative tools.
 You can also add other objects that might be useful
-at the top of a FedFS domain namespace, such as standard NFS referrals,
-or files, like a terms-of-use document.
+at the top of a FedFS domain namespace, such as standard NFS referrals
+or files like a terms-of-use document.
 .P
 To enable discovery of this domain root
 by FedFS-enabled file system clients,
@@ -284,7 +262,7 @@ domain.
 Such a record might look like
 .RS
 .sp
- _nfs4._domainroot._tcp	IN SRV	0 0 2049	foo.example.net.
+ _nfs-domainroot._tcp	IN SRV	0 0 2049	foo.example.net.
 .RE
 .SH SECURITY
 Each host in a FedFS domain plays one or more of the following roles,

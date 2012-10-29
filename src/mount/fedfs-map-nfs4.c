@@ -51,24 +51,14 @@
 #include "gpl-boiler.h"
 
 /**
- * Name of SRV record containing NFSv4 r/o FedFS root
+ * Name of SRV record containing NFSv4 FedFS root
  */
-#define FEDFS_NFS4_DOMAINROOT_RO	"_nfs4._domainroot._tcp"
+#define FEDFS_NFS_DOMAINROOT	"_nfs-domainroot._tcp"
 
 /**
- * Name of SRV record containing NFSv4 r/w FedFS root
+ * Export pathname of NFSv4 FedFS root
  */
-#define FEDFS_NFS4_DOMAINROOT_RW	"_nfs4._write._domainroot._tcp"
-
-/**
- * Export path of NFSv4 r/o FedFS root
- */
-#define FEDFS_NFS4_EXPORTPATH_RO	"/.domainroot"
-
-/**
- * Export path of NFSv4 r/w FedFS root
- */
-#define FEDFS_NFS4_EXPORTPATH_RW	"/.domainroot-write"
+#define FEDFS_NFS_EXPORTPATH	"/.domainroot"
 
 static char *progname;
 
@@ -87,19 +77,15 @@ fedfs_map_usage(void)
  * Construct an NFSv4 map entry for "domainname" with one server
  *
  * @param si single-entry list of SRV records
- * @param rw_replica true if a R/W domain root replica was requested
  * @param domainname NUL-terminated UTF-8 string containing name of FedFS domain
  * @return command exit status
  */
-static int fedfs_map_nfs4_oneserver(struct srvinfo *si, _Bool rw_replica,
-		const char *domainname)
+static int fedfs_map_nfs4_oneserver(struct srvinfo *si, const char *domainname)
 {
 	printf("-fstype=nfs,vers=4,fg");
 	if (si->si_port != 2049)
 		printf(",port=%u", si->si_port);
-	printf(" %s:%s-%s\n", si->si_target,
-		rw_replica ? FEDFS_NFS4_EXPORTPATH_RW :
-			     FEDFS_NFS4_EXPORTPATH_RO, domainname);
+	printf(" %s:%s/%s\n", si->si_target, FEDFS_NFS_EXPORTPATH, domainname);
 	return 0;
 }
 
@@ -107,12 +93,10 @@ static int fedfs_map_nfs4_oneserver(struct srvinfo *si, _Bool rw_replica,
  * Construct an NFSv4 map entry for "domainname" with multiple servers
  *
  * @param si list of SRV records for requested FedFS domain
- * @param rw_replica true if a R/W domain root replica was requested
  * @param domainname NUL-terminated UTF-8 string containing name of FedFS domain
  * @return command exit status
  */
-static int fedfs_map_nfs4_replicas(struct srvinfo *si, _Bool rw_replica,
-		const char *domainname)
+static int fedfs_map_nfs4_replicas(struct srvinfo *si, const char *domainname)
 {
 	struct srvinfo *cur;
 	unsigned short port;
@@ -146,8 +130,7 @@ static int fedfs_map_nfs4_replicas(struct srvinfo *si, _Bool rw_replica,
 		printf("%s(%u)", cur->si_target, cur->si_weight);
 		comma = true;
 	}
-	printf(":%s-%s\n", rw_replica ? FEDFS_NFS4_EXPORTPATH_RW :
-		     FEDFS_NFS4_EXPORTPATH_RO, domainname);
+	printf(":%s/%s\n", FEDFS_NFS_EXPORTPATH, domainname);
 
 	return 0;
 }
@@ -163,18 +146,9 @@ static int fedfs_map_nfs4(const char *domainname)
 	struct srvinfo *cur, *si = NULL;
 	unsigned int count;
 	int error, result;
-	_Bool rw_replica;
-	char *rr;
-
-	rw_replica = false;
-	if (domainname[0] == '.') {
-		rw_replica = true;
-		domainname++;
-	}
 
 	result = 1;
-	rr = rw_replica ? FEDFS_NFS4_DOMAINROOT_RW : FEDFS_NFS4_DOMAINROOT_RO;
-	error = getsrvinfo(rr, domainname, &si);
+	error = getsrvinfo(FEDFS_NFS_DOMAINROOT, domainname, &si);
 	switch (error) {
 	case ESI_SUCCESS:
 		break;
@@ -195,11 +169,9 @@ static int fedfs_map_nfs4(const char *domainname)
 	for (count = 0, cur = si; cur != NULL; cur = cur->si_next)
 		count++;
 	if (count == 1)
-		result = fedfs_map_nfs4_oneserver(si, rw_replica,
-								domainname);
+		result = fedfs_map_nfs4_oneserver(si, domainname);
 	else
-		result = fedfs_map_nfs4_replicas(si, rw_replica,
-								domainname);
+		result = fedfs_map_nfs4_replicas(si, domainname);
 
 out:
 	freesrvinfo(si);

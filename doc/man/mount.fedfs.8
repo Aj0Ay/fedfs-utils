@@ -44,7 +44,7 @@ For further details, see
 The
 .BR mount.fedfs (8)
 command locates FedFS domains by looking for DNS SRV records
-that advertise file servers exporting domain root replicas.
+that advertise file servers exporting FedFS domain root replicas.
 The
 .I remotedir
 argument determines what FedFS domain is mounted and
@@ -54,7 +54,7 @@ The
 .BR mount.fedfs (8)
 command sorts the list of available domain root replicas
 according to the SRV record sorting rules outlined in RFC 2782.
-It serially attempts to contact each file server
+It attempts to contact each file server
 appearing in the SRV record list
 until a mount request succeeds
 or the end of the SRV record list is reached.
@@ -142,20 +142,14 @@ FedFS domain via NFS version 4 automatically, you might add this to your
 /nfs4/example.net   /nfs4/example.net   fedfs  defaults  0  0
 .sp
 .RE
-If you wanted the read-write replica instead, you could use:
-.RS
-.sp
-/nfs4/.example.net  /nfs4/.example.net  fedfs  defaults  0  0
-.sp
-.RE
 A FedFS domain root can also be mounted with a stand-alone invocation of
 .BR mount (8):
 .RS
 .sp
-# mount -t fedfs /nfs4/.example.net /mnt/fedfs
+# mount -t fedfs /nfs4/example.net /mnt/fedfs
 .sp
 .RE
-This mounts the read-write replica of the FedFS domain root for the
+This mounts the FedFS domain root for the
 .I example.net
 domain on the client's
 .I /mnt/fedfs

@@ -56,24 +56,14 @@
 #define FEDFS_NFS4_TLDIR		"nfs4"
 
 /**
- * Name of SRV record containing NFSv4 r/o FedFS root
+ * Name of SRV record containing NFSv4 FedFS root
  */
-#define FEDFS_NFS4_DOMAINROOT_RO	"_nfs4._domainroot._tcp"
+#define FEDFS_NFS_DOMAINROOT	"_nfs-domainroot._tcp"
 
 /**
- * Name of SRV record containing NFSv4 r/w FedFS root
+ * Export path of NFSv4 FedFS root
  */
-#define FEDFS_NFS4_DOMAINROOT_RW	"_nfs4._write._domainroot._tcp"
-
-/**
- * Export path of NFSv4 r/o FedFS root
- */
-#define FEDFS_NFS4_EXPORTPATH_RO	"/.domainroot"
-
-/**
- * Export path of NFSv4 r/w FedFS root
- */
-#define FEDFS_NFS4_EXPORTPATH_RW	"/.domainroot-write"
+#define FEDFS_NFS_EXPORTPATH	"/.domainroot"
 
 /**
  * Pathname to mount.nfs
@@ -186,7 +176,6 @@ out:
  *
  * @param server NUL-terminated C string containing name of NFS server
  * @param port server port to use when mounting
- * @param rw_replica true if the read-write replica was requested
  * @param domainname NUL-terminated C string containing FedFS domain name
  * @param export_path NUL-terminated C string containing server export path
  * @param mounted_on_dir NUL-terminated C string containing local mounted-on directory
@@ -194,7 +183,7 @@ out:
  *
  */
 static void
-exec_mount_nfs4(const char *server, unsigned short port, _Bool rw_replica,
+exec_mount_nfs4(const char *server, unsigned short port,
 		const char *domainname, const char *export_path,
 		const char *mounted_on_dir, const char *text_options)
 {
@@ -203,10 +192,8 @@ exec_mount_nfs4(const char *server, unsigned short port, _Bool rw_replica,
 	char *args[16];
 	int count = 0;
 
-	snprintf(special, sizeof(special), "%s:%s-%s%s", server,
-			rw_replica ? FEDFS_NFS4_EXPORTPATH_RW :
-					FEDFS_NFS4_EXPORTPATH_RO,
-			domainname, export_path);
+	snprintf(special, sizeof(special), "%s:%s/%s%s", server,
+			FEDFS_NFS_EXPORTPATH, domainname, export_path);
 
 	if (text_options != NULL && strcmp(text_options, "") != 0)
 		snprintf(options, sizeof(options), "%s,vers=4,fg,port=%u",
@@ -262,19 +249,10 @@ nfs4_mount(const char *domainname, const char *export_path,
 {
 	struct srvinfo *tmp, *si = NULL;
 	int error, status;
-	_Bool rw_replica;
-	char *srv_rr;
 
 	status = EX_FAIL;
 
-	rw_replica = false;
-	if (domainname[0] == '.') {
-		rw_replica = true;
-		domainname++;
-	}
-
-	srv_rr = rw_replica ? FEDFS_NFS4_DOMAINROOT_RW : FEDFS_NFS4_DOMAINROOT_RO;
-	error = getsrvinfo(srv_rr, domainname, &si);
+	error = getsrvinfo(FEDFS_NFS_DOMAINROOT, domainname, &si);
 	switch (error) {
 	case ESI_SUCCESS:
 		break;
@@ -303,7 +281,7 @@ nfs4_mount(const char *domainname, const char *export_path,
 		pid = fork();
 		switch (pid) {
 		case 0:
-			exec_mount_nfs4(tmp->si_target, tmp->si_port, rw_replica,
+			exec_mount_nfs4(tmp->si_target, tmp->si_port,
 					domainname, export_path, mounted_on_dir,
 					text_options);
 			/*NOTREACHED*/

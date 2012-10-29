@@ -50,7 +50,7 @@ for information about how program maps work.
 The
 .BR fedfs-map-nfs4 (8)
 command locates FedFS domains by looking for DNS SRV records
-that advertise file servers exporting domain root replicas.
+that advertise file servers exporting FedFS domain root replicas.
 The
 .I domainname
 argument determines what FedFS domain is to be mounted.
@@ -96,11 +96,8 @@ Under the /nfs4 directory on the local system, the automounter uses
 to convert a FedFS domain name to a set of servers and an export path,
 which are then passed to
 .BR mount.nfs (8).
-.P
 The automounter mounts this FedFS domain on the directory
 .IR /nfs4/domainname .
-Note that this also works for dot-prefixed domain names, in order to
-support mounting read-write domain root replicas.
 .P
 After configuring and restarting
 .BR autofs ,
@@ -129,6 +126,7 @@ While these mounted domains remain active on the local system,
 the mounted-on directories remain visible.
 After a period of inactivity, the automounter automatically unmounts
 a FedFS domain.
+.P
 Local applications browsing the top-level directory
 do not see all available FedFS domains.  They see only the ones that
 are mounted and active.

@@ -98,8 +98,8 @@ required as such a namespace is changed over time.
 
 Installable components include:
 
-   o  An automounter program map to manage the FedFS domain namespace
-      on FedFS-enabled clients
+   o  An automounter program map to allow access to the FedFS domain
+      namespace on FedFS-enabled clients
 
    o  A mount command to mount parts of a FedFS domain namespace
 
