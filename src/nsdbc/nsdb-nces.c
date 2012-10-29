@@ -216,11 +216,10 @@ main(int argc, char **argv)
 		retval = nsdb_get_nceprefix_s(host, contexts[i], &dn, &ldap_err);
 		printf("  namingContext '%s' ", contexts[i]);
 		if (retval == FEDFS_OK) {
-			printf("is a FedFS NCE, DIT starts at '%s'.\n", dn);
+			printf("hosts an NCE at '%s'.\n", dn);
 			free(dn);
-			retval = FEDFS_OK;
 		} else
-			printf("is not a FedFS NCE.\n");
+			printf("does not host an NCE.\n");
 	}
 
 	nsdb_free_string_array(contexts);
