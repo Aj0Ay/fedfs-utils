@@ -8,7 +8,7 @@
 #endif
 
 /*
- * Copyright (c) 2010 IETF Trust and the persons identified
+ * Copyright (c) 2010-2012 IETF Trust and the persons identified
  * as authors of the code.  All rights reserved.
  *
  * The authors of the code are the authors of
@@ -87,22 +87,22 @@ enum FedFsStatus {
  FEDFS_ERR_PATH_TYPE_UNSUPP               = 33,
  FEDFS_ERR_DELAY                          = 34,
  FEDFS_ERR_NO_CACHE                       = 35,
- FEDFS_ERR_UNKNOWN_CACHE                   = 36,
+ FEDFS_ERR_UNKNOWN_CACHE                  = 36,
  FEDFS_ERR_NO_CACHE_UPDATE                = 37
 };
 
 typedef opaque                 utf8string<>;
-typedef utf8string             utf8str_cs;
-typedef utf8string             utf8str_cis;
+typedef utf8string             ascii_REQUIRED4;
+typedef utf8string             utf8val_REQUIRED4;
 
 typedef opaque FedFsUuid[16];
 
 struct FedFsNsdbName {
         unsigned int           port;
-        utf8str_cis            hostname;
+        utf8val_REQUIRED4      hostname;
 };
 
-typedef utf8str_cs FedFsPathComponent;
+typedef ascii_REQUIRED4 FedFsPathComponent;
 typedef FedFsPathComponent FedFsPathName<>;
 
 struct FedFsFsn {
@@ -118,7 +118,7 @@ enum FedFsFslType {
 struct FedFsNfsFsl {
         FedFsUuid              fslUuid;
         unsigned int           port;
-        utf8str_cis            hostname;
+        utf8val_REQUIRED4      hostname;
         FedFsPathName          path;
 };
 
