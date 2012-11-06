@@ -29,8 +29,8 @@ noinst_LTLIBRARIES	= libjunction.la
 noinst_PROGRAMS		= display-junction
 libjunction_la_SOURCES	= export-cache.c fedfs.c junction.c \
 			  locations.c nfs.c xml.c
-LDADD			= $(top_builddir)/src/libxlog/libxlog.la \
-			  $(top_builddir)/src/libjunction/libjunction.la \
+display_junction_LDADD	= $(top_builddir)/src/libxlog/libxlog.la \
+			  libjunction.la \
 			  $(top_builddir)/src/libnsdb/libnsdb.la
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
