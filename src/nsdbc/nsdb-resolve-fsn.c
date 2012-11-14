@@ -151,10 +151,6 @@ nsdb_resolve_fsn_display_fsl(struct fedfs_fsl *fsl)
 
 	printf(" FSN UUID:\t\t%s\n", fsl->fl_fsnuuid);
 	printf(" FSL UUID:\t\t%s\n", fsl->fl_fsluuid);
-	if (fsl->fl_nsdbport == 0)
-		printf(" NSDB:\t\t\t%s\n", fsl->fl_nsdbname);
-	else
-		printf(" NSDB:\t\t\t%s:%u\n", fsl->fl_nsdbname, fsl->fl_nsdbport);
 	if (fsl->fl_fslport == 0)
 		printf(" FSL host:\t\t%s\n", fsl->fl_fslhost);
 	else

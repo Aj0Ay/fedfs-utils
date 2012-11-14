@@ -307,7 +307,6 @@ nfsref_add_nfs_fsl_defaults(const char *rootpath, struct fedfs_nfs_fsl *new)
  * Convert a pair of command line arguments to one fedfs_fsl structure
  *
  * @param fsn_uuid NUL-terminated C string containing FSN UUID to use
- * @param host an initialized NSDB host object
  * @param server NUL-terminated C string containing file server hostname
  * @param rootpath NUL-terminated C string containing POSIX-style export path
  * @param fsl OUT: fedfs_fsl object
@@ -317,7 +316,7 @@ nfsref_add_nfs_fsl_defaults(const char *rootpath, struct fedfs_nfs_fsl *new)
  * returned fsl with nsdb_free_fedfs_fsl().
  */
 static FedFsStatus
-nfsref_add_build_fsl(const char *fsn_uuid, nsdb_t host, const char *server,
+nfsref_add_build_fsl(const char *fsn_uuid, const char *server,
 		const char *rootpath, struct fedfs_fsl **fsl)
 {
 	struct fedfs_fsl *new;
@@ -336,8 +335,6 @@ nfsref_add_build_fsl(const char *fsn_uuid, nsdb_t host, const char *server,
 	uuid_generate_random(uu);
 	uuid_unparse(uu, new->fl_fsluuid);
 	strncpy(new->fl_fsnuuid, fsn_uuid, sizeof(new->fl_fsnuuid));
-	strncpy(new->fl_nsdbname, nsdb_hostname(host), sizeof(new->fl_nsdbname));
-	new->fl_nsdbport = nsdb_port(host);
 	strncpy(new->fl_fslhost, server, sizeof(new->fl_fslhost));
 	new->fl_fslport = 0;
 
@@ -354,7 +351,6 @@ nfsref_add_build_fsl(const char *fsn_uuid, nsdb_t host, const char *server,
  *
  * @param argv array of pointers to NUL-terminated C strings contains arguments
  * @param optind index of "argv" where "add" subcommand arguments start
- * @param host an initialized NSDB host object
  * @param fsn_uuid NUL-terminated C string containing FSN UUID to use
  * @param fsls OUT a list of fedfs_fsl objects
  * @return a FedFsStatus code
@@ -364,7 +360,7 @@ nfsref_add_build_fsl(const char *fsn_uuid, nsdb_t host, const char *server,
  *
  */
 static FedFsStatus
-nfsref_add_build_fsl_list(char **argv, int optind, nsdb_t host,
+nfsref_add_build_fsl_list(char **argv, int optind,
 		const char *fsn_uuid, struct fedfs_fsl **fsls)
 {
 	struct fedfs_fsl *fsl, *result = NULL;
@@ -372,7 +368,7 @@ nfsref_add_build_fsl_list(char **argv, int optind, nsdb_t host,
 	int i;
 
 	for (i = optind + 2; argv[i] != NULL; i += 2) {
-		retval = nfsref_add_build_fsl(fsn_uuid, host,
+		retval = nfsref_add_build_fsl(fsn_uuid,
 						argv[i], argv[i + 1], &fsl);
 		if (retval != FEDFS_OK) {
 			nsdb_free_fedfs_fsls(result);
@@ -457,7 +453,7 @@ nfsref_add_create_fedfs_junction(const char *junct_path, char **argv, int optind
 	struct fedfs_fsl *fsls;
 	FedFsStatus retval;
 
-	retval = nfsref_add_build_fsl_list(argv, optind, host, fsn_uuid, &fsls);
+	retval = nfsref_add_build_fsl_list(argv, optind, fsn_uuid, &fsls);
 	if (retval != FEDFS_OK)
 		return retval;
 

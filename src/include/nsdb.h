@@ -86,8 +86,6 @@ struct fedfs_fsl {
 
 	char			  fl_fsluuid[FEDFS_UUID_STRLEN];
 	char			  fl_fsnuuid[FEDFS_UUID_STRLEN];
-	char			  fl_nsdbname[NI_MAXHOST + 1];
-	int			  fl_nsdbport;
 	char			  fl_fslhost[NI_MAXHOST + 1];
 	int			  fl_fslport;
 	int			  fl_fslttl;

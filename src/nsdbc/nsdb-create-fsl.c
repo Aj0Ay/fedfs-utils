@@ -208,7 +208,6 @@ main(int argc, char **argv)
 	}
 	strcpy(fsl->fl_fsluuid, fsl_uuid);
 	strcpy(fsl->fl_fsnuuid, fsn_uuid);
-	strcpy(fsl->fl_nsdbname, nsdbname);
 	strcpy(fsl->fl_fslhost, servername);
 	retval = nsdb_posix_to_path_array(serverpath,
 						&fsl->fl_u.fl_nfsfsl.fn_nfspath);
@@ -216,7 +215,6 @@ main(int argc, char **argv)
 		fprintf(stderr, "Failed to encode serverpath\n");
 		goto out;
 	}
-	fsl->fl_nsdbport = nsdbport;
 	fsl->fl_fslport = serverport;
 
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);

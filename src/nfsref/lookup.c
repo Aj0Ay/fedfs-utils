@@ -214,8 +214,6 @@ nfsref_lookup_display_fedfs_fsl(struct fedfs_fsl *fsl)
 
 	printf("\tfedfsFslUuid:\t\t\t%s\n", fsl->fl_fsluuid);
 	printf("\tfedfsFsnUuid:\t\t\t%s\n", fsl->fl_fsnuuid);
-	printf("\tfedfsNsdbName:\t\t\t%s\n", fsl->fl_nsdbname);
-	printf("\tfedfsNsdbPort:\t\t\t%u\n", fsl->fl_nsdbport);
 	printf("\tfedfsFslHost:\t\t\t%s\n", fsl->fl_fslhost);
 	printf("\tfedfsFslPort:\t\t\t%u\n", fsl->fl_fslport);
 	printf("\tfedfsFslTTL:\t\t\t%d\n", fsl->fl_fslttl);

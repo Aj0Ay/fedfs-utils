@@ -558,7 +558,6 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 {
 	struct fedfs_nfs_fsl *nfsfsl = &fsl->fl_u.fl_nfsfsl;
 	char *ocvals[3], *fsluuidvals[2], *fsnuuidvals[2];
-	char *nsdbnamevals[2], *nsdbportvals[2], nsdbportbuf[12];
 	char *servernamevals[2], *serverportvals[2], serverportbuf[12];
 	char *ttyvals[2], ttybuf[12];
 
@@ -599,13 +598,6 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 				fsluuidvals, fsl->fl_fsluuid);
 	nsdb_init_add_attribute(attrs[i++], "fedfsFsnUuid",
 				fsnuuidvals, fsl->fl_fsnuuid);
-	nsdb_init_add_attribute(attrs[i++], "fedfsNsdbName",
-				nsdbnamevals, fsl->fl_nsdbname);
-	if (fsl->fl_nsdbport != LDAP_PORT) {
-		sprintf(nsdbportbuf, "%d", fsl->fl_nsdbport);
-		nsdb_init_add_attribute(attrs[i++], "fedfsNsdbPort",
-					nsdbportvals, nsdbportbuf);
-	}
 	nsdb_init_add_attribute(attrs[i++], "fedfsFslHost",
 				servernamevals, fsl->fl_fslhost);
 	if (fsl->fl_fslport != 0) {
