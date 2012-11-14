@@ -42,6 +42,11 @@
 #include "nfsref.h"
 
 /**
+ * Default cache expiration for FSN information
+ */
+#define FSN_DEFAULT_TTL		(300)
+
+/**
  * Fill in default settings for NFSv4.0 fs_locations4
  *
  * @param new NFS location structure to fill in
@@ -239,8 +244,7 @@ nfsref_add_create_fedfs_fsn(nsdb_t host, const char *nce, char **fsn_uuid)
 	uuid_unparse(uu, fsnuuid);
 
 	retval = nsdb_create_fsn_s(host, nce, fsnuuid,
-					nsdb_hostname(host), nsdb_port(host),
-					&ldap_err);
+					FSN_DEFAULT_TTL, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		xlog(D_GENERAL, "%s: Successfully created FSN record "

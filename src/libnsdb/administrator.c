@@ -85,8 +85,7 @@ nsdb_construct_fsn_dn(const char *nce, const char *fsn_uuid)
  * @param ld an initialized LDAP server descriptor
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
  * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param nsdbname a NUL-terminated C string containing DNS hostname of NSDB server
- * @param nsdbport port number of NSDB server
+ * @param ttl number of seconds fileservers may cache this FSN
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  *
@@ -98,18 +97,18 @@ nsdb_construct_fsn_dn(const char *nce, const char *fsn_uuid)
    changeType: add
    objectClass: fedfsFsn
    fedfsFsnUuid: "fsn_uuid"
-   fedfsNsdbName: "nsdbname"
+   fedfsFsnTTL: "ttl"
    @endverbatim
  */
 static FedFsStatus
 nsdb_create_fsn_add_entry(LDAP *ld, const char *nce,
-		const char *fsn_uuid, const char *nsdbname,
-		const unsigned short nsdbport, unsigned int *ldap_err)
+		const char *fsn_uuid, const unsigned int ttl,
+		unsigned int *ldap_err)
 {
-	char *ocvals[2], *uuidvals[2], *namevals[2], *portvals[2];
+	char *ocvals[2], *uuidvals[2], *ttlvals[2];
 	LDAPMod *attrs[5];
 	LDAPMod attr[4];
-	char portbuf[8];
+	char ttlbuf[16];
 	int i, rc;
 	char *dn;
 
@@ -121,11 +120,9 @@ nsdb_create_fsn_add_entry(LDAP *ld, const char *nce,
 				"objectClass", ocvals, "fedfsFsn");
 	nsdb_init_add_attribute(attrs[i++],
 				"fedfsFsnUuid", uuidvals, fsn_uuid);
+	sprintf(ttlbuf, "%u", ttl);
 	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbName", namevals, nsdbname);
-	sprintf(portbuf, "%u", nsdbport);
-	nsdb_init_add_attribute(attrs[i++],
-				"fedfsNsdbPort", portvals, portbuf);
+				"fedfsFsnTTL", ttlvals, ttlbuf);
 
 	attrs[i] = NULL;
 
@@ -152,29 +149,26 @@ nsdb_create_fsn_add_entry(LDAP *ld, const char *nce,
  * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
  * @param fsn_uuid a NUL-terminated C string containing FSN UUID
- * @param nsdbname a NUL-terminated C string containing DNS hostname of NSDB server
- * @param nsdbport port number of NSDB server
+ * @param ttl number of seconds fileservers may cache this FSN
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
  */
 FedFsStatus
 nsdb_create_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
-		const char *nsdbname, const unsigned short nsdbport,
-		unsigned int *ldap_err)
+		const unsigned int ttl, unsigned int *ldap_err)
 {
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
 		return FEDFS_ERR_INVAL;
 	}
 
-	if (nce == NULL || fsn_uuid == NULL ||
-	    nsdbname == NULL || ldap_err == NULL) {
+	if (nce == NULL || fsn_uuid == NULL || ldap_err == NULL) {
 		xlog(L_ERROR, "%s: Invalid parameter", __func__);
 		return FEDFS_ERR_INVAL;
 	}
 
 	return nsdb_create_fsn_add_entry(host->fn_ldap, nce, fsn_uuid,
-						nsdbname, nsdbport, ldap_err);
+							ttl, ldap_err);
 }
 
 /**

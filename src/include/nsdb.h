@@ -243,8 +243,8 @@ void		 nsdb_env(char **nsdbname, unsigned short *nsdbport,
  * Create an FSN (5.1.1)
  */
 FedFsStatus	 nsdb_create_fsn_s(nsdb_t host, const char *nce,
-				const char *fsn_uuid, const char *nsdbname,
-				const unsigned short nsdbport,
+				const char *fsn_uuid,
+				const unsigned int ttl,
 				unsigned int *ldap_err);
 
 /**

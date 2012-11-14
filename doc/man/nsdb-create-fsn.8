@@ -37,6 +37,8 @@ nsdb-create-fsn \- create a fileset name (FSN) record on an NSDB
 .IR nsdbname ]
 .RB [ \-r
 .IR nsdbport ]
+.RB [ \-t
+.IR ttl ]
 .I fsn-uuid
 .SH INTRODUCTION
 RFC 5716 introduces the Federated File System (FedFS, for short).
@@ -146,6 +148,12 @@ If the
 option is not specified,
 the value of the FEDFS_NSDB_PORT environment variable is consulted.
 The default value if the variable is not set is 389.
+.IP "\fB\-t, \-\-ttl=\fITTL\fP"
+Specifies the number of seconds a file server may cache the information
+in this record.  If the
+.B \-\-ttl
+option is not specified,
+a value of 300 seconds is used.
 .SH EXIT CODES
 The NSDB returns a value that reflects the success of the requested operation.
 .TP

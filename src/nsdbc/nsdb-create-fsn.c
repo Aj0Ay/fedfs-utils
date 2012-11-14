@@ -48,9 +48,14 @@
 #include "gpl-boiler.h"
 
 /**
+ * Default cache expiration for FSN information
+ */
+#define FSN_DEFAULT_TTL		(300)
+
+/**
  * Short form command line options
  */
-static const char nsdb_create_fsn_opts[] = "?dD:e:l:r:";
+static const char nsdb_create_fsn_opts[] = "?dD:e:l:r:t:";
 
 /**
  * Long form command line options
@@ -62,6 +67,7 @@ static const struct option nsdb_create_fsn_longopts[] = {
 	{ "nce", 1, NULL, 'e', },
 	{ "nsdbname", 1, NULL, 'l', },
 	{ "nsdbport", 1, NULL, 'r', },
+	{ "ttl", 1, NULL, 't', },
 	{ NULL, 0, NULL, 0, },
 };
 
@@ -74,7 +80,7 @@ static void
 nsdb_create_fsn_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
-	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] "
+	fprintf(stderr, "Usage: %s [ -d ] [ -D binddn ] [ -t ttl ] "
 			"[ -l nsdbname ] [ -r nsdbport ] [ -e nce ] "
 			"fsn-uuid\n\n",
 			progname);
@@ -85,6 +91,7 @@ nsdb_create_fsn_usage(const char *progname)
 	fprintf(stderr, "\t-e, --nce            DN of NSDB container entry\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
 	fprintf(stderr, "\t-r, --nsdbport       NSDB port\n");
+	fprintf(stderr, "\t-t, --ttl            FSN TTL\n");
 
 	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
 
@@ -101,11 +108,12 @@ nsdb_create_fsn_usage(const char *progname)
 int
 main(int argc, char **argv)
 {
-	char *progname, *binddn, *nsdbname;
+	char *progname, *binddn, *nsdbname, *endptr;
 	unsigned short nsdbport;
-	unsigned int ldap_err;
+	unsigned int ttl, ldap_err;
 	char *nce, *fsn_uuid;
 	FedFsStatus retval;
+	unsigned long tmp;
 	nsdb_t host;
 	int arg;
 
@@ -130,6 +138,7 @@ main(int argc, char **argv)
 	xlog_open(progname);
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce);
+	ttl = FSN_DEFAULT_TTL;
 
 	while ((arg = getopt_long(argc, argv, nsdb_create_fsn_opts,
 			nsdb_create_fsn_longopts, NULL)) != -1) {
@@ -152,6 +161,19 @@ main(int argc, char **argv)
 					optarg);
 				nsdb_create_fsn_usage(progname);
 			}
+			break;
+		case 't':
+			if (optarg == NULL || *optarg == '\0') {
+				fprintf(stderr, "Missing TTL value\n");
+				nsdb_create_fsn_usage(progname);
+			}
+			errno = 0;
+			tmp = strtoul(optarg, &endptr, 10);
+			if (errno != 0 || *endptr != '\0') {
+				fprintf(stderr, "Bad TTL value\n");
+				nsdb_create_fsn_usage(progname);
+			}
+			ttl = (unsigned int)tmp;
 			break;
 		default:
 			fprintf(stderr, "Invalid command line "
@@ -230,8 +252,7 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
-	retval = nsdb_create_fsn_s(host, nce, fsn_uuid,
-					nsdbname, nsdbport, &ldap_err);
+	retval = nsdb_create_fsn_s(host, nce, fsn_uuid, ttl, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		printf("Successfully created FSN record for %s under %s\n",
