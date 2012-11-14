@@ -441,6 +441,207 @@ out:
 }
 
 /**
+ * Parse fedfsNceDN attribute
+ *
+ * @param ld an initialized LDAP descriptor
+ * @param entry an LDAP_RES_SEARCH_ENTRY message
+ * @param attr a NUL-terminated C string containing the name of an attribute
+ * @param dn OUT: pointer to a NUL-terminated C string containing resulting DN
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with free(3)
+ */
+static FedFsStatus
+nsdb_parse_ncedn_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
+		char **dn)
+{
+	struct berval **values;
+	FedFsStatus retval;
+	char *tmp;
+
+	xlog(D_CALL, "%s: parsing attribute %s", __func__, attr);
+	if (strcasecmp(attr, "fedfsNceDN") != 0)
+		return FEDFS_OK;
+
+	values = ldap_get_values_len(ld, entry, attr);
+	if (values == NULL) {
+		xlog(D_GENERAL, "%s: No values found for attribute %s",
+			__func__, attr);
+		return FEDFS_ERR_NSDB_RESPONSE;
+	}
+	if (values[1] != NULL) {
+		xlog(L_ERROR, "%s: Expecting only one value for attribute %s",
+			__func__, attr);
+		retval = FEDFS_ERR_NSDB_RESPONSE;
+		goto out_free;
+	}
+
+	tmp = strdup(values[0]->bv_val);
+	if (tmp == NULL) {
+		xlog(L_ERROR, "%s: strdup(3) failed for %s", __func__, attr);
+		retval = FEDFS_ERR_SVRFAULT;
+		goto out_free;
+	}
+
+	retval = FEDFS_OK;
+	*dn = tmp;
+
+out_free:
+	ldap_value_free_len(values);
+	return retval;
+}
+
+/**
+ * Construct DN for an LDAP server's NSDB container
+ *
+ * @param ld an initialized LDAP descriptor
+ * @param entry an LDAP_RES_SEARCH_ENTRY message
+ * @param dn OUT: pointer to a NUL-terminated C string containing resulting DN
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with free(3)
+ */
+static FedFsStatus
+nsdb_parse_ncedn_entry(LDAP *ld, LDAPMessage *entry, char **dn)
+{
+	BerElement *field = NULL;
+	FedFsStatus retval;
+	char *attr;
+
+	for (attr = ldap_first_attribute(ld, entry, &field), retval = FEDFS_OK;
+	     attr != NULL && retval == FEDFS_OK;
+	     attr = ldap_next_attribute(ld, entry, field)) {
+		retval = nsdb_parse_ncedn_attribute(ld, entry, attr, dn);
+		ldap_memfree(attr);
+	}
+
+	if (field != NULL)
+		ber_free(field, 0);
+	return retval;
+}
+
+/**
+ * Get the naming context's NSDB DN, if it has one
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param naming_context NUL-terminated C string containing one naming context
+ * @param dn OUT: pointer to a NUL-terminated C string containing full DN of NSDB container
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with free(3)
+ *
+ * ldapsearch equivalent:
+ *
+ * @verbatim
+
+   ldapsearch -b "naming_context" -s base (objectClass=*) fedfsNceDN
+   @endverbatim
+ *
+ * The full DN for the NSDB container entry is returned in "dn."
+ */
+FedFsStatus
+nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
+		unsigned int *ldap_err)
+{
+	LDAPMessage *response, *message;
+	char *attrs[2], *tmp = NULL;
+	LDAP *ld = host->fn_ldap;
+	FedFsStatus retval;
+	int rc;
+
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (dn == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	attrs[0] = "fedfsNceDN";
+	attrs[1] = NULL;
+	rc = ldap_search_ext_s(ld, naming_context, LDAP_SCOPE_BASE,
+				"(objectClass=*)", attrs, 0, NULL,
+				NULL, &nsdb_ldap_timeout,
+				LDAP_NO_LIMIT, &response);
+	switch (rc) {
+	case LDAP_SUCCESS:
+		break;
+	case LDAP_NO_SUCH_OBJECT:
+		xlog(D_GENERAL, "%s: %s is not an NSDB container entry",
+			__func__, naming_context);
+		return FEDFS_ERR_NSDB_NONCE;
+	default:
+		xlog(D_GENERAL, "%s: Failed to retrieve naming_context "
+			"entry %s: %s", __func__, naming_context,
+			ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+	if (response == NULL) {
+		xlog(D_GENERAL, "%s: Empty LDAP response\n", __func__);
+		return FEDFS_ERR_NSDB_FAULT;
+	}
+
+	rc = ldap_count_messages(ld, response);
+	switch (rc) {
+	case -1:
+		xlog(D_GENERAL, "%s: Empty LDAP response\n", __func__);
+		retval = FEDFS_ERR_NSDB_FAULT;
+		goto out;
+	case 1:
+		xlog(L_ERROR, "Naming context entry %s is inaccessible",
+			naming_context);
+		retval = FEDFS_ERR_NSDB_NONCE;
+		goto out;
+	default:
+		xlog(D_CALL, "%s: received %d messages", __func__, rc);
+		break;
+	}
+
+	tmp = NULL;
+	retval = FEDFS_OK;
+	for (message = ldap_first_message(ld, response);
+	     message != NULL && retval == FEDFS_OK;
+	     message = ldap_next_message(ld, message)) {
+		switch (ldap_msgtype(message)) {
+		case LDAP_RES_SEARCH_ENTRY:
+			retval = nsdb_parse_ncedn_entry(ld, message, &tmp);
+			break;
+		case LDAP_RES_SEARCH_REFERENCE:
+			retval = nsdb_parse_reference(ld, message, ldap_err);
+			break;
+		case LDAP_RES_SEARCH_RESULT:
+			retval = nsdb_parse_result(ld, message, ldap_err);
+			break;
+		default:
+			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
+				__func__);
+			retval = FEDFS_ERR_NSDB_FAULT;
+		}
+	}
+
+	if (retval == FEDFS_OK) {
+		if (tmp == NULL) {
+			xlog(D_GENERAL, "%s: %s is not an NCE",
+				__func__, naming_context);
+			retval = FEDFS_ERR_NSDB_NONCE;
+		} else {
+			xlog(D_CALL, "%s: %s contains NCE DN %s",
+				__func__, naming_context, tmp);
+			*dn = tmp;
+		}
+	} else
+		free(tmp);
+
+out:
+	ldap_msgfree(response);
+	return retval;
+}
+
+/**
  * Parse namingContext attribute
  *
  * @param ld an initialized LDAP descriptor
@@ -448,6 +649,8 @@ out:
  * @param attr a NUL-terminated C string containing the name of an attribute
  * @param contexts OUT: pointer to an array of NUL-terminated C strings
  * @return a FedFsStatus code
+ *
+ * Caller must free "contexts" with nsdb_free_string_array()
  */
 static FedFsStatus
 nsdb_parse_naming_contexts_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
@@ -1040,7 +1243,7 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 	 * Query only naming contexts that have an NCE prefix
 	 */
 	for (i = 0, j = 0; contexts[i] != NULL; i++) {
-		retval = nsdb_get_nceprefix_s(host, contexts[i],
+		retval = nsdb_get_ncedn_s(host, contexts[i],
 						&nce_list[j], ldap_err);
 		if (retval == FEDFS_OK)
 			j++;
@@ -1299,7 +1502,7 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 	 * List only naming contexts that have an NCE prefix
 	 */
 	for (i = 0, j = 0; contexts[i] != NULL; i++) {
-		retval = nsdb_get_nceprefix_s(host, contexts[i],
+		retval = nsdb_get_ncedn_s(host, contexts[i],
 						&nce_list[j], ldap_err);
 		if (retval == FEDFS_OK)
 			j++;
@@ -1340,7 +1543,7 @@ nsdb_ping_contexts_s(nsdb_t host, char **contexts, unsigned int *ldap_err)
 	int i;
 
 	for (i = 0; contexts[i] != NULL; i++) {
-		retval = nsdb_get_nceprefix_s(host, contexts[i], &dn, ldap_err);
+		retval = nsdb_get_ncedn_s(host, contexts[i], &dn, ldap_err);
 		if (retval == FEDFS_OK) {
 			free(dn);
 			break;

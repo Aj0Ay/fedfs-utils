@@ -213,7 +213,7 @@ main(int argc, char **argv)
 	for (i = 0; contexts[i] != NULL; i++) {
 		char *dn;
 
-		retval = nsdb_get_nceprefix_s(host, contexts[i], &dn, &ldap_err);
+		retval = nsdb_get_ncedn_s(host, contexts[i], &dn, &ldap_err);
 		printf("  namingContext '%s' ", contexts[i]);
 		if (retval == FEDFS_OK) {
 			printf("hosts an NCE at '%s'.\n", dn);
