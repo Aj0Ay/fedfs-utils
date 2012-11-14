@@ -74,8 +74,6 @@ nfsref_add_fsloc_defaults(struct nfs_fsloc *new)
 	new->nfl_info.nfl_readorder = 0;
 	new->nfl_info.nfl_writerank = 0;
 	new->nfl_info.nfl_writeorder = 0;
-	new->nfl_majorver = 4;
-	new->nfl_minorver = 0;
 	new->nfl_ttl = 300;
 }
 
@@ -284,8 +282,6 @@ nfsref_add_nfs_fsl_defaults(const char *rootpath, struct fedfs_nfs_fsl *new)
 	if (retval != FEDFS_OK)
 		return retval;
 
-	new->fn_majorver = 4;
-	new->fn_minorver = 0;
 	new->fn_currency = -1;
 	new->fn_gen_writable = false;
 	new->fn_gen_going = false;

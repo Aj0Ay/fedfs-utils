@@ -114,8 +114,6 @@ nsdb_init_fedfs_nfs_fsl(struct fedfs_fsl *fsl)
 {
 	struct fedfs_nfs_fsl *nfsfsl = &fsl->fl_u.fl_nfsfsl;
 
-	nfsfsl->fn_majorver = 4;
-	nfsfsl->fn_minorver = 0;
 	nfsfsl->fn_currency = -1;
 	nfsfsl->fn_gen_writable = false;
 	nfsfsl->fn_gen_going = false;
@@ -685,12 +683,6 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 	else if (strcasecmp(attr, "fedfsNfsPath") == 0)
 		retval = nsdb_parse_singlevalue_xdrpath(attr, values,
 					&nfsl->fn_nfspath);
-	else if (strcasecmp(attr, "fedfsNfsMajorVer") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
-				&nfsl->fn_majorver);
-	else if (strcasecmp(attr, "fedfsNfsMinorVer") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
-				&nfsl->fn_minorver);
 	else if (strcasecmp(attr, "fedfsNfsCurrency") == 0)
 		retval = nsdb_parse_singlevalue_int(attr, values,
 				&nfsl->fn_currency);

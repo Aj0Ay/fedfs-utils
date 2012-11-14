@@ -356,35 +356,6 @@ nfs_location_path_xml(const char *pathname, xmlNodePtr parent,
 }
 
 /**
- * Add a "version" child to a "location" element
- *
- * @param pathname NUL-terminated C string containing pathname of a junction
- * @param parent parent element to which to add "host" child
- * @param fsloc NFS location containing host information to add
- * @return a FedFsStatus code
- */
-static FedFsStatus
-nfs_location_version_xml(const char *pathname, xmlNodePtr parent,
-		struct nfs_fsloc *fsloc)
-{
-	xmlNodePtr new;
-
-	new = xmlNewTextChild(parent, NULL, NFS_XML_VERSION_TAG, NULL);
-	if (new == NULL) {
-		xlog(D_GENERAL, "%s: Failed to add version element for %s",
-			__func__, pathname);
-		return FEDFS_ERR_SVRFAULT;
-	}
-
-	junction_xml_set_int_attribute(new, NFS_XML_VERSION_MAJOR_ATTR,
-							fsloc->nfl_majorver);
-	junction_xml_set_int_attribute(new, NFS_XML_VERSION_MINOR_ATTR,
-							fsloc->nfl_minorver);
-
-	return FEDFS_OK;
-}
-
-/**
  * Add a "currency" child to a "location" element
  *
  * @param pathname NUL-terminated C string containing pathname of a junction
@@ -644,9 +615,6 @@ nfs_location_xml(const char *pathname, xmlNodePtr fileset,
 	if (retval != FEDFS_OK)
 		return retval;
 	retval = nfs_location_path_xml(pathname, new, fsloc);
-	if (retval != FEDFS_OK)
-		return retval;
-	retval = nfs_location_version_xml(pathname, new, fsloc);
 	if (retval != FEDFS_OK)
 		return retval;
 	retval = nfs_location_currency_xml(pathname, new, fsloc);
@@ -1005,39 +973,6 @@ nfs_parse_location_path(const char *pathname, xmlNodePtr location,
 }
 
 /**
- * Parse the first "version" child of "location"
- *
- * @param pathname NUL-terminated C string containing pathname of a junction
- * @param location XML parse tree containing fileset location element
- * @param fsloc a blank nfs_fsloc to fill in
- * @return a FedFsStatus code
- */
-static FedFsStatus
-nfs_parse_location_version(const char *pathname, xmlNodePtr location,
-		struct nfs_fsloc *fsloc)
-{
-	xmlNodePtr node;
-
-	node = junction_xml_find_child_by_name(location, NFS_XML_VERSION_TAG);
-	if (node == NULL)
-		goto out_err;
-
-	if (!junction_xml_get_int_attribute(node, NFS_XML_VERSION_MAJOR_ATTR,
-							&fsloc->nfl_majorver))
-		goto out_err;
-	if (!junction_xml_get_int_attribute(node, NFS_XML_VERSION_MINOR_ATTR,
-							&fsloc->nfl_minorver))
-		goto out_err;
-
-	return FEDFS_OK;
-
-out_err:
-	xlog(D_GENERAL, "%s: Missing or invalid version element in %s",
-		__func__, pathname);
-	return FEDFS_ERR_NOTJUNCT;
-}
-
-/**
  * Parse the first "currency" child of "location"
  *
  * @param pathname NUL-terminated C string containing pathname of a junction
@@ -1371,9 +1306,6 @@ nfs_parse_location_children(const char *pathname, xmlNodePtr location,
 	if (retval != FEDFS_OK)
 		return retval;
 	retval = nfs_parse_location_path(pathname, location, fsloc);
-	if (retval != FEDFS_OK)
-		return retval;
-	retval = nfs_parse_location_version(pathname, location, fsloc);
 	if (retval != FEDFS_OK)
 		return retval;
 	retval = nfs_parse_location_currency(pathname, location, fsloc);

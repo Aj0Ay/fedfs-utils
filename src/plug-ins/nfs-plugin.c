@@ -279,8 +279,6 @@ nfs_jp_convert_fedfs_fsl(struct fedfs_fsl *fsl, struct nfs_fsloc **fsloc)
 	new->nfl_info.nfl_writerank = nfs_fsl->fn_writerank;
 	new->nfl_info.nfl_readorder = nfs_fsl->fn_readorder;
 	new->nfl_info.nfl_writeorder = nfs_fsl->fn_writeorder;
-	new->nfl_majorver = nfs_fsl->fn_majorver;
-	new->nfl_minorver = nfs_fsl->fn_minorver;
 
 	*fsloc = new;
 	return JP_OK;

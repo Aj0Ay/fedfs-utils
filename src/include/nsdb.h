@@ -55,8 +55,6 @@ struct fedfs_secdata {
  */
 struct fedfs_nfs_fsl {
 	char			**fn_nfspath;
-	int			  fn_majorver;
-	int			  fn_minorver;
 	int			  fn_currency;
 	_Bool			  fn_gen_writable;
 	_Bool			  fn_gen_going;

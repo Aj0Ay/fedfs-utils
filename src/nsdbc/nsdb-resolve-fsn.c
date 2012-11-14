@@ -116,8 +116,6 @@ nsdb_resolve_fsn_display_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 		return;
 	printf(" NFS fli_rootpath:\t\t%s\n", rootpath);
 	free(rootpath);
-	printf(" NFS major version:\t\t%d\n", nfsl->fn_majorver);
-	printf(" NFS minor version:\t\t%d\n", nfsl->fn_minorver);
 	printf(" NFS fls_currency:\t\t%d\n", nfsl->fn_currency);
 	printf(" NFS FSLI4GF_WRITABLE:\t\t%s\n", _display_bool(nfsl->fn_gen_writable));
 	printf(" NFS FSLI4GF_GOING:\t\t%s\n", _display_bool(nfsl->fn_gen_going));

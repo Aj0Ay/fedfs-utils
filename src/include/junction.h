@@ -70,7 +70,6 @@ struct nfs_fsloc {
 		uint8_t		  nfl_readorder, nfl_writeorder;
 	} nfl_info;
 
-	int32_t			  nfl_majorver, nfl_minorver;
 	int32_t			  nfl_ttl;
 };
 

@@ -63,8 +63,6 @@ nfsref_lookup_display_nfs_location(struct nfs_fsloc *fsloc)
 		printf("%s: - Invalid root path -\n", fsloc->nfl_hostname);
 	printf("\n");
 
-	printf("\tNFS Version:\t%d.%d\n",
-		fsloc->nfl_majorver, fsloc->nfl_minorver);
 	printf("\tNFS port:\t%u\n", fsloc->nfl_hostport);
 	printf("\tValid for:\t%d\n", fsloc->nfl_validfor);
 	printf("\tCache TTL:\t%d\n", fsloc->nfl_ttl);
@@ -178,8 +176,6 @@ nfsref_lookup_display_fedfs_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 	} else
 		printf("\tfedfsNfsPath:\t\t\tInvalid\n");
 
-	printf("\tfedfsNfsMajorVer:\t\t%d\n", nfsl->fn_majorver);
-	printf("\tfedfsNfsMinorVer:\t\t%d\n", nfsl->fn_minorver);
 	printf("\tfedfsNfsCurrency:\t\t%d\n", nfsl->fn_currency);
 	printf("\tfedfsNfsGenFlagWritable:\t%s\n",
 		nfsref_lookup_display_ldap_boolean(nfsl->fn_gen_writable));

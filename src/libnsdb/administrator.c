@@ -566,8 +566,6 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 	 *	attributes would go here */
 
 	struct berval *xdrpathvals[2], xdr_path;
-	char *majversvals[2], majversbuf[12];
-	char *minversvals[2], minversbuf[12];
 	char *currvals[2], currbuf[12];
 	char *flagwvals[2], *flaggvals[2], *flagsvals[2],
 		*flagrvals[2], *varsubvals[2];
@@ -627,12 +625,6 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 	attr[i].mod_type = "fedfsNfsPath";
 	attr[i++].mod_bvalues = xdrpathvals;
 
-	sprintf(majversbuf, "%d", nfsfsl->fn_majorver);
-	nsdb_init_add_attribute(attrs[i++], "fedfsNfsMajorVer",
-				majversvals, majversbuf);
-	sprintf(minversbuf, "%d", nfsfsl->fn_minorver);
-	nsdb_init_add_attribute(attrs[i++], "fedfsNfsMinorVer",
-				minversvals, minversbuf);
 	sprintf(currbuf, "%d", nfsfsl->fn_currency);
 	nsdb_init_add_attribute(attrs[i++], "fedfsNfsCurrency",
 				currvals, currbuf);
