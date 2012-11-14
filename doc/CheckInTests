@@ -86,14 +86,17 @@ Per-commit acceptance tests
 This is basic stuff that's easy to run, and should be working for
 bisecting to be useful.
 
- 1.  "autogen.sh" and "configure" must run without error
- 2.  "CC=cgcc ./configure --enable-silent-rules; make -s" must complete
-     without error, and without new compiler or sparse warnings
- 3.  "make doxy" must complete with no errors or warnings
- 4.  "make distcheck" must complete without error
- 5.  "git status" must produce no output on a clean tree
- 6.  "git log -p" shows no new white space damage
- 7.  "git clean -d -f -x" does not break anything
+ 1.  "autogen.sh" must run without error
+ 2.  "CC=cgcc ./configure --enable-silent-rules --exec=/usr" must
+     complete successfully
+ 3.  "make -s -j3" must complete without error or new compiler
+     or sparse warnings
+ 4.  "make doxy" must complete with no errors or warnings
+ 5.  "make distcheck" must complete without error
+ 6.  "make distclean" must complete without error
+ 7.  "git status" must produce no output on a clean tree
+ 8.  "git clean -d -f -x" does not break anything
+ 9.  "git log -p" shows no new white space damage
 
 To preserve bisectability, the tree MUST build after each commit.
 
