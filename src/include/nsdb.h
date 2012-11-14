@@ -321,8 +321,6 @@ FedFsStatus	 nsdb_annotation_delete_s(nsdb_t host, const char *dn,
  */
 FedFsStatus	 nsdb_get_ncedn_s(nsdb_t host, const char *naming_context,
 				char **dn, unsigned int *ldap_err);
-FedFsStatus	 nsdb_get_nceprefix_s(nsdb_t host, const char *naming_context,
-				char **dn, unsigned int *ldap_err);
 FedFsStatus	 nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 				unsigned int *ldap_err);
 FedFsStatus	 nsdb_find_naming_context_s(nsdb_t host, const char *entry,
