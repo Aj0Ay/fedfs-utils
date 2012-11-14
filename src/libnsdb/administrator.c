@@ -1086,12 +1086,9 @@ nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
  *
  * @param ld an initialized LDAP server descriptor
  * @param context a NUL-terminated C string containing DN of namingContext
- * @param nceprefix a NUL-terminated C string containing value of new FedFsNcePrefix attribute
+ * @param nce a NUL-terminated C string containing value of new FedFsNceDN attribute
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
- *
- * If "nceprefix" is NULL, then assign an empty string value to the
- * FedFsNcePrefix attribute.
  *
  * LDIF equivalent:
  *
@@ -1100,15 +1097,15 @@ nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
    dn: "context"
    changeType: modify
    objectClass: fedfsNsdbContainerInfo
-   add: fedfsNcePrefix
-   fedfsNcePrefix: "nceprefix"
+   add: fedfsNceDN
+   fedfsNceDN: "nce"
    @endverbatim
  */
 static FedFsStatus
 nsdb_add_nci_attributes_s(LDAP *ld, const char *context,
-		const char *nceprefix, unsigned int *ldap_err)
+		const char *nce, unsigned int *ldap_err)
 {
-	char *ocvals[2], *prefixvals[2];
+	char *ocvals[2], *ncevals[2];
 	LDAPMod *mods[3];
 	LDAPMod mod[2];
 	int i, rc;
@@ -1120,8 +1117,7 @@ nsdb_add_nci_attributes_s(LDAP *ld, const char *context,
 	nsdb_init_mod_attribute(mods[i++],
 				"objectClass", ocvals, "fedfsNsdbContainerInfo");
 	nsdb_init_mod_attribute(mods[i++],
-				"fedfsNcePrefix", prefixvals,
-				nceprefix == NULL ? "" : nceprefix);
+				"fedfsNceDN", ncevals, nce);
 	mods[i] = NULL;
 
 	rc = ldap_modify_ext_s(ld, context, mods, NULL, NULL);
@@ -1164,7 +1160,7 @@ nsdb_update_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 	if (retval != FEDFS_OK)
 		return retval;
 
-	retval = nsdb_add_nci_attributes_s(host->fn_ldap, context, prefix,
+	retval = nsdb_add_nci_attributes_s(host->fn_ldap, context, nce,
 						ldap_err);
 	free(context);
 	free(prefix);
@@ -1187,7 +1183,7 @@ nsdb_update_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
    changeType: modify
    delete: objectClass
    objectClass: fedfsNsdbContainerInfo
-   delete: fedfsNcePrefix
+   delete: fedfsNceDN
    @endverbatim
  */
 static FedFsStatus
@@ -1206,7 +1202,7 @@ nsdb_remove_nci_attributes_s(LDAP *ld, const char *context,
 	nsdb_init_del_attribute(mods[i++],
 				"objectClass", ocvals, "fedfsNsdbContainerInfo");
 	nsdb_init_del_attribute(mods[i++],
-				"fedfsNcePrefix", NULL, NULL);
+				"fedfsNceDN", NULL, NULL);
 	mods[i] = NULL;
 
 	rc = ldap_modify_ext_s(ld, context, mods, NULL, NULL);
