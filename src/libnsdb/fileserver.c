@@ -1653,3 +1653,85 @@ out:
 		__func__, nsdb_display_fedfsstatus(retval));
 	return retval;
 }
+
+/**
+ * See if "entry" ends with one of the items of "contexts"
+ *
+ * @param entry a NUL-terminated C string containing DN of some entry
+ * @param contexts pointer to an array of NUL-terminated C strings
+ * @param context OUT: a NUL-terminated C string containing a suffix DN
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_match_root_suffix(const char *entry, char **contexts,
+		char **context, unsigned int *ldap_err)
+{
+	unsigned int i;
+
+	for (i = 0; contexts[i] != NULL; i++) {
+		_Bool result;
+
+		result = nsdb_dn_ends_with(entry, contexts[i], ldap_err);
+		if (*ldap_err != LDAP_SUCCESS)
+			return FEDFS_ERR_NSDB_LDAP_VAL;
+		if (result)
+			goto found;
+	}
+
+	xlog(D_CALL, "%s: context not found", __func__);
+	return FEDFS_ERR_NSDB_NONCE;
+
+found:
+	*context = strdup(contexts[i]);
+	if (*context == NULL) {
+		xlog(D_GENERAL, "%s: No memory", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	xlog(D_CALL, "%s: context='%s'", __func__, contexts[i]);
+	return FEDFS_OK;
+}
+
+/**
+ * Discover naming context under which an entry resides
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param entry a NUL-terminated C string containing DN of some entry
+ * @param context OUT: a NUL-terminated C string containing a suffix DN
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * "entry" must already exist on "host".  Caller must free
+ * "context" with free(3).
+ *
+ * Strategy:
+ *   1. Retrieve the list of root suffixes on "host"
+ *   2. For each root suffix, see if "entry" ends with that suffix
+ */
+FedFsStatus
+nsdb_find_naming_context_s(nsdb_t host, const char *entry, char **context,
+		unsigned int *ldap_err)
+{
+	char **contexts = NULL;
+	FedFsStatus retval;
+
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (context == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = nsdb_match_root_suffix(entry, contexts, context, ldap_err);
+
+	nsdb_free_string_array(contexts);
+	return retval;
+}

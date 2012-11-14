@@ -1143,8 +1143,8 @@ nsdb_add_nci_attributes_s(LDAP *ld, const char *context,
 FedFsStatus
 nsdb_update_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 {
-	char *context, *prefix;
 	FedFsStatus retval;
+	char *context;
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
@@ -1156,14 +1156,13 @@ nsdb_update_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 		return FEDFS_ERR_INVAL;
 	}
 
-	retval = nsdb_split_nce_dn_s(host, nce, &context, &prefix, ldap_err);
+	retval = nsdb_find_naming_context_s(host, nce, &context, ldap_err);
 	if (retval != FEDFS_OK)
 		return retval;
 
 	retval = nsdb_add_nci_attributes_s(host->fn_ldap, context, nce,
 						ldap_err);
 	free(context);
-	free(prefix);
 	return retval;
 }
 
@@ -1228,8 +1227,8 @@ nsdb_remove_nci_attributes_s(LDAP *ld, const char *context,
 FedFsStatus
 nsdb_remove_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 {
-	char *context, *prefix;
 	FedFsStatus retval;
+	char *context;
 
 	if (host->fn_ldap == NULL) {
 		xlog(L_ERROR, "%s: NSDB not open", __func__);
@@ -1241,14 +1240,13 @@ nsdb_remove_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
 		return FEDFS_ERR_INVAL;
 	}
 
-	retval = nsdb_split_nce_dn_s(host, nce, &context, &prefix, ldap_err);
+	retval = nsdb_find_naming_context_s(host, nce, &context, ldap_err);
 	if (retval != FEDFS_OK)
 		return retval;
 
 	retval = nsdb_remove_nci_attributes_s(host->fn_ldap, context, ldap_err);
 
 	free(context);
-	free(prefix);
 	return retval;
 }
 

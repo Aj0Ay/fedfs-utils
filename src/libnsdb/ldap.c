@@ -1178,3 +1178,82 @@ out:
 	free(rstr);
 	return retval;
 }
+
+/**
+ * Compare two LDAP distinguished names
+ *
+ * @param dn a structured LDAP distinguished name
+ * @param suffix a structured LDAP distinguished name
+ * @return if true, the DNs match
+ */
+static _Bool
+nsdb_ends_with(LDAPDN dn, LDAPDN suffix)
+{
+	unsigned int count_d, count_s;
+
+	for (count_d = 0; dn[count_d] != NULL; count_d++);
+	for (count_s = 0; suffix[count_s] != NULL; count_s++);
+
+	if (count_d < count_s || count_s == 0)
+		return false;
+
+	for (; count_s != 0; count_d--, count_s--)
+		if (!nsdb_compare_rdns(dn[count_d - 1], suffix[count_s - 1]))
+			return false;
+	return true;
+}
+
+/**
+ * Predicate: See if "dn" ends with "suffix"
+ *
+ * @param dn_in a NUL-terminated C string containing a distinguished name
+ * @param suffix_in a NUL-terminated C string containing a distinguished name
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return if true, "dn" ends with "suffix"
+ *
+ * On return, the return value is valid only if "ldap_err" is
+ * LDAP_SUCCESS.
+ */
+_Bool
+nsdb_dn_ends_with(const char *dn_in, const char *suffix_in,
+		unsigned int *ldap_err)
+{
+	LDAPDN dn = NULL;
+	LDAPDN suffix = NULL;
+	_Bool result;
+	int rc;
+
+	result = false;
+
+	if (dn_in == NULL || suffix_in == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		goto out;
+	}
+
+	rc = ldap_str2dn(dn_in, &dn, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		*ldap_err = rc;
+		goto out;
+	}
+
+	rc = ldap_str2dn(suffix_in, &suffix, LDAP_DN_FORMAT_LDAPV3);
+	if (rc != LDAP_SUCCESS) {
+		*ldap_err = rc;
+		goto out;
+	}
+
+	*ldap_err = LDAP_SUCCESS;
+	result = nsdb_ends_with(dn, suffix);
+
+	if (result)
+		xlog(D_CALL, "%s: dn '%s' ends with '%s'",
+			__func__, dn_in, suffix_in);
+	else
+		xlog(D_CALL, "%s: dn '%s' does not end with '%s'",
+			__func__, dn_in, suffix_in);
+
+out:
+	ldap_dnfree(suffix);
+	ldap_dnfree(dn);
+	return result;
+}

@@ -112,6 +112,8 @@ _Bool		 nsdb_compare_dn_strings(const char *dn1_in,
 FedFsStatus	 nsdb_left_remove_rdn(LDAPDN *dn, unsigned int *ldap_err);
 FedFsStatus	 nsdb_right_append_rdn(LDAPDN *dn, LDAPRDN rdn,
 				unsigned int *ldap_err);
+_Bool		 nsdb_dn_ends_with(const char *dn_in, const char *suffix_in,
+				unsigned int *ldap_err);
 
 
 /**

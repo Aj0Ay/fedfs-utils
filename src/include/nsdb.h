@@ -326,6 +326,8 @@ FedFsStatus	 nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 FedFsStatus	 nsdb_split_nce_dn_s(nsdb_t host, const char *nce,
 				char **context, char **prefix,
 				unsigned int *ldap_err);
+FedFsStatus	 nsdb_find_naming_context_s(nsdb_t host, const char *entry,
+				char **context, unsigned int *ldap_err);
 
 /**
  * Resolve an FSN (5.2.2)
