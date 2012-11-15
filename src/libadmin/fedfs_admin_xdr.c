@@ -26,7 +26,7 @@ xdr_utf8string (XDR *xdrs, utf8string *objp)
 }
 
 bool_t
-xdr_utf8str_cs (XDR *xdrs, utf8str_cs *objp)
+xdr_ascii_REQUIRED4 (XDR *xdrs, ascii_REQUIRED4 *objp)
 {
 	register int32_t *buf;
 
@@ -36,7 +36,7 @@ xdr_utf8str_cs (XDR *xdrs, utf8str_cs *objp)
 }
 
 bool_t
-xdr_utf8str_cis (XDR *xdrs, utf8str_cis *objp)
+xdr_utf8val_REQUIRED4 (XDR *xdrs, utf8val_REQUIRED4 *objp)
 {
 	register int32_t *buf;
 
@@ -62,7 +62,7 @@ xdr_FedFsNsdbName (XDR *xdrs, FedFsNsdbName *objp)
 
 	 if (!xdr_u_int (xdrs, &objp->port))
 		 return FALSE;
-	 if (!xdr_utf8str_cis (xdrs, &objp->hostname))
+	 if (!xdr_utf8val_REQUIRED4 (xdrs, &objp->hostname))
 		 return FALSE;
 	return TRUE;
 }
@@ -72,7 +72,7 @@ xdr_FedFsPathComponent (XDR *xdrs, FedFsPathComponent *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_utf8str_cs (xdrs, objp))
+	 if (!xdr_ascii_REQUIRED4 (xdrs, objp))
 		 return FALSE;
 	return TRUE;
 }
@@ -119,7 +119,7 @@ xdr_FedFsNfsFsl (XDR *xdrs, FedFsNfsFsl *objp)
 		 return FALSE;
 	 if (!xdr_u_int (xdrs, &objp->port))
 		 return FALSE;
-	 if (!xdr_utf8str_cis (xdrs, &objp->hostname))
+	 if (!xdr_utf8val_REQUIRED4 (xdrs, &objp->hostname))
 		 return FALSE;
 	 if (!xdr_FedFsPathName (xdrs, &objp->path))
 		 return FALSE;

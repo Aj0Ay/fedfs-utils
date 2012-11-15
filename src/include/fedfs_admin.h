@@ -61,19 +61,19 @@ typedef struct {
 	char *utf8string_val;
 } utf8string;
 
-typedef utf8string utf8str_cs;
+typedef utf8string ascii_REQUIRED4;
 
-typedef utf8string utf8str_cis;
+typedef utf8string utf8val_REQUIRED4;
 
 typedef char FedFsUuid[16];
 
 struct FedFsNsdbName {
 	u_int port;
-	utf8str_cis hostname;
+	utf8val_REQUIRED4 hostname;
 };
 typedef struct FedFsNsdbName FedFsNsdbName;
 
-typedef utf8str_cs FedFsPathComponent;
+typedef ascii_REQUIRED4 FedFsPathComponent;
 
 typedef struct {
 	u_int FedFsPathName_len;
@@ -94,7 +94,7 @@ typedef enum FedFsFslType FedFsFslType;
 struct FedFsNfsFsl {
 	FedFsUuid fslUuid;
 	u_int port;
-	utf8str_cis hostname;
+	utf8val_REQUIRED4 hostname;
 	FedFsPathName path;
 };
 typedef struct FedFsNfsFsl FedFsNfsFsl;
@@ -282,8 +282,8 @@ extern int fedfs_prog_1_freeresult ();
 #if defined(__STDC__) || defined(__cplusplus)
 extern  bool_t xdr_FedFsStatus (XDR *, FedFsStatus*);
 extern  bool_t xdr_utf8string (XDR *, utf8string*);
-extern  bool_t xdr_utf8str_cs (XDR *, utf8str_cs*);
-extern  bool_t xdr_utf8str_cis (XDR *, utf8str_cis*);
+extern  bool_t xdr_ascii_REQUIRED4 (XDR *, ascii_REQUIRED4*);
+extern  bool_t xdr_utf8val_REQUIRED4 (XDR *, utf8val_REQUIRED4*);
 extern  bool_t xdr_FedFsUuid (XDR *, FedFsUuid);
 extern  bool_t xdr_FedFsNsdbName (XDR *, FedFsNsdbName*);
 extern  bool_t xdr_FedFsPathComponent (XDR *, FedFsPathComponent*);
@@ -309,8 +309,8 @@ extern  bool_t xdr_FedFsGetLimitedNsdbParamsRes (XDR *, FedFsGetLimitedNsdbParam
 #else /* K&R C */
 extern bool_t xdr_FedFsStatus ();
 extern bool_t xdr_utf8string ();
-extern bool_t xdr_utf8str_cs ();
-extern bool_t xdr_utf8str_cis ();
+extern bool_t xdr_ascii_REQUIRED4 ();
+extern bool_t xdr_utf8val_REQUIRED4 ();
 extern bool_t xdr_FedFsUuid ();
 extern bool_t xdr_FedFsNsdbName ();
 extern bool_t xdr_FedFsPathComponent ();
