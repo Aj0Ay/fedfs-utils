@@ -585,14 +585,11 @@ nsdb_resolve_fsn_parse_objectclass(char *attr, struct berval **values,
  * Parse fedfsAnnotation attribute of a fedfsFsl
  *
  * @param values array of values for this attribute
- * @param fsl OUT: fedfs_fsl structure to fill in
+ * @param annotations OUT: pointer to array of NUL-terminated C strings
  * @return a FedFsStatus code
- *
- * Place the keywords in fsl->fl_anno_keys and the values in
- * fsl->fl_anno_vals.
  */
 static FedFsStatus
-nsdb_parse_annotations(struct berval **values, struct fedfs_fsl *fsl)
+nsdb_parse_annotations(struct berval **values, char ***annotations)
 {
 	char **tmp_annos;
 	int i, count;
@@ -619,7 +616,7 @@ nsdb_parse_annotations(struct berval **values, struct fedfs_fsl *fsl)
 	}
 	tmp_annos[i] = NULL;
 
-	fsl->fl_annotations = tmp_annos;
+	*annotations = tmp_annos;
 	return FEDFS_OK;
 }
 
@@ -662,7 +659,7 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 		retval = nsdb_parse_singlevalue_int(attr, values,
 				&fsl->fl_fslport);
 	else if (strcasecmp(attr, "fedfsAnnotation") == 0)
-		retval = nsdb_parse_annotations(values, fsl);
+		retval = nsdb_parse_annotations(values, &fsl->fl_annotations);
 	else if (strcasecmp(attr, "fedfsDescr") == 0)
 		retval = nsdb_parse_multivalue_str(attr, values,
 				&fsl->fl_description);
