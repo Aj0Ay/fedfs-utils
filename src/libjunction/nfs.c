@@ -38,7 +38,6 @@
  *         <component>bar</component>
  *         <component>baz</component>
  *       </path>
- *       <version major="4" minor="0" />
  *       <currency>-1</currency>
  *       <genflags writable="false" going="false" split="true" />
  *       <transflags rdma="true" />
@@ -117,21 +116,6 @@
  * Tag name of component child element of a path element
  */
 #define NFS_XML_COMPONENT_TAG		(const xmlChar *)"component"
-
-/**
- * Tag name of version child element of an NFS location element
- */
-#define NFS_XML_VERSION_TAG		(const xmlChar *)"version"
-
-/**
- * Name of major version attribute of a version element
- */
-#define NFS_XML_VERSION_MAJOR_ATTR	(const xmlChar *)"major"
-
-/**
- * Name of minor version attribute of a version element
- */
-#define NFS_XML_VERSION_MINOR_ATTR	(const xmlChar *)"minor"
 
 /**
  * Tag name of currency child element of an NFS location element
