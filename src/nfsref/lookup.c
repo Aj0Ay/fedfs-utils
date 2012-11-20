@@ -216,7 +216,6 @@ nfsref_lookup_display_fedfs_fsl(struct fedfs_fsl *fsl)
 	printf("\tfedfsFsnUuid:\t\t\t%s\n", fsl->fl_fsnuuid);
 	printf("\tfedfsFslHost:\t\t\t%s\n", fsl->fl_fslhost);
 	printf("\tfedfsFslPort:\t\t\t%u\n", fsl->fl_fslport);
-	printf("\tfedfsFslTTL:\t\t\t%d\n", fsl->fl_fslttl);
 
 	if (fsl->fl_annotations != NULL) {
 		for (i = 0; fsl->fl_annotations[i] != NULL; i++)

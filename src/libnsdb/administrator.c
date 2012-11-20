@@ -559,7 +559,6 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 	struct fedfs_nfs_fsl *nfsfsl = &fsl->fl_u.fl_nfsfsl;
 	char *ocvals[3], *fsluuidvals[2], *fsnuuidvals[2];
 	char *servernamevals[2], *serverportvals[2], serverportbuf[12];
-	char *ttyvals[2], ttybuf[12];
 
 	/* XXX: variables for encoding annotations and description
 	 *	attributes would go here */
@@ -605,8 +604,6 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 		nsdb_init_add_attribute(attrs[i++], "fedfsFslPort",
 					serverportvals, serverportbuf);
 	}
-	sprintf(ttybuf, "%d", fsl->fl_fslttl);
-	nsdb_init_add_attribute(attrs[i++], "fedfsFslTTL", ttyvals, ttybuf);
 
 	retval = nsdb_path_array_to_xdr(nfsfsl->fn_nfspath, &xdr_path);
 	if (retval != FEDFS_OK)

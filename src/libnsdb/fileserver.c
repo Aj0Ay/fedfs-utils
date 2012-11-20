@@ -161,7 +161,6 @@ nsdb_new_fedfs_fsl(FedFsFslType type)
 	}
 
 	new->fl_type = type;
-	new->fl_fslttl = 300;
 	return new;
 }
 
@@ -662,9 +661,6 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 	else if (strcasecmp(attr, "fedfsFslPort") == 0)
 		retval = nsdb_parse_singlevalue_int(attr, values,
 				&fsl->fl_fslport);
-	else if (strcasecmp(attr, "fedfsFslTTL") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
-				&fsl->fl_fslttl);
 	else if (strcasecmp(attr, "fedfsAnnotation") == 0)
 		retval = nsdb_parse_annotations(values, fsl);
 	else if (strcasecmp(attr, "fedfsDescr") == 0)

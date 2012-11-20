@@ -260,7 +260,6 @@ nfs_jp_convert_fedfs_fsl(struct fedfs_fsl *fsl, struct nfs_fsloc **fsloc)
 	}
 
 	new->nfl_hostport = fsl->fl_fslport;
-	new->nfl_ttl = fsl->fl_fslttl;
 
 	new->nfl_flags.nfl_varsub = nfs_fsl->fn_varsub;
 	new->nfl_currency = nfs_fsl->fn_currency;

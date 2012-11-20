@@ -155,7 +155,6 @@ nsdb_resolve_fsn_display_fsl(struct fedfs_fsl *fsl)
 		printf(" FSL host:\t\t%s\n", fsl->fl_fslhost);
 	else
 		printf(" FSL host:\t\t%s:%u\n", fsl->fl_fslhost, fsl->fl_fslport);
-	printf(" TTL:\t\t\t%d\n\n", fsl->fl_fslttl);
 
 	if (fsl->fl_annotations != NULL) {
 		for (i = 0; fsl->fl_annotations[i] != NULL; i++)
