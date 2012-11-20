@@ -65,7 +65,6 @@ nfsref_lookup_display_nfs_location(struct nfs_fsloc *fsloc)
 
 	printf("\tNFS port:\t%u\n", fsloc->nfl_hostport);
 	printf("\tValid for:\t%d\n", fsloc->nfl_validfor);
-	printf("\tCache TTL:\t%d\n", fsloc->nfl_ttl);
 	printf("\tCurrency:\t%d\n", fsloc->nfl_currency);
 	printf("\tFlags:\t\tvarsub(%s)\n",
 		nfsref_lookup_display_boolean(fsloc->nfl_flags.nfl_varsub));

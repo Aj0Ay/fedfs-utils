@@ -233,11 +233,6 @@
 #define NFS_XML_VALIDFOR_TAG		(const xmlChar *)"validfor"
 
 /**
- * Tag name of a ttl child element of an NFS location element
- */
-#define NFS_XML_TTL_TAG			(const xmlChar *)"ttl"
-
-/**
  * XPath path to NFS location elements in a junction document
  */
 #define NFS_XML_LOCATION_XPATH		(const xmlChar *)	\
@@ -556,24 +551,6 @@ nfs_location_validfor_xml(__attribute__((unused)) const char *pathname,
 }
 
 /**
- * Add a "validfor" child to a "location" element
- *
- * @param pathname NUL-terminated C string containing pathname of a junction
- * @param parent parent element to which to add "host" child
- * @param fsloc NFS location containing host information to add
- * @return a FedFsStatus code
- */
-static FedFsStatus
-nfs_location_ttl_xml(__attribute__((unused)) const char *pathname,
-		xmlNodePtr parent, struct nfs_fsloc *fsloc)
-{
-	if (junction_xml_set_int_content(parent, NFS_XML_TTL_TAG,
-						fsloc->nfl_ttl) == NULL)
-		return FEDFS_ERR_SVRFAULT;
-	return FEDFS_OK;
-}
-
-/**
  * Construct and add one "location" element to a "fileset"
  *
  * @param pathname NUL-terminated C string containing pathname of a junction
@@ -622,10 +599,7 @@ nfs_location_xml(const char *pathname, xmlNodePtr fileset,
 	retval = nfs_location_flags_xml(pathname, new, fsloc);
 	if (retval != FEDFS_OK)
 		return retval;
-	retval = nfs_location_validfor_xml(pathname, new, fsloc);
-	if (retval != FEDFS_OK)
-		return retval;
-	return nfs_location_ttl_xml(pathname, new, fsloc);
+	return nfs_location_validfor_xml(pathname, new, fsloc);
 }
 
 /**
@@ -1241,35 +1215,6 @@ out_err:
 }
 
 /**
- * Parse the first "ttl" child of "location"
- *
- * @param pathname NUL-terminated C string containing pathname of a junction
- * @param location XML parse tree containing fileset location element
- * @param fsloc a blank nfs_fsloc to fill in
- * @return a FedFsStatus code
- */
-static FedFsStatus
-nfs_parse_location_ttl(const char *pathname, xmlNodePtr location,
-		struct nfs_fsloc *fsloc)
-{
-	xmlNodePtr node;
-
-	node = junction_xml_find_child_by_name(location, NFS_XML_TTL_TAG);
-	if (node == NULL)
-		goto out_err;
-
-	if (!junction_xml_get_int_content(node, &fsloc->nfl_ttl))
-		goto out_err;
-
-	return FEDFS_OK;
-
-out_err:
-	xlog(D_GENERAL, "%s: Missing or invalid ttl element in %s",
-		__func__, pathname);
-	return FEDFS_ERR_NOTJUNCT;
-}
-
-/**
  * Parse children of NFS location element in an NFS junction
  *
  * @param pathname NUL-terminated C string containing pathname of a junction
@@ -1313,10 +1258,7 @@ nfs_parse_location_children(const char *pathname, xmlNodePtr location,
 	retval = nfs_parse_location_flags(pathname, location, fsloc);
 	if (retval != FEDFS_OK)
 		return retval;
-	retval = nfs_parse_location_validfor(pathname, location, fsloc);
-	if (retval != FEDFS_OK)
-		return retval;
-	return nfs_parse_location_ttl(pathname, location, fsloc);
+	return nfs_parse_location_validfor(pathname, location, fsloc);
 }
 
 /**

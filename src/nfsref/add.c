@@ -74,7 +74,6 @@ nfsref_add_fsloc_defaults(struct nfs_fsloc *new)
 	new->nfl_info.nfl_readorder = 0;
 	new->nfl_info.nfl_writerank = 0;
 	new->nfl_info.nfl_writeorder = 0;
-	new->nfl_ttl = 300;
 }
 
 /**
