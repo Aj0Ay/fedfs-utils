@@ -44,6 +44,7 @@
 #include "junction.h"
 
 struct nfs_fsloc_set {
+	int			  ns_ttl;
 	struct nfs_fsloc	 *ns_current;
 	struct nfs_fsloc	 *ns_list;
 };
@@ -225,6 +226,7 @@ nfs_jp_get_basic(const char *junct_path, nfs_fsloc_set_t *locset)
 
 	nfs_jp_debug("%s: Returning location set %p\n", __func__, new);
 	nfs_jp_do_rewind_locations(new);
+	new->ns_ttl = FEDFS_NFS_BASIC_TTL;
 	*locset = new;
 	return JP_OK;
 }
@@ -342,16 +344,44 @@ nfs_jp_resolve_fsn(const char *fsn_uuid, nsdb_t host,
 {
 	enum jp_status status = JP_NSDBREMOTE;
 	struct fedfs_fsl *fsls;
+	struct fedfs_fsn *fsn;
 	unsigned int ldap_err;
 	FedFsStatus retval;
+	int fsn_ttl;
 
 	if (nsdb_open_nsdb(host, NULL, NULL, &ldap_err) != FEDFS_OK)
 		return JP_NSDBLOCAL;
+
+	retval = nsdb_get_fsn_s(host, NULL, fsn_uuid, &fsn, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		fsn_ttl = fsn->fn_fsnttl;
+		nsdb_free_fedfs_fsn(fsn);
+		break;
+	case FEDFS_ERR_NSDB_NOFSL:
+		nfs_jp_debug("%s: No FSL entries for FSN %s\n",
+			__func__, fsn_uuid);
+		goto out_close;
+	case FEDFS_ERR_NSDB_NOFSN:
+		nfs_jp_debug("%s: No FSN %s found\n",
+			__func__, fsn_uuid);
+		goto out_close;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		nfs_jp_debug("%s: NSDB operation failed with %s\n",
+			__func__, ldap_err2string(ldap_err));
+		goto out_close;
+	default:
+		nfs_jp_debug("%s: Failed to resolve FSN %s: %s\n",
+			__func__, fsn_uuid, nsdb_display_fedfsstatus(retval));
+		goto out_close;
+	}
 
 	retval = nsdb_resolve_fsn_s(host, NULL, fsn_uuid, &fsls, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		status = nfs_jp_convert_fedfs_fsls(fsls, new);
+		if (status == JP_OK)
+			new->ns_ttl = fsn_ttl;
 		nfs_jp_debug("%s: Returning %p, ns_list=%p\n",
 			__func__, new, new->ns_list);
 		nsdb_free_fedfs_fsls(fsls);
@@ -373,6 +403,7 @@ nfs_jp_resolve_fsn(const char *fsn_uuid, nsdb_t host,
 			__func__, fsn_uuid, nsdb_display_fedfsstatus(retval));
 	}
 
+out_close:
 	nsdb_close_nsdb(host);
 	return status;
 }
@@ -544,7 +575,7 @@ nfs_jp_get_next_location(nfs_fsloc_set_t locset,
 		__func__, hostname_tmp, export_path_tmp);
 	*hostname = hostname_tmp;
 	*export_path = export_path_tmp;
-	*ttl = fsloc->nfl_ttl;
+	*ttl = locset->ns_ttl;
 	locset->ns_current = locset->ns_current->nfl_next;
 	return JP_OK;
 }

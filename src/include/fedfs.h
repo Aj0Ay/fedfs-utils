@@ -57,6 +57,11 @@
 #define FEDFS_DELAY_MAX_SECS	(FEDFS_DELAY_MIN_SECS << 4)
 
 /**
+ * Number of seconds an NFS basic junction should be cached
+ */
+#define FEDFS_NFS_BASIC_TTL	(300)
+
+/**
  * Compute seconds to wait after receiving FEDFS_ERR_DELAY
  */
 static inline unsigned int fedfs_delay(unsigned int seconds)
