@@ -49,6 +49,34 @@
 static struct timeval nsdb_ldap_timeout = { 5, 0 };
 
 /**
+ * Free a single struct fedfs_fsn
+ *
+ * @param fsn pointer to struct fedfs_fsn to free
+ */
+void
+nsdb_free_fedfs_fsn(struct fedfs_fsn *fsn)
+{
+	nsdb_free_string_array(fsn->fn_description);
+	nsdb_free_string_array(fsn->fn_annotations);
+	free(fsn->fn_dn);
+	free(fsn);
+}
+
+/**
+ * Allocate a new struct fedfs_fsn
+ *
+ * @return a malloc'd struct fedfs_fsn, or NULL
+ *
+ * Caller must free the returned memory with free(3)
+ */
+__attribute_malloc__
+static struct fedfs_fsn *
+nsdb_alloc_fedfs_fsn(void)
+{
+	return calloc(1, sizeof(struct fedfs_fsn));
+}
+
+/**
  * Free a single struct fedfs_fsl
  *
  * @param fsl pointer to struct fedfs_fsl to free
@@ -961,6 +989,320 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		retval = nsdb_resolve_fsn_find_entry_s(host->fn_ldap,
 							nce_list[j], fsn_uuid,
 							fsls, ldap_err);
+		if (retval == FEDFS_OK)
+			break;
+	}
+
+out:
+	nsdb_free_string_array(nce_list);
+	nsdb_free_string_array(contexts);
+	return retval;
+}
+
+/**
+ * Parse objectClass attribute of a fedfsFsn
+ *
+ * @param attr a NUL-terminated C string containing the name of an attribute
+ * @param values array of values for this attribute
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_get_fsn_parse_objectclass(char *attr, struct berval **values)
+{
+	char **objectclass;
+	FedFsStatus retval;
+	int i;
+
+	retval = nsdb_parse_multivalue_str(attr, values, &objectclass);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = FEDFS_ERR_NSDB_RESPONSE;
+	for (i = 0; objectclass[i] != NULL; i++)
+		if (strcasecmp(objectclass[i], "fedfsFsn") == 0)
+			retval = FEDFS_OK;
+
+	nsdb_free_string_array(objectclass);
+	return retval;
+}
+
+
+/**
+ * Parse the values of each attribute in a fedfsFsn object
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param entry an LDAP search result message
+ * @param attr a NUL-terminated C string containing the name of an attribute
+ * @param fsn OUT: fedfs_fsn structure to fill in
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_get_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
+		struct fedfs_fsn *fsn)
+{
+	struct berval **values;
+	FedFsStatus retval;
+
+	values = ldap_get_values_len(ld, entry, attr);
+	if (values == NULL) {
+		xlog(D_GENERAL, "%s: No values found for attribute %s",
+			__func__, attr);
+		return FEDFS_OK;
+	}
+
+	if (strcasecmp(attr, "objectClass") == 0)
+		retval = nsdb_get_fsn_parse_objectclass(attr, values);
+	else if (strcasecmp(attr, "fedfsFsnUuid") == 0)
+		retval = nsdb_parse_singlevalue_str(attr, values,
+				fsn->fn_fsnuuid, sizeof(fsn->fn_fsnuuid));
+	else if (strcasecmp(attr, "fedfsFsnTTL") == 0)
+		retval = nsdb_parse_singlevalue_int(attr, values,
+				&fsn->fn_fsnttl);
+	else if (strcasecmp(attr, "fedfsAnnotation") == 0)
+		retval = nsdb_parse_annotations(values, &fsn->fn_annotations);
+	else if (strcasecmp(attr, "fedfsDescr") == 0)
+		retval = nsdb_parse_multivalue_str(attr, values,
+				&fsn->fn_description);
+	else {
+		/* Ignore anything we don't recognize */
+		xlog(D_GENERAL, "%s: Unrecognized attribute: %s",
+			__func__, attr);
+		retval = FEDFS_OK;
+	}
+
+	ldap_value_free_len(values);
+	return retval;
+}
+
+/**
+ * Construct a struct fedfs_fsn based on the returned "entry"
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param entry an LDAP_RES_SEARCH_ENTRY message
+ * @param fsn OUT: a fedfs_fsn structures
+ * @return a FedFsStatus code
+ *
+ * Caller must free the returned "fsn" using nsdb_free_fedfs_fsn().
+ */
+static FedFsStatus
+nsdb_get_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
+		struct fedfs_fsn **fsn)
+{
+	BerElement *field = NULL;
+	struct fedfs_fsn *new;
+	FedFsStatus retval;
+	char *attr, *dn;
+
+	xlog(D_CALL, "%s: parsing entry", __func__);
+
+	new = nsdb_alloc_fedfs_fsn();
+	if (new == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate new fsn", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	dn = ldap_get_dn(ld, entry);
+	if (dn != NULL ) {
+		new->fn_dn = strdup(dn);
+		ldap_memfree(dn);
+	}
+
+	for (attr = ldap_first_attribute(ld, entry, &field), retval = FEDFS_OK;
+	     attr != NULL && retval == FEDFS_OK;
+	     attr = ldap_next_attribute(ld, entry, field)) {
+		retval = nsdb_get_fsn_parse_attribute(ld, entry, attr, new);
+		ldap_memfree(attr);
+	}
+
+	if (field != NULL)
+		ber_free(field, 0);
+
+	if (retval != FEDFS_OK) {
+		xlog(D_CALL, "%s: parsing failed: %s",
+			__func__, nsdb_display_fedfsstatus(retval));
+		free(new->fn_dn);
+		free(new);
+		return retval;
+	}
+
+	*fsn = new;
+	xlog(D_CALL, "%s: parsing complete", __func__);
+	return FEDFS_OK;
+}
+
+/**
+ * Retrieve an FSN entry associated with an FSN UUID
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param nce a NUL-terminated C string containing DN of NSDB container entry
+ * @param fsn_uuid a NUL-terminated C string containing FSN UUID
+ * @param fsn OUT: a fedfs_fsn structures
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free the returned "fsn" using nsdb_free_fedfs_fsn().
+ *
+ * ldapsearch equivalent:
+ *
+ * @verbatim
+
+   ldapsearch -b "nce" -s one
+		(&(objectClass=fedfsFsn)(fedfsFsnUuid="fsn_uuid"))
+   @endverbatim
+ */
+static FedFsStatus
+nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
+		struct fedfs_fsn **fsn, unsigned int *ldap_err)
+{
+	LDAPMessage *response, *message;
+	struct fedfs_fsn *tmp;
+	FedFsStatus retval;
+	char filter[128];
+	int len, rc;
+
+	/* watch out for buffer overflow */
+	len = snprintf(filter, sizeof(filter),
+			"(&(objectClass=fedfsFsn)(fedfsFsnUuid=%s))", fsn_uuid);
+	if (len < 0 || (size_t)len > sizeof(filter)) {
+		xlog(D_GENERAL, "%s: filter is too long", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_ONE,
+				filter, NULL, 0, NULL, NULL,
+				NULL, LDAP_NO_LIMIT, &response);
+	switch (rc) {
+	case LDAP_SUCCESS:
+		break;
+	case LDAP_NO_SUCH_OBJECT:
+		xlog(D_GENERAL, "%s: No FSN record for FSN UUID %s exists",
+			__func__, fsn_uuid);
+		return FEDFS_ERR_NSDB_NOFSN;
+	default:
+		xlog(D_GENERAL, "%s: LDAP search failed: %s",
+			__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+	if (response == NULL) {
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		return FEDFS_ERR_NSDB_FAULT;
+	}
+
+	rc = ldap_count_messages(ld, response);
+	switch (rc) {
+	case -1:
+		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
+		ldap_msgfree(response);
+		return FEDFS_ERR_NSDB_FAULT;
+	case 1:
+		xlog(D_GENERAL, "%s: No FSN record for FSN UUID %s exists",
+			__func__, fsn_uuid);
+		ldap_msgfree(response);
+		return FEDFS_ERR_NSDB_NOFSN;
+	default:
+		xlog(D_CALL, "%s: Received %d messages", __func__, rc);
+		break;
+	}
+
+	tmp = NULL;
+	retval = FEDFS_OK;
+	for (message = ldap_first_message(ld, response);
+	     message != NULL && retval == FEDFS_OK;
+	     message = ldap_next_message(ld, message)) {
+		switch (ldap_msgtype(message)) {
+		case LDAP_RES_SEARCH_ENTRY:
+			retval = nsdb_get_fsn_parse_entry(ld, message, &tmp);
+			break;
+		case LDAP_RES_SEARCH_REFERENCE:
+			retval = nsdb_parse_reference(ld, message, ldap_err);
+			break;
+		case LDAP_RES_SEARCH_RESULT:
+			retval = nsdb_parse_result(ld, message, ldap_err);
+			break;
+		default:
+			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
+				__func__);
+			retval = FEDFS_ERR_NSDB_FAULT;
+		}
+	}
+	ldap_msgfree(response);
+
+	if (retval == FEDFS_OK) {
+		xlog(D_CALL, "%s: returning fsn", __func__);
+		*fsn = tmp;
+	} else
+		nsdb_free_fedfs_fsn(tmp);
+	return retval;
+}
+
+/**
+ * Retrieve an FSN record under "nce"
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param nce a NUL-terminated C string containing DN of NSDB container entry
+ * @param fsn_uuid a NUL-terminated C string containing FSN UUID
+ * @param fsn OUT: a fedfs_fsn structures
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * If caller did not provide an NCE, discover one by querying the NSDB.
+ *
+ * Caller must free the returned "fsn" using nsdb_free_fedfs_fsn().
+ */
+FedFsStatus
+nsdb_get_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
+		struct fedfs_fsn **fsn, unsigned int *ldap_err)
+{
+	char **contexts, **nce_list;
+	FedFsStatus retval;
+	int i, j;
+
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (fsn == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (nce != NULL)
+		return nsdb_get_fsn_find_entry_s(host->fn_ldap, nce,
+						fsn_uuid, fsn, ldap_err);
+
+	/*
+	 * Caller did not provide an nce.  Generate a list
+	 * of the server's NSDB container entries.
+	 */
+	retval = nsdb_get_naming_contexts_s(host, &contexts, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	for (i = 0; contexts[i] != NULL; i++);
+	nce_list = calloc(i + 1, sizeof(char *));
+	if (nce_list == NULL) {
+		retval = FEDFS_ERR_INVAL;
+		goto out;
+	}
+
+	/*
+	 * Query only naming contexts that have an NCE prefix
+	 */
+	for (i = 0, j = 0; contexts[i] != NULL; i++) {
+		retval = nsdb_get_ncedn_s(host, contexts[i],
+						&nce_list[j], ldap_err);
+		if (retval == FEDFS_OK)
+			j++;
+	}
+	if (j == 0)
+		goto out;
+
+	for (j = 0; nce_list[j] != NULL; j++) {
+		retval = nsdb_get_fsn_find_entry_s(host->fn_ldap,
+							nce_list[j], fsn_uuid,
+							fsn, ldap_err);
 		if (retval == FEDFS_OK)
 			break;
 	}

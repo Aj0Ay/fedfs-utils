@@ -48,6 +48,31 @@ struct fedfs_secdata {
 };
 
 /**
+ * Object that contains FedFS Fileset Name data
+ *
+ * Derived from the fedfsFsn object class, defined in
+ * the NSDB protocol draft, chapter 4, section 2.2.2
+ */
+struct fedfs_fsn {
+	char			 *fn_dn;
+
+	char			  fn_fsnuuid[FEDFS_UUID_STRLEN];
+	int			  fn_fsnttl;
+	char			**fn_annotations;
+	char			**fn_description;
+};
+
+/**
+ ** API to manage struct fedfs_fsn objects
+ **/
+
+/**
+ * Release a struct fedfs_fsn
+ */
+void		 nsdb_free_fedfs_fsn(struct fedfs_fsn *fsn);
+
+
+/**
  * Object that contains FedFS NFS fileset Location data
  *
  * Derived from the fedfsNfsFsl object class, defined in
@@ -326,6 +351,9 @@ FedFsStatus	 nsdb_find_naming_context_s(nsdb_t host, const char *entry,
  */
 FedFsStatus	 nsdb_resolve_fsn_s(nsdb_t host, const char *nce,
 				const char *fsn_uuid, struct fedfs_fsl **fsls,
+				unsigned int *ldap_err);
+FedFsStatus	 nsdb_get_fsn_s(nsdb_t host, const char *nce,
+				const char *fsn_uuid, struct fedfs_fsn **fsn,
 				unsigned int *ldap_err);
 
 /**
