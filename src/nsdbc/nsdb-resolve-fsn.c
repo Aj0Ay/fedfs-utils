@@ -147,6 +147,7 @@ nsdb_resolve_fsn_display_fsl(struct fedfs_fsl *fsl)
 {
 	int i;
 
+	printf("------------------------------------------------------\n");
 	printf("dn: %s\n\n", fsl->fl_dn);
 
 	printf(" FSN UUID:\t\t%s\n", fsl->fl_fsnuuid);
@@ -197,11 +198,12 @@ main(int argc, char **argv)
 	char *progname, *nsdbname;
 	unsigned short nsdbport;
 	struct fedfs_fsl *fsls;
+	struct fedfs_fsn *fsn;
 	unsigned int ldap_err;
 	char *nce, *fsn_uuid;
 	FedFsStatus retval;
+	int fsn_ttl, arg;
 	nsdb_t host;
-	int arg;
 
 	(void)umask(S_IRWXO);
 
@@ -309,10 +311,38 @@ main(int argc, char **argv)
 		goto out_free;
 	}
 
+	retval = nsdb_get_fsn_s(host, nce, fsn_uuid, &fsn, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		fsn_ttl = fsn->fn_fsnttl;
+		nsdb_free_fedfs_fsn(fsn);
+		break;
+	case FEDFS_ERR_NSDB_NONCE:
+		if (nce == NULL)
+			fprintf(stderr, "NSDB %s:%u has no NCE\n",
+				nsdbname, nsdbport);
+		else
+			fprintf(stderr, "NCE %s does not exist\n", nce);
+		goto out_close;
+	case FEDFS_ERR_NSDB_NOFSN:
+		fprintf(stderr, "Failed to find FSN %s\n", fsn_uuid);
+		goto out_close;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		fprintf(stderr, "NSDB LDAP error: %s\n",
+			ldap_err2string(ldap_err));
+		goto out_close;
+	default:
+		fprintf(stderr, "FedFsStatus code "
+			"while retrieving FSN UUID %s: %s\n",
+			fsn_uuid, nsdb_display_fedfsstatus(retval));
+		goto out_close;
+	}
+
 	retval = nsdb_resolve_fsn_s(host, nce, fsn_uuid, &fsls, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
-		printf("For FSN UUID %s:\n\n", fsn_uuid);
+		printf("For FSN UUID: %s\n", fsn_uuid);
+		printf("    FSN TTL: %d\n\n", fsn_ttl);
 		nsdb_resolve_fsn_display_fsls(fsls);
 		nsdb_free_fedfs_fsls(fsls);
 		break;
@@ -324,8 +354,9 @@ main(int argc, char **argv)
 			fprintf(stderr, "NCE %s does not exist\n", nce);
 		break;
 	case FEDFS_ERR_NSDB_NOFSL:
-		fprintf(stderr, "Failed to find FSL entries for FSN %s\n",
-			fsn_uuid);
+		printf("For FSN UUID: %s\n", fsn_uuid);
+		printf("    FSN TTL: %d\n", fsn_ttl);
+		printf("    No FSL entries found\n");
 		break;
 	case FEDFS_ERR_NSDB_NOFSN:
 		fprintf(stderr, "Failed to find FSN %s\n", fsn_uuid);
@@ -340,6 +371,7 @@ main(int argc, char **argv)
 			fsn_uuid, nsdb_display_fedfsstatus(retval));
 	}
 
+out_close:
 	nsdb_close_nsdb(host);
 
 out_free:

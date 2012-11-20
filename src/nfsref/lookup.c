@@ -267,8 +267,10 @@ nfsref_lookup_resolve_fsn(const char *fsn_uuid, nsdb_t host)
 {
 	int status = EXIT_FAILURE;
 	struct fedfs_fsl *fsls;
+	struct fedfs_fsn *fsn;
 	unsigned int ldap_err;
 	FedFsStatus retval;
+	int fsn_ttl;
 
 	xlog(D_GENERAL, "%s: resolving FSN UUID %s with NSDB %s:%u",
 		__func__, fsn_uuid, nsdb_hostname(host), nsdb_port(host));
@@ -276,11 +278,36 @@ nfsref_lookup_resolve_fsn(const char *fsn_uuid, nsdb_t host)
 	if (nsdb_open_nsdb(host, NULL, NULL, &ldap_err) != FEDFS_OK)
 		return status;
 
+	retval = nsdb_get_fsn_s(host, NULL, fsn_uuid, &fsn, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		fsn_ttl = fsn->fn_fsnttl;
+		nsdb_free_fedfs_fsn(fsn);
+		break;
+	case FEDFS_ERR_NSDB_NOFSN:
+		xlog(L_ERROR, "%s: No FSN %s found",
+			__func__, fsn_uuid);
+		goto out_close;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		xlog(L_ERROR, "%s: NSDB operation failed with %s",
+			__func__, ldap_err2string(ldap_err));
+		goto out_close;
+	default:
+		xlog(L_ERROR, "%s: Failed to retrieve FSN %s: %s",
+			__func__, fsn_uuid, nsdb_display_fedfsstatus(status));
+		goto out_close;
+	}
+
 	retval = nsdb_resolve_fsn_s(host, NULL, fsn_uuid, &fsls, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
+		printf("fedfsFsnUuid:\t%s\n", fsn_uuid);
+		printf("NSDB:\t\t%s:%u\n", nsdb_hostname(host), nsdb_port(host));
+		printf("fedfsFsnTTL:\t%d\n", fsn_ttl);
+
 		nfsref_lookup_display_fedfs_fsls(fsls);
 		nsdb_free_fedfs_fsls(fsls);
+
 		status = EXIT_SUCCESS;
 		break;
 	case FEDFS_ERR_NSDB_NOFSL:
@@ -300,6 +327,7 @@ nfsref_lookup_resolve_fsn(const char *fsn_uuid, nsdb_t host)
 			__func__, fsn_uuid, nsdb_display_fedfsstatus(status));
 	}
 
+out_close:
 	nsdb_close_nsdb(host);
 	return status;
 }
