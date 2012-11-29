@@ -1071,7 +1071,9 @@ nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
 
    dn: "context"
    changeType: modify
+   add: objectClass
    objectClass: fedfsNsdbContainerInfo
+   -
    add: fedfsNceDN
    fedfsNceDN: "nce"
    @endverbatim
@@ -1157,6 +1159,7 @@ nsdb_update_nci_s(nsdb_t host, const char *nce, unsigned int *ldap_err)
    changeType: modify
    delete: objectClass
    objectClass: fedfsNsdbContainerInfo
+   -
    delete: fedfsNceDN
    @endverbatim
  */
