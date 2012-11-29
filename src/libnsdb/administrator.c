@@ -47,6 +47,82 @@
 #include "xlog.h"
 
 /**
+ * Invoke ldap_search_ext_s(3), requesting no attributes
+ *
+ * @param func NUL-terminated C string containing name of calling function
+ * @param ld an initialized LDAP server descriptor
+ * @param base NUL-terminated C string containing search base
+ * @param scope LDAP scope
+ * @param filter NUL-terminated C string containing search filter
+ * @param response OUT: list of LDAP responses
+ * @return an LDAP result code
+ *
+ */
+static int
+__nsdb_search_nsdb_none_s(const char *func, LDAP *ld, const char *base,
+		int scope, char *filter, LDAPMessage **response)
+{
+	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
+	char *uri;
+
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s %s '%s'",
+			func, uri, base, nsdb_printable_scope(scope), filter);
+		ldap_memfree(uri);
+	} else {
+		xlog(D_CALL, "%s:\n  ldapsearch -b \"%s\" -s %s '%s'",
+			func, base, nsdb_printable_scope(scope), filter);
+	}
+
+	return ldap_search_ext_s(ld, (char *)base, scope, filter, attrs,
+					0, NULL, NULL, NULL,
+					LDAP_NO_LIMIT, response);
+}
+
+/**
+ * Hide the __func__ argument at call sites
+ */
+#define nsdb_search_nsdb_none_s(ld, base, scope, filter, response) \
+	__nsdb_search_nsdb_none_s(__func__, ld, base, scope, filter, response)
+
+/**
+ * Invoke ldap_search_ext_s(3), requesting no attributes, no filter
+ *
+ * @param func NUL-terminated C string containing name of calling function
+ * @param ld an initialized LDAP server descriptor
+ * @param base NUL-terminated C string containing search base
+ * @param response OUT: list of LDAP responses
+ * @return an LDAP result code
+ *
+ */
+static int
+__nsdb_search_nsdb_nofilter_s(const char *func, LDAP *ld, const char *base,
+		LDAPMessage **response)
+{
+	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
+	char *uri;
+
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s one",
+			func, uri, base);
+		ldap_memfree(uri);
+	} else {
+		xlog(D_CALL, "%s:\n  ldapsearch -b \"%s\" -s one",
+			func, base);
+	}
+
+	return ldap_search_ext_s(ld, (char *)base, LDAP_SCOPE_ONELEVEL, NULL,
+					attrs, 0, NULL, NULL, NULL,
+					LDAP_NO_LIMIT, response);
+}
+
+/**
+ * Hide the __func__ argument at call sites
+ */
+#define nsdb_search_nsdb_nofilter_s(ld, base, response) \
+	__nsdb_search_nsdb_nofilter_s(__func__, ld, base, response)
+
+/**
  * Construct the DN of an FSN entry
  *
  * @param nce NUL-terminated C string containing DN of NSDB container entry
@@ -187,7 +263,6 @@ static FedFsStatus
 nsdb_search_fsn_dn_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		char **dn, unsigned int *ldap_err)
 {
-	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
 	LDAPMessage *response;
 	FedFsStatus retval;
 	char filter[128];
@@ -201,9 +276,8 @@ nsdb_search_fsn_dn_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		return FEDFS_ERR_INVAL;
 	}
 
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_ONELEVEL,
-				filter, attrs, 0, NULL, NULL,
-				NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_none_s(ld, nce, LDAP_SCOPE_ONELEVEL,
+					filter, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -310,7 +384,6 @@ nsdb_parse_delete_fsn_fsls_entry_s(LDAP *ld, LDAPMessage *entry,
 static FedFsStatus
 nsdb_delete_fsn_fsls_s(LDAP *ld, const char *dn, unsigned int *ldap_err)
 {
-	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
 	LDAPMessage *message, *response;
 	FedFsStatus retval;
 	int entries, rc;
@@ -318,8 +391,7 @@ nsdb_delete_fsn_fsls_s(LDAP *ld, const char *dn, unsigned int *ldap_err)
 	xlog(D_CALL, "%s: searching for children of %s", __func__, dn);
 
 again:
-	rc = ldap_search_ext_s(ld, dn, LDAP_SCOPE_ONELEVEL, NULL, attrs, 0,
-				NULL, NULL, NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_nofilter_s(ld, dn, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 	case LDAP_SIZELIMIT_EXCEEDED:
@@ -773,7 +845,6 @@ static FedFsStatus
 nsdb_search_fsl_dn_s(LDAP *ld, const char *nce, const char *fsl_uuid,
 		char **dn, unsigned int *ldap_err)
 {
-	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
 	LDAPMessage *response;
 	FedFsStatus retval;
 	char filter[128];
@@ -787,9 +858,8 @@ nsdb_search_fsl_dn_s(LDAP *ld, const char *nce, const char *fsl_uuid,
 		return FEDFS_ERR_INVAL;
 	}
 
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
-				filter, attrs, 0, NULL, NULL,
-				NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_none_s(ld, nce, LDAP_SCOPE_SUBTREE,
+					filter, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -1275,7 +1345,6 @@ out:
 static FedFsStatus
 nsdb_delete_nsdb_fsns_s(LDAP *ld, const char *nce, unsigned int *ldap_err)
 {
-	static char *attrs[] = { LDAP_NO_ATTRS, NULL };
 	LDAPMessage *message, *response;
 	FedFsStatus retval;
 	int entries, rc;
@@ -1283,8 +1352,7 @@ nsdb_delete_nsdb_fsns_s(LDAP *ld, const char *nce, unsigned int *ldap_err)
 	xlog(D_CALL, "%s: searching for children of %s", __func__, nce);
 
 again:
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_ONELEVEL, NULL, attrs, 0,
-				NULL, NULL, NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_nofilter_s(ld, nce, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 	case LDAP_SIZELIMIT_EXCEEDED:

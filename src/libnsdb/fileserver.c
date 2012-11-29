@@ -44,9 +44,88 @@
 #include "xlog.h"
 
 /**
- * Default 5 second time out for LDAP requests
+ * Invoke ldap_search_ext_s(3), requesting all attributes
+ *
+ * @param func NUL-terminated C string containing name of calling function
+ * @param ld an initialized LDAP server descriptor
+ * @param base NUL-terminated C string containing search base
+ * @param scope LDAP scope
+ * @param filter NUL-terminated C string containing search filter
+ * @param response OUT: list of LDAP responses
+ * @return an LDAP result code
+ *
+ * A fast timeout is used to prevent hanging the caller.
  */
-static struct timeval nsdb_ldap_timeout = { 5, 0 };
+static int
+__nsdb_search_nsdb_all_s(const char *func, LDAP *ld, const char *base,
+		int scope, char *filter, LDAPMessage **response)
+{
+	static char *attrs[] = { LDAP_ALL_USER_ATTRIBUTES, NULL };
+	static struct timeval timeout = { 5, 0 };
+	char *uri;
+
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s %s  '%s' *",
+			func, uri, base, nsdb_printable_scope(scope), filter);
+		ldap_memfree(uri);
+	} else {
+		xlog(D_CALL, "%s:\n  ldapsearch -b \"%s\" -s %s '%s' *",
+			func, base, nsdb_printable_scope(scope), filter);
+	}
+
+	return ldap_search_ext_s(ld, (char *)base, LDAP_SCOPE_SUBTREE, filter,
+					attrs, 0, NULL, NULL, &timeout,
+					LDAP_NO_LIMIT, response);
+}
+
+/**
+ * Hide the __func__ argument at call sites
+ */
+#define nsdb_search_nsdb_all_s(ld, base, scope, filter, response) \
+	__nsdb_search_nsdb_all_s(__func__, ld, base, scope, filter, response)
+
+/**
+ * Invoke ldap_search_ext_s(3), requesting a specific attribute
+ *
+ * @param func NUL-terminated C string containing name of calling function
+ * @param ld an initialized LDAP server descriptor
+ * @param base NUL-terminated C string containing search base
+ * @param filter NUL-terminated C string containing search filter
+ * @param attr NUL-terminated C string containing attribute name
+ * @param response OUT: list of LDAP responses
+ * @return an LDAP result code
+ *
+ * A fast timeout is used to prevent hanging the caller.
+ */
+static int
+__nsdb_search_nsdb_attr_s(const char *func, LDAP *ld, const char *base,
+		char *filter, char *attr, LDAPMessage **response)
+{
+	static struct timeval timeout = { 5, 0 };
+	char *uri, *attrs[2];
+
+	attrs[0] = attr;
+	attrs[1] = NULL;
+
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s base '%s' %s",
+			func, uri, filter, attr);
+		ldap_memfree(uri);
+	} else {
+		xlog(D_CALL, "%s:\n  ldapsearch -b \"%s\" -s base '%s' %s",
+			func, filter, attr);
+	}
+
+	return ldap_search_ext_s(ld, (char *)base, LDAP_SCOPE_BASE, filter,
+					attrs, 0, NULL, NULL, &timeout,
+					LDAP_NO_LIMIT, response);
+}
+
+/**
+ * Hide the __func__ argument at call sites
+ */
+#define nsdb_search_nsdb_attr_s(ld, base, filter, attr, response) \
+	__nsdb_search_nsdb_attr_s(__func__, ld, base, filter, attr, response)
 
 /**
  * Free a single struct fedfs_fsn
@@ -297,9 +376,9 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 		unsigned int *ldap_err)
 {
 	LDAPMessage *response, *message;
-	char *attrs[2], *tmp = NULL;
 	LDAP *ld = host->fn_ldap;
 	FedFsStatus retval;
+	char *tmp = NULL;
 	int rc;
 
 	if (host->fn_ldap == NULL) {
@@ -312,12 +391,8 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 		return FEDFS_ERR_INVAL;
 	}
 
-	attrs[0] = "fedfsNceDN";
-	attrs[1] = NULL;
-	rc = ldap_search_ext_s(ld, naming_context, LDAP_SCOPE_BASE,
-				"(objectClass=*)", attrs, 0, NULL,
-				NULL, &nsdb_ldap_timeout,
-				LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_attr_s(ld, naming_context, "(objectClass=*)",
+						"fedfsNceDN", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -492,8 +567,8 @@ nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 {
 	LDAPMessage *response, *message;
 	LDAP *ld = host->fn_ldap;
-	char *attrs[2], **tmp;
 	FedFsStatus retval;
+	char **tmp;
 	int rc;
 
 	if (host->fn_ldap == NULL) {
@@ -506,12 +581,8 @@ nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 		return FEDFS_ERR_INVAL;
 	}
 
-	attrs[0] = "namingContexts";
-	attrs[1] = NULL;
-	rc = ldap_search_ext_s(ld, "", LDAP_SCOPE_BASE,
-				"(objectClass=*)", attrs, 0, NULL,
-				NULL, &nsdb_ldap_timeout,
-				LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_attr_s(ld, LDAP_ROOT_DSE, "(objectClass=*)",
+					"namingContexts", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -853,9 +924,8 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		return FEDFS_ERR_INVAL;
 	}
 
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
-				filter, NULL, 0, NULL, NULL,
-				NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_all_s(ld, nce, LDAP_SCOPE_SUBTREE,
+						filter, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -1168,9 +1238,8 @@ nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		return FEDFS_ERR_INVAL;
 	}
 
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_ONE,
-				filter, NULL, 0, NULL, NULL,
-				NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_all_s(ld, nce, LDAP_SCOPE_ONE,
+						filter, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -1420,9 +1489,8 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 	char **tmp;
 	int rc;
 
-	rc = ldap_search_ext_s(ld, nce, LDAP_SCOPE_SUBTREE,
-				"(objectClass=fedfsFsn)", NULL, 0, NULL,
-				NULL, NULL, LDAP_NO_LIMIT, &response);
+	rc = nsdb_search_nsdb_all_s(ld, nce, LDAP_SCOPE_ONE,
+					"(objectClass=fedfsFsn)", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 		break;
@@ -1560,8 +1628,8 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 
 	for (j = 0; nce_list[j] != NULL; j++) {
 		retval = nsdb_list_find_entries_s(host->fn_ldap,
-						nce_list[j],
-						fsns, ldap_err);
+							nce_list[j],
+							fsns, ldap_err);
 		if (retval == FEDFS_OK)
 			break;
 	}

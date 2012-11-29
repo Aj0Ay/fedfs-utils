@@ -44,6 +44,28 @@
 #include "xlog.h"
 
 /**
+ * Map scope to a printable string
+ *
+ * @param scope LDAP scope
+ * @return static NUL-terminated C string containing scope name
+ */
+const char *
+nsdb_printable_scope(int scope)
+{
+	switch (scope) {
+	case LDAP_SCOPE_BASE:
+		return "base";
+	case LDAP_SCOPE_ONE:
+		return "one";
+	case LDAP_SCOPE_SUB:
+		return "sub";
+	case LDAP_SCOPE_CHILDREN:
+		return "children";
+	}
+	return "default";
+}
+
+/**
  * Read a password from stdin, disabling character echo
  *
  * @return a NUL-terminated C string containing the typed-in password.  Caller must free the string with free(3)

@@ -51,6 +51,8 @@ struct fedfs_nsdb {
  ** Private LDAP-related APIs (ldap.c)
  **/
 
+const char *	 nsdb_printable_scope(int scope);
+
 void		 nsdb_init_add_attribute(LDAPMod *mod,
 				const char *attribute, char **bv,
 				const char *value);
