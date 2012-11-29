@@ -695,9 +695,11 @@ fedfsd_fill_in_fedfsfsl(const struct fedfs_fsl *fsl, FedFsFsl *new)
 	}
 	memcpy(new->FedFsFsl_u.nfsFsl.fslUuid, &uu, sizeof(uu));
 
-	new->FedFsFsl_u.nfsFsl.port = fsl->fl_fslport;
-	new->FedFsFsl_u.nfsFsl.hostname.utf8string_len = strlen(fsl->fl_fslhost);
-	new->FedFsFsl_u.nfsFsl.hostname.utf8string_val = strdup(fsl->fl_fslhost);
+	new->FedFsFsl_u.nfsFsl.port = fsl->fl_u.fl_nfsfsl.fn_fslport;
+	new->FedFsFsl_u.nfsFsl.hostname.utf8string_len =
+				strlen(fsl->fl_u.fl_nfsfsl.fn_fslhost);
+	new->FedFsFsl_u.nfsFsl.hostname.utf8string_val =
+				strdup(fsl->fl_u.fl_nfsfsl.fn_fslhost);
 	if (new->FedFsFsl_u.nfsFsl.hostname.utf8string_val == NULL) {
 		xlog(D_GENERAL, "%s: Failed to allocate hostname", __func__);
 		goto out_free;

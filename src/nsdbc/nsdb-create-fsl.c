@@ -208,14 +208,21 @@ main(int argc, char **argv)
 	}
 	strcpy(fsl->fl_fsluuid, fsl_uuid);
 	strcpy(fsl->fl_fsnuuid, fsn_uuid);
-	strcpy(fsl->fl_fslhost, servername);
+
+	retval = FEDFS_ERR_NAMETOOLONG;
+	if (strlen(servername) >= sizeof(fsl->fl_u.fl_nfsfsl.fn_fslhost)) {
+		fprintf(stderr, "Fileserver hostname too large\n");
+		goto out;
+	}
+	strcpy(fsl->fl_u.fl_nfsfsl.fn_fslhost, servername);
+
+	fsl->fl_u.fl_nfsfsl.fn_fslport = serverport;
 	retval = nsdb_posix_to_path_array(serverpath,
 						&fsl->fl_u.fl_nfsfsl.fn_nfspath);
 	if (retval != FEDFS_OK) {
 		fprintf(stderr, "Failed to encode serverpath\n");
 		goto out;
 	}
-	fsl->fl_fslport = serverport;
 
 	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (retval) {

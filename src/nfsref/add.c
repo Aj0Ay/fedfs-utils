@@ -267,15 +267,21 @@ nfsref_add_create_fedfs_fsn(nsdb_t host, const char *nce, char **fsn_uuid)
 /**
  * Fill in default settings for NFSv4.0 fs_locations4
  *
+ * @param server NUL-terminated C string containing fileserver hostname
  * @param rootpath NUL-terminated C string containing POSIX-style export path
  * @param new fedfs_fsl object to fill in
  *
  * See section 5.1.3.2 of the NSDB protocol draft.
  */
 static FedFsStatus
-nfsref_add_nfs_fsl_defaults(const char *rootpath, struct fedfs_nfs_fsl *new)
+nfsref_add_nfs_fsl_defaults(const char *server, const char *rootpath,
+		struct fedfs_nfs_fsl *new)
 {
 	FedFsStatus retval;
+
+	/* XXX: check the server hostname length */
+	strcpy(new->fn_fslhost, server);
+	new->fn_fslport = 0;
 
 	retval = nsdb_posix_to_path_array(rootpath, &new->fn_nfspath);
 	if (retval != FEDFS_OK)
@@ -334,10 +340,8 @@ nfsref_add_build_fsl(const char *fsn_uuid, const char *server,
 	uuid_generate_random(uu);
 	uuid_unparse(uu, new->fl_fsluuid);
 	strncpy(new->fl_fsnuuid, fsn_uuid, sizeof(new->fl_fsnuuid));
-	strncpy(new->fl_fslhost, server, sizeof(new->fl_fslhost));
-	new->fl_fslport = 0;
 
-	retval = nfsref_add_nfs_fsl_defaults(rootpath, &new->fl_u.fl_nfsfsl);
+	retval = nfsref_add_nfs_fsl_defaults(server, rootpath, &new->fl_u.fl_nfsfsl);
 	if (retval != FEDFS_OK)
 		return retval;
 

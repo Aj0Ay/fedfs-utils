@@ -114,8 +114,16 @@ nsdb_resolve_fsn_display_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 	status = nsdb_path_array_to_posix(nfsl->fn_nfspath, &rootpath);
 	if (status != FEDFS_OK)
 		return;
+
+	if (nfsl->fn_fslport == 0)
+		printf(" NFS fls_server:\t\t%s\n", nfsl->fn_fslhost);
+	else
+		printf(" NFS fls_server:\t\t%s:%u\n", nfsl->fn_fslhost,
+			nfsl->fn_fslport);
+
 	printf(" NFS fli_rootpath:\t\t%s\n", rootpath);
 	free(rootpath);
+
 	printf(" NFS fls_currency:\t\t%d\n", nfsl->fn_currency);
 	printf(" NFS FSLI4GF_WRITABLE:\t\t%s\n", _display_bool(nfsl->fn_gen_writable));
 	printf(" NFS FSLI4GF_GOING:\t\t%s\n", _display_bool(nfsl->fn_gen_going));
@@ -152,10 +160,6 @@ nsdb_resolve_fsn_display_fsl(struct fedfs_fsl *fsl)
 
 	printf(" FSN UUID:\t\t%s\n", fsl->fl_fsnuuid);
 	printf(" FSL UUID:\t\t%s\n", fsl->fl_fsluuid);
-	if (fsl->fl_fslport == 0)
-		printf(" FSL host:\t\t%s\n", fsl->fl_fslhost);
-	else
-		printf(" FSL host:\t\t%s:%u\n", fsl->fl_fslhost, fsl->fl_fslport);
 
 	if (fsl->fl_annotations != NULL) {
 		for (i = 0; fsl->fl_annotations[i] != NULL; i++)

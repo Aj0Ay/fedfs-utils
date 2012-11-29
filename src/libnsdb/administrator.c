@@ -613,6 +613,85 @@ nsdb_construct_fsl_dn(const char *nce, const char *fsn_uuid, const char *fsl_uui
 	return dn;
 }
 
+/**
+ * Build a UriUriA for the location information in "nfsfsl"
+ *
+ * @param nfsfsl an initialized struct fedfs_nfs_fsl
+ * @param uri OUT: a filled-in UriUriA object
+ * @return a FedFsStatus code
+ *
+ * Caller must free the members of the UriUriA object with
+ * uriFreeUriMembersA().
+ */
+static FedFsStatus
+nsdb_nfsfsl_to_uri(const struct fedfs_nfs_fsl *nfsfsl, UriUriA *uri)
+{
+	memset(uri, 0, sizeof(*uri));
+
+	nsdb_assign_textrange(&uri->scheme, "nfs");
+	nsdb_assign_textrange(&uri->hostText, nfsfsl->fn_fslhost);
+	if (nfsfsl->fn_fslport != 2049 && nfsfsl->fn_fslport != 0) {
+		char portbuf[8];
+		sprintf(portbuf, "%u", nfsfsl->fn_fslport);
+		nsdb_assign_textrange(&uri->portText, portbuf);
+	}
+
+	return nsdb_path_array_to_uri_pathname(nfsfsl->fn_nfspath, uri);
+}
+
+/**
+ * Construct an NFS URI for this location
+ *
+ * @param nfsfsl an initialized struct fedfs_nfs_fsl
+ * @param nfsuri OUT: a NUL-terminated C string containing an NFS URI
+ * @return a FedFsStatus code
+ *
+ * Caller must free "nfsuri" with free(3).
+ */
+static FedFsStatus
+nsdb_construct_nfsuri(const struct fedfs_nfs_fsl *nfsfsl, char **nfsuri)
+{
+	FedFsStatus retval;
+	char *result;
+	int len, err;
+	UriUriA uri;
+
+	retval = nsdb_nfsfsl_to_uri(nfsfsl, &uri);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = FEDFS_ERR_SVRFAULT;
+	err = uriToStringCharsRequiredA(&uri, &len);
+	if (err != URI_SUCCESS) {
+		xlog(D_GENERAL, "%s: uriToStringCharsRequired failed: %d",
+			__func__, err);
+		goto out;
+	}
+	len++;
+
+	result = (char *)calloc(len, sizeof(char));
+	if (result == NULL) {
+		xlog(D_GENERAL, "%s calloc failed", __func__);
+		goto out;
+	}
+
+	err = uriToStringA(result, &uri, len, NULL);
+	if (err != URI_SUCCESS) {
+		xlog(D_GENERAL, "%s uriToStringA failed: %d",
+			__func__, err);
+		free(result);
+		goto out;
+	}
+
+	xlog(D_CALL, "%s: NFS URI: %s", __func__, result);
+	*nfsuri = result;
+	retval = FEDFS_OK;
+
+out:
+	uriFreeUriMembersA(&uri);
+	return retval;
+}
+
 static const char *nsdb_ldap_true	= "TRUE";
 static const char *nsdb_ldap_false	= "FALSE";
 
@@ -671,12 +750,11 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 {
 	struct fedfs_nfs_fsl *nfsfsl = &fsl->fl_u.fl_nfsfsl;
 	char *ocvals[3], *fsluuidvals[2], *fsnuuidvals[2];
-	char *servernamevals[2], *serverportvals[2], serverportbuf[12];
 
 	/* XXX: variables for encoding annotations and description
 	 *	attributes would go here */
 
-	struct berval *xdrpathvals[2], xdr_path;
+	char *nfsurivals[2], *nfsuri = NULL;
 	char *currvals[2], currbuf[12];
 	char *flagwvals[2], *flaggvals[2], *flagsvals[2],
 		*flagrvals[2], *varsubvals[2];
@@ -710,22 +788,11 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 				fsluuidvals, fsl->fl_fsluuid);
 	nsdb_init_add_attribute(attrs[i++], "fedfsFsnUuid",
 				fsnuuidvals, fsl->fl_fsnuuid);
-	nsdb_init_add_attribute(attrs[i++], "fedfsFslHost",
-				servernamevals, fsl->fl_fslhost);
-	if (fsl->fl_fslport != 0) {
-		sprintf(serverportbuf, "%d", fsl->fl_fslport);
-		nsdb_init_add_attribute(attrs[i++], "fedfsFslPort",
-					serverportvals, serverportbuf);
-	}
-
-	retval = nsdb_path_array_to_xdr(nfsfsl->fn_nfspath, &xdr_path);
+	retval = nsdb_construct_nfsuri(nfsfsl, &nfsuri);
 	if (retval != FEDFS_OK)
-		return retval;
-	xdrpathvals[0] = &xdr_path;
-	xdrpathvals[1] = NULL;
-	attr[i].mod_op = LDAP_MOD_BVALUES;
-	attr[i].mod_type = "fedfsNfsPath";
-	attr[i++].mod_bvalues = xdrpathvals;
+		goto out;
+	nsdb_init_add_attribute(attrs[i++], "fedfsNfsURI",
+				 nfsurivals, nfsuri);
 
 	sprintf(currbuf, "%d", nfsfsl->fn_currency);
 	nsdb_init_add_attribute(attrs[i++], "fedfsNfsCurrency",
@@ -802,7 +869,7 @@ nsdb_create_nfs_fsl_entry_s(LDAP *ld, const char *nce, struct fedfs_fsl *fsl,
 	retval = FEDFS_OK;
 
 out:
-	ber_memfree(xdr_path.bv_val);
+	free(nfsuri);
 	return retval;
 }
 
@@ -1093,21 +1160,13 @@ nsdb_update_fsl_update_attribute_s(LDAP *ld, const char *dn,
 	struct berval newval;
 	FedFsStatus retval;
 
-	if (strcasecmp(attribute, "fedfsNfsPath") == 0) {
-		retval = nsdb_path_array_to_xdr((char * const *)value, &newval);
-		if (retval != FEDFS_OK)
-			return retval;
-	} else {
-		newval.bv_val = (char *)value;
-		newval.bv_len = 0;
-		if (value != NULL)
-			newval.bv_len = (ber_len_t)strlen(value);
-	}
+	newval.bv_val = (char *)value;
+	newval.bv_len = 0;
+	if (value != NULL)
+		newval.bv_len = (ber_len_t)strlen(value);
 
 	retval = nsdb_modify_attribute_s(ld, dn, attribute,
 						&newval, ldap_err);
-	if (strcasecmp(attribute, "fedfsNfsPath") == 0)
-		ber_memfree(newval.bv_val);
 	if (retval != FEDFS_OK)
 		return retval;
 

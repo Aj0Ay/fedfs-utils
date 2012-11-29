@@ -39,6 +39,8 @@
 #include <unistd.h>
 #include <netdb.h>
 
+#include <uriparser/Uri.h>
+
 #include "nsdb.h"
 #include "nsdb-internal.h"
 #include "xlog.h"
@@ -720,6 +722,128 @@ nsdb_parse_annotations(struct berval **values, char ***annotations)
 }
 
 /**
+ * Unmarshal a parsed NFS URI object into an NFS FSL
+ *
+ * @param attr NUL-terminated C string containing LDAP attribute name
+ * @param uri a filled-in UriUriA structure
+ * @param nfsl OUT: fedfs_nfs_fsl structure to fill in
+ * @return a FedFsStatus code
+ *
+ * @todo i18n hostname
+ */
+static FedFsStatus
+nsdb_parse_nfs_uri_fsl(const char *attr, UriUriA *uri,
+		struct fedfs_nfs_fsl *nfsl)
+{
+	unsigned short port;
+	FedFsStatus retval;
+	char **pathname;
+	size_t len;
+
+	retval = FEDFS_ERR_NSDB_RESPONSE;
+
+	if ((uri->scheme.first == NULL) ||
+	    (uri->scheme.afterLast != uri->scheme.first + 3) ||
+	    (strncmp(uri->scheme.first, "nfs", 3) != 0)) {
+		xlog(L_ERROR, "%s: Attribute %s does not contain an NFS URI",
+			__func__, attr);
+		goto out;
+	}
+
+	if ((uri->hostText.first == NULL) ||
+	    (uri->hostText.afterLast <= uri->hostText.first)) {
+		xlog(L_ERROR, "%s: NFS URI has no hostname",
+			__func__);
+		goto out;
+	}
+	len = uri->hostText.afterLast - uri->hostText.first;
+	if (len > sizeof(nfsl->fn_fslhost)) {
+		xlog(L_ERROR, "%s: NFS URI hostname too large",
+			__func__);
+		goto out;
+	}
+
+	port = 0;
+	if ((uri->portText.first != NULL) &&
+	    (uri->portText.afterLast > uri->portText.first)) {
+		char string[16];
+		size_t portlen;
+
+		portlen = uri->portText.afterLast - uri->portText.first;
+		if (portlen > sizeof(string)) {
+			xlog(L_ERROR, "%s: NFS URI has invalid port",
+				__func__, attr);
+			goto out;
+		}
+		string[0] = '\0';
+		strncat(string, uri->portText.first, portlen);
+		if (!nsdb_parse_port_string(string, &port)) {
+			xlog(L_ERROR, "%s: NFS URI has invalid port",
+				__func__, attr);
+			goto out;
+		}
+	}
+
+	retval = nsdb_uri_pathname_to_path_array(uri, &pathname);
+	if (retval != FEDFS_OK)
+		goto out;
+
+	xlog(D_CALL, "%s: NFS URI successfully parsed", __func__);
+
+	strncpy(nfsl->fn_fslhost, uri->hostText.first, len);
+	nfsl->fn_fslport = port;
+	nfsl->fn_nfspath = pathname;
+	retval = FEDFS_OK;
+
+out:
+	return retval;
+}
+
+/**
+ * Parse an NFS URI into a hostname and pathname
+ *
+ * @param attr NUL-terminated C string containing LDAP attribute name
+ * @param values URI string value returned from LDAP server
+ * @param nfsl OUT: fedfs_nfs_fsl structure to fill in
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_parse_nfs_uri(const char *attr, struct berval **values,
+		struct fedfs_nfs_fsl *nfsl)
+{
+	UriUriA uri;
+	UriParserStateA state = {
+		.uri		= &uri,
+	};
+	FedFsStatus retval;
+
+	retval = FEDFS_ERR_NSDB_RESPONSE;
+
+	if (values[0] == NULL) {
+		xlog(L_ERROR, "%s: NULL value for attribute %s",
+			__func__, attr);
+		return retval;
+	}
+	if (values[1] != NULL) {
+		xlog(L_ERROR, "%s: Expecting only one value for attribute %s",
+			__func__, attr);
+		return retval;
+	}
+
+	if (uriParseUriA(&state, (char *)values[0]->bv_val) != URI_SUCCESS) {
+		xlog(L_ERROR, "%s: Failed to parse NFS URI", __func__);
+		goto out;
+	}
+
+	xlog(D_CALL, "%s: parsing '%s'", __func__, (char *)values[0]->bv_val);
+	retval = nsdb_parse_nfs_uri_fsl(attr, &uri, nfsl);
+
+out:
+	uriFreeUriMembersA(&uri);
+	return retval;
+}
+
+/**
  * Parse the values of each attribute in a fedfsFsl object
  *
  * @param ld an initialized LDAP server descriptor
@@ -751,12 +875,6 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 	else if (strcasecmp(attr, "fedfsFsnUuid") == 0)
 		retval = nsdb_parse_singlevalue_str(attr, values,
 				fsl->fl_fsnuuid, sizeof(fsl->fl_fsnuuid));
-	else if (strcasecmp(attr, "fedfsFslHost") == 0)
-		retval = nsdb_parse_singlevalue_str(attr, values,
-				fsl->fl_fslhost, sizeof(fsl->fl_fslhost));
-	else if (strcasecmp(attr, "fedfsFslPort") == 0)
-		retval = nsdb_parse_singlevalue_int(attr, values,
-				&fsl->fl_fslport);
 	else if (strcasecmp(attr, "fedfsAnnotation") == 0)
 		retval = nsdb_parse_annotations(values, &fsl->fl_annotations);
 	else if (strcasecmp(attr, "fedfsDescr") == 0)
@@ -765,9 +883,8 @@ nsdb_resolve_fsn_parse_attribute(LDAP *ld, LDAPMessage *entry, char *attr,
 
 	/* fedfsNfsFsl attributes */
 
-	else if (strcasecmp(attr, "fedfsNfsPath") == 0)
-		retval = nsdb_parse_singlevalue_xdrpath(attr, values,
-					&nfsl->fn_nfspath);
+	else if (strcasecmp(attr, "fedfsNfsURI") == 0)
+		retval = nsdb_parse_nfs_uri(attr, values, nfsl);
 	else if (strcasecmp(attr, "fedfsNfsCurrency") == 0)
 		retval = nsdb_parse_singlevalue_int(attr, values,
 				&nfsl->fn_currency);

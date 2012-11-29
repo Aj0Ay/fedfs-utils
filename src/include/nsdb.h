@@ -80,6 +80,8 @@ void		 nsdb_free_fedfs_fsn(struct fedfs_fsn *fsn);
  * the NSDB protocol draft, chapter 4, section 2.2.4
  */
 struct fedfs_nfs_fsl {
+	char			  fn_fslhost[NI_MAXHOST + 1];
+	int			  fn_fslport;
 	char			**fn_nfspath;
 	int			  fn_currency;
 	_Bool			  fn_gen_writable;
@@ -112,8 +114,6 @@ struct fedfs_fsl {
 
 	char			  fl_fsluuid[FEDFS_UUID_STRLEN];
 	char			  fl_fsnuuid[FEDFS_UUID_STRLEN];
-	char			  fl_fslhost[NI_MAXHOST + 1];
-	int			  fl_fslport;
 	char			**fl_annotations;
 	char			**fl_description;
 

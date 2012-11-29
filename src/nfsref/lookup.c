@@ -169,11 +169,14 @@ nfsref_lookup_display_fedfs_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 {
 	char *rootpath;
 
+	printf("\tFileserver name:\t\t\t%s\n", nfsl->fn_fslhost);
+	printf("\tFileserver port:\t\t\t%u\n", nfsl->fn_fslport);
+
 	if (nsdb_path_array_to_posix(nfsl->fn_nfspath, &rootpath) == FEDFS_OK) {
-		printf("\tfedfsNfsPath:\t\t\t%s\n", rootpath);
+		printf("\tExport path:\t\t\t%s\n", rootpath);
 		free(rootpath);
 	} else
-		printf("\tfedfsNfsPath:\t\t\tInvalid\n");
+		printf("\tExport path:\t\t\tInvalid\n");
 
 	printf("\tfedfsNfsCurrency:\t\t%d\n", nfsl->fn_currency);
 	printf("\tfedfsNfsGenFlagWritable:\t%s\n",
@@ -213,8 +216,6 @@ nfsref_lookup_display_fedfs_fsl(struct fedfs_fsl *fsl)
 
 	printf("\tfedfsFslUuid:\t\t\t%s\n", fsl->fl_fsluuid);
 	printf("\tfedfsFsnUuid:\t\t\t%s\n", fsl->fl_fsnuuid);
-	printf("\tfedfsFslHost:\t\t\t%s\n", fsl->fl_fslhost);
-	printf("\tfedfsFslPort:\t\t\t%u\n", fsl->fl_fslport);
 
 	if (fsl->fl_annotations != NULL) {
 		for (i = 0; fsl->fl_annotations[i] != NULL; i++)

@@ -253,15 +253,14 @@ nfs_jp_convert_fedfs_fsl(struct fedfs_fsl *fsl, struct nfs_fsloc **fsloc)
 		return JP_MEMORY;
 	}
 
-	new->nfl_hostname = strdup(fsl->fl_fslhost);
+	new->nfl_hostname = strdup(nfs_fsl->fn_fslhost);
+	new->nfl_hostport = nfs_fsl->fn_fslport;
 	new->nfl_rootpath = nfs_dup_string_array(nfs_fsl->fn_nfspath);
 	if (new->nfl_hostname == NULL || new->nfl_rootpath == NULL) {
 		nfs_free_location(new);
 		nfs_jp_debug("%s: No memory\n", __func__);
 		return JP_MEMORY;
 	}
-
-	new->nfl_hostport = fsl->fl_fslport;
 
 	new->nfl_flags.nfl_varsub = nfs_fsl->fn_varsub;
 	new->nfl_currency = nfs_fsl->fn_currency;
