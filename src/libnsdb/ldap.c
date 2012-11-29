@@ -66,6 +66,69 @@ nsdb_printable_scope(int scope)
 }
 
 /**
+ * Map LDAPMod operation to a printable string
+ *
+ * @param op LDAPMod operation
+ * @return static NUL-terminated C string containing operation name
+ */
+static const char *
+nsdb_printable_ldap_mod_op(int op)
+{
+	switch (op & LDAP_MOD_OP) {
+	case LDAP_MOD_ADD:
+		return "add";
+	case LDAP_MOD_DELETE:
+		return "delete";
+	case LDAP_MOD_REPLACE:
+		return "replace";
+	}
+	return "modify";
+}
+
+/**
+ * Modify a FedFS-related record on an NSDB
+ *
+ * @param func NUL-terminated C string containing a function name
+ * @param ld an initialized LDAP server descriptor
+ * @param dn a NUL-terminated C string containing DN of NSDB container entry
+ * @param mod filled-in LDAP modification argument
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return an LDAP result code
+ */
+static int
+__nsdb_modify_nsdb_s(const char *func, LDAP *ld, const char *dn, LDAPMod *mod,
+		unsigned int *ldap_err)
+{
+	char *uri, *attribute = mod->mod_type;
+	LDAPMod *mods[] = { mod, NULL };
+	int rc;
+
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s: modifying %s (%s) at %s",
+			func, dn, attribute, uri);
+		ldap_memfree(uri);
+	} else
+		xlog(D_CALL, "%s: modifying %s (%s)",
+			func, dn, attribute);
+
+	rc = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: failed to %s attribute %s: %s",
+				func, nsdb_printable_ldap_mod_op(mod->mod_op),
+				attribute, ldap_err2string(rc));
+		*ldap_err = (unsigned int)rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+	return FEDFS_OK;
+}
+
+/**
+ * Hide the __func__ argument at call sites
+ */
+#define nsdb_modify_nsdb_s(ld, dn, mod, ldaperr) \
+	__nsdb_modify_nsdb_s(__func__, ld, dn, mod, ldaperr)
+
+/**
  * Read a password from stdin, disabling character echo
  *
  * @return a NUL-terminated C string containing the typed-in password.  Caller must free the string with free(3)
@@ -618,28 +681,14 @@ nsdb_add_attribute_s(LDAP *ld, const char *dn,
 		const char *attribute, struct berval *value,
 		unsigned int *ldap_err)
 {
-	struct berval *attrvals[2];
-	LDAPMod mod[1], *mods[2];
-	int rc;
+	struct berval *attrvals[] = { value, NULL };
+	LDAPMod mod = {
+		.mod_op		= LDAP_MOD_ADD | LDAP_MOD_BVALUES,
+		.mod_type	= (char *)attribute,
+		.mod_bvalues	= attrvals,
+	};
 
-	attrvals[0] = value;
-	attrvals[1] = NULL;
-
-	mod[0].mod_op = LDAP_MOD_ADD | LDAP_MOD_BVALUES;
-	mod[0].mod_type = (char *)attribute;
-	mod[0].mod_bvalues = attrvals;
-
-	mods[0] = &mod[0];
-	mods[1] = NULL;
-
-	rc = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "Failed to add attribute %s: %s",
-				attribute, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-	return FEDFS_OK;
+	return nsdb_modify_nsdb_s(ld, dn, &mod, ldap_err);
 }
 
 /**
@@ -669,28 +718,14 @@ FedFsStatus
 nsdb_modify_attribute_s(LDAP *ld, const char *dn, const char *attribute,
 		struct berval *value, unsigned int *ldap_err)
 {
-	struct berval *attrvals[2];
-	LDAPMod mod[1], *mods[2];
-	int rc;
+	struct berval *attrvals[] = { value, NULL };
+	LDAPMod mod = {
+		.mod_op		= LDAP_MOD_REPLACE | LDAP_MOD_BVALUES,
+		.mod_type	= (char *)attribute,
+		.mod_bvalues	= attrvals,
+	};
 
-	attrvals[0] = value;
-	attrvals[1] = NULL;
-
-	mod[0].mod_op = LDAP_MOD_REPLACE | LDAP_MOD_BVALUES;
-	mod[0].mod_type = (char *)attribute;
-	mod[0].mod_bvalues = attrvals;
-
-	mods[0] = &mod[0];
-	mods[1] = NULL;
-
-	rc = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "Failed to replace attribute %s: %s",
-				attribute, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-	return FEDFS_OK;
+	return nsdb_modify_nsdb_s(ld, dn, &mod, ldap_err);
 }
 
 /**
@@ -723,28 +758,14 @@ FedFsStatus
 nsdb_delete_attribute_s(LDAP *ld, const char *dn, const char *attribute,
 		struct berval *value, unsigned int *ldap_err)
 {
-	struct berval *attrvals[2];
-	LDAPMod mod[1], *mods[2];
-	int rc;
+	struct berval *attrvals[] = { value, NULL };
+	LDAPMod mod = {
+		.mod_op		= LDAP_MOD_DELETE | LDAP_MOD_BVALUES,
+		.mod_type	= (char *)attribute,
+		.mod_bvalues	= attrvals,
+	};
 
-	attrvals[0] = value;
-	attrvals[1] = NULL;
-
-	mod[0].mod_op = LDAP_MOD_DELETE | LDAP_MOD_BVALUES;
-	mod[0].mod_type = (char *)attribute;
-	mod[0].mod_bvalues = attrvals;
-
-	mods[0] = &mod[0];
-	mods[1] = NULL;
-
-	rc = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to delete attribute %s: %s",
-				__func__, attribute, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-	return FEDFS_OK;
+	return nsdb_modify_nsdb_s(ld, dn, &mod, ldap_err);
 }
 
 /**
@@ -779,24 +800,12 @@ FedFsStatus
 nsdb_delete_attribute_all_s(LDAP *ld, const char *dn,
 		const char *attribute, unsigned int *ldap_err)
 {
-	LDAPMod mod[1], *mods[2];
-	int rc;
+	LDAPMod mod = {
+		.mod_op		= LDAP_MOD_DELETE,
+		.mod_type	= (char *)attribute,
+	};
 
-	mod[0].mod_op = LDAP_MOD_DELETE;
-	mod[0].mod_type = (char *)attribute;
-	mod[0].mod_values = NULL;
-
-	mods[0] = &mod[0];
-	mods[1] = NULL;
-
-	rc = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to delete attribute %s: %s",
-				__func__, attribute, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-	return FEDFS_OK;
+	return nsdb_modify_nsdb_s(ld, dn, &mod, ldap_err);
 }
 
 /**

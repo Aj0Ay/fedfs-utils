@@ -123,6 +123,47 @@ __nsdb_search_nsdb_nofilter_s(const char *func, LDAP *ld, const char *base,
 	__nsdb_search_nsdb_nofilter_s(__func__, ld, base, response)
 
 /**
+ * Modify a FedFS-related record on an NSDB
+ *
+ * @param func NUL-terminated C string containing a function name
+ * @param ld an initialized LDAP server descriptor
+ * @param dn a NUL-terminated C string containing DN of NSDB container entry
+ * @param mods filled-in LDAP modification array
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return an LDAP result code
+ */
+static int
+__nsdb_modify_nsdb_s(const char *func, LDAP *ld, const char *dn, LDAPMod **mods,
+		unsigned int *ldap_err)
+{
+	char *uri;
+	int rc;
+
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s: modifying %s on %s", func, dn, uri);
+		ldap_memfree(uri);
+	} else
+		xlog(D_CALL, "%s: modifying %s", func, dn);
+
+	rc = ldap_modify_ext_s(ld, dn, mods, NULL, NULL);
+	if (rc != LDAP_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to update %s: %s",
+			func, dn, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	xlog(D_CALL, "%s: Successfully updated %s", func, dn);
+	return FEDFS_OK;
+}
+
+/**
+ * Hide the __func__ argument at call sites
+ */
+#define nsdb_modify_nsdb_s(ld, dn, mods, ldaperr) \
+	__nsdb_modify_nsdb_s(__func__, ld, dn, mods, ldaperr)
+
+/**
  * Construct the DN of an FSN entry
  *
  * @param nce NUL-terminated C string containing DN of NSDB container entry
@@ -1155,7 +1196,7 @@ nsdb_add_nci_attributes_s(LDAP *ld, const char *context,
 	char *ocvals[2], *ncevals[2];
 	LDAPMod *mods[3];
 	LDAPMod mod[2];
-	int i, rc;
+	int i;
 
 	for (i = 0; i < 2; i++)
 		mods[i] = &mod[i];
@@ -1167,16 +1208,7 @@ nsdb_add_nci_attributes_s(LDAP *ld, const char *context,
 				"fedfsNceDN", ncevals, nce);
 	mods[i] = NULL;
 
-	rc = ldap_modify_ext_s(ld, context, mods, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to update %s: %s",
-			__func__, context, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-
-	xlog(D_CALL, "%s: Successfully updated %s", __func__, context);
-	return FEDFS_OK;
+	return nsdb_modify_nsdb_s(ld, context, mods, ldap_err);
 }
 
 /**
@@ -1240,7 +1272,7 @@ nsdb_remove_nci_attributes_s(LDAP *ld, const char *context,
 	LDAPMod *mods[3];
 	char *ocvals[2];
 	LDAPMod mod[2];
-	int i, rc;
+	int i;
 
 	for (i = 0; i < 2; i++)
 		mods[i] = &mod[i];
@@ -1252,16 +1284,7 @@ nsdb_remove_nci_attributes_s(LDAP *ld, const char *context,
 				"fedfsNceDN", NULL, NULL);
 	mods[i] = NULL;
 
-	rc = ldap_modify_ext_s(ld, context, mods, NULL, NULL);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to update %s: %s",
-			__func__, context, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-
-	xlog(D_CALL, "%s: Successfully updated %s", __func__, context);
-	return FEDFS_OK;
+	return nsdb_modify_nsdb_s(ld, context, mods, ldap_err);
 }
 
 /**
