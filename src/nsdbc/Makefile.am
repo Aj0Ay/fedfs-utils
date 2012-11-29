@@ -30,6 +30,7 @@ sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl
 LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBURIPARSER) \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libxlog/libxlog.la \
 			  $(top_builddir)/src/libjunction/libjunction.la

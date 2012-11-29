@@ -29,6 +29,7 @@ sbin_PROGRAMS		= fedfsd
 fedfsd_SOURCES		= listen.c main.c privilege.c svc.c
 fedfsd_LDADD		= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
+			  $(LIBURIPARSER) \
 			  $(top_builddir)/src/libadmin/libadmin.la \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \

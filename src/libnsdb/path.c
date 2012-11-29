@@ -38,6 +38,7 @@
 #include <ldap.h>
 
 #include <netinet/in.h>
+#include <uriparser/Uri.h>
 
 #include "nsdb.h"
 #include "junction.h"
@@ -718,6 +719,234 @@ nsdb_fedfspathname_to_path_array(FedFsPathName fpath, char ***path_array)
 			nsdb_free_string_array(result);
 			return FEDFS_ERR_SVRFAULT;
 		}
+	}
+
+	*path_array = result;
+	return FEDFS_OK;
+}
+
+/**
+ * Assign the value of "string" to a UriTextRangeA field
+ *
+ * @param text UriTextRangeA field to assign
+ * @param string NUL-terminated C string
+ *
+ * Note: "string" must not be freed until the text range
+ * is no longer used.
+ *
+ * Note: string is assumed to contain only single-width
+ * characters.
+ */
+void
+nsdb_assign_textrange(UriTextRangeA *text, const char *string)
+{
+	text->first = string;
+	text->afterLast = string + strlen(string);
+}
+
+/**
+ * Allocate a UriPathSegmentA
+ *
+ * @param name NUL-terminated C string containing path segment
+ * @return freshly allocated UriPathSegmentA object
+ */
+static UriPathSegmentA *
+nsdb_new_uri_path_segment(const char *name)
+{
+	UriPathSegmentA *new;
+
+	new = (UriPathSegmentA *)calloc(1, sizeof(*new));
+	if (new != NULL)
+		nsdb_assign_textrange(&new->text, name);
+	return new;
+}
+
+/**
+ * Release a list of UriPathSegmentA objects
+ *
+ * @param pos head of UriPathSegmentA list
+ */
+static void
+nsdb_free_path_segments(UriPathSegmentA *pos)
+{
+	UriPathSegmentA *next;
+
+	while (pos != NULL) {
+		next = pos->next;
+		free(pos);
+		pos = next;
+	}
+}
+
+/**
+ * Marshal the pathname component of an NFS URI
+ *
+ * @param path_array array of pointers to NUL-terminated C strings
+ * @param uri OUT: a filled-in UriUriA structure
+ * @return a FedFsStatus code
+ *
+ * Caller must free the members of the UriUriA object with
+ * uriFreeUriMembersA().
+ *
+ * @todo Proper i18n of pathname segments
+ */
+FedFsStatus
+nsdb_path_array_to_uri_pathname(char * const *path_array, UriUriA *uri)
+{
+	UriPathSegmentA *pos, *result;
+	size_t length, len;
+	char *component;
+	unsigned int i;
+
+	pos = nsdb_new_uri_path_segment("");
+	if (pos == NULL)
+		return FEDFS_ERR_SVRFAULT;
+	result = pos;
+
+	length = 0;
+	for (i = 0; path_array[i] != NULL; i++) {
+		component = path_array[i];
+		len = strlen(component);
+
+		if (len == 0) {
+			xlog(D_GENERAL, "%s: Zero-length component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (len > NAME_MAX) {
+			xlog(D_GENERAL, "%s: Component length too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+		if (strchr(component, '/') != NULL) {
+			xlog(D_GENERAL, "%s: Local separator character "
+					"found in component", __func__);
+			return FEDFS_ERR_BADNAME;
+		}
+		if (!nsdb_pathname_is_utf8(component)) {
+			xlog(D_GENERAL, "%s: Bad character in component",
+				__func__);
+			return FEDFS_ERR_BADCHAR;
+		}
+
+		length += STRLEN_SLASH + len;
+
+		if (length > PATH_MAX) {
+			xlog(D_GENERAL, "%s: Pathname too long", __func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+
+		pos->next = nsdb_new_uri_path_segment(component);
+		if (pos->next == NULL) {
+			nsdb_free_path_segments(result);
+			return FEDFS_ERR_SVRFAULT;
+		}
+		pos = pos->next;
+	}
+
+	uri->pathHead = result;
+	return FEDFS_OK;
+}
+
+/**
+ * Return length in bytes of a URI pathname segment
+ *
+ * @param segment URI pathname segment
+ * @return count of bytes in segment
+ *
+ * XXX: Isn't there a uriparser API that does this?
+ */
+static size_t
+nsdb_uri_pathname_segment_size(const UriPathSegmentA *segment)
+{
+	if (segment->text.first == NULL)
+		return 0;
+	return segment->text.afterLast - segment->text.first;
+}
+
+/**
+ * Return number of segments in a URI pathname
+ *
+ * @param uri filled-in URI
+ * @return count of segments
+ *
+ * XXX: Isn't there a uriparser API that does this?
+ */
+static unsigned int
+nsdb_uri_pathname_segment_count(const UriUriA *uri)
+{
+	UriPathSegmentA *pos;
+	unsigned int result;
+
+	if (uri->pathHead->text.first == NULL)
+		return 0;
+
+	result = 1;
+	for (pos = uri->pathHead; pos != uri->pathTail; pos = pos->next)
+		result++;
+	return result;
+}
+
+/**
+ * Unmarshal the pathname component of an NFS URI
+ *
+ * @param uri a filled-in UriUriA structure
+ * @param path_array OUT: array of pointers to NUL-terminated C strings
+ * @return a FedFsStatus code
+ *
+ * Caller must free "path_array" with nsdb_free_string_array().
+ *
+ * @todo Proper i18n of pathname segments
+ * @todo Handling too many slashes in various places
+ */
+FedFsStatus
+nsdb_uri_pathname_to_path_array(const UriUriA *uri, char ***path_array)
+{
+	unsigned int i, count;
+	UriPathSegmentA *pos;
+	char **result = NULL;
+
+	if (uri->pathHead == NULL) {
+		xlog(D_GENERAL, "%s: NFS URI has no pathname component", __func__);
+		return FEDFS_ERR_BADNAME;
+	}
+
+	count = nsdb_uri_pathname_segment_count(uri);
+	if (count < 2) {
+		xlog(D_GENERAL, "%s: NFS URI has short pathname component", __func__);
+		return FEDFS_ERR_BADNAME;
+	}
+
+	pos = uri->pathHead->next;
+	if (count == 2 && nsdb_uri_pathname_segment_size(pos) == 0)
+		return nsdb_alloc_zero_component_pathname(path_array);
+
+	result = (char **)calloc(count + 1, sizeof(char *));
+	if (result == NULL) {
+		xlog(L_ERROR, "%s: Failed to allocate array",
+			__func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	for (i = 0; pos != NULL; pos = pos->next) {
+		size_t len;
+
+		len = nsdb_uri_pathname_segment_size(pos);
+		if (len > NAME_MAX) {
+			nsdb_free_string_array(result);
+			xlog(D_GENERAL, "%s: Component length too long",
+				__func__);
+			return FEDFS_ERR_NAMETOOLONG;
+		}
+		if (len == 0)
+			continue;
+
+		result[i] = strndup((char *)pos->text.first, len);
+		if (result[i] == NULL) {
+			nsdb_free_string_array(result);
+			xlog(L_ERROR, "%s: Failed to allocate component string",
+				__func__);
+			return FEDFS_ERR_SVRFAULT;
+		}
+		i++;
 	}
 
 	*path_array = result;

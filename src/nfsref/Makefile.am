@@ -28,6 +28,7 @@ sbin_PROGRAMS		= nfsref
 nfsref_SOURCES		= add.c lookup.c nfsref.c remove.c
 LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBURIPARSER) \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libxlog/libxlog.la \
 			  $(top_builddir)/src/libjunction/libjunction.la

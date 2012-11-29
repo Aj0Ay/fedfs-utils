@@ -123,6 +123,11 @@ AC_CHECK_LIB([xml2], [xmlParseFile],
 		 AC_DEFINE([HAVE_LIBXML2], [1],
 			   [Define if you have libxml2])],
 		[AC_MSG_ERROR([libxml2 not found.])])
+AC_CHECK_LIB([uriparser], [uriParseUriA],
+		[AC_SUBST([LIBURIPARSER], ["-luriparser"])
+		 AC_DEFINE([HAVE_LIBURIPARSER], [1],
+			   [Define if you have liburiparser])],
+		[AC_MSG_ERROR([liburiparser not found.])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h langinfo.h locale.h memory.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h syslog.h termios.h unistd.h wchar.h])

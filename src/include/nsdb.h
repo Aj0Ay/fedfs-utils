@@ -28,6 +28,7 @@
 
 #include <netdb.h>
 #include <ldap.h>
+#include <uriparser/Uri.h>
 
 #include "fedfs_admin.h"
 #include "fedfs.h"
@@ -413,6 +414,12 @@ FedFsStatus	 nsdb_posix_to_path_array(const char *pathname,
 FedFsStatus	 nsdb_path_array_to_fedfspathname(char * const *path_array,
 				FedFsPathName *fpath);
 FedFsStatus	 nsdb_fedfspathname_to_path_array(FedFsPathName fpath,
+				char ***path_array);
+void		 nsdb_assign_textrange(UriTextRangeA *text,
+				const char *string);
+FedFsStatus	 nsdb_path_array_to_uri_pathname(char * const *path_array,
+				UriUriA *uri);
+FedFsStatus	 nsdb_uri_pathname_to_path_array(const UriUriA *uri,
 				char ***path_array);
 
 #endif	/* !_FEDFS_NSDB_H_ */
