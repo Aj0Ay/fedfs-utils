@@ -72,8 +72,6 @@ FedFsStatus	 nsdb_parse_singlevalue_int(char *attr,
 FedFsStatus	 nsdb_parse_singlevalue_str(char *attr,
 				struct berval **values, char *result,
 				const size_t len);
-FedFsStatus	 nsdb_parse_singlevalue_xdrpath(char *attr,
-				struct berval **values, char ***result);
 FedFsStatus	 nsdb_parse_multivalue_str(char *attr,
 				struct berval **values, char ***result);
 

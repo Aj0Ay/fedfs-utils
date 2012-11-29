@@ -403,10 +403,6 @@ char		*nsdb_normalize_path(const char *pathname);
 _Bool		 nsdb_pathname_is_utf8(const char *pathname);
 void		 nsdb_free_fedfspathname(FedFsPathName *fpath);
 
-FedFsStatus	 nsdb_path_array_to_xdr(char * const *path_array,
-				struct berval *xdr_path);
-FedFsStatus	 nsdb_xdr_to_path_array(const struct berval *xdr_path,
-				char ***path_array);
 FedFsStatus	 nsdb_path_array_to_posix(char * const *path_array,
 				char **pathname);
 FedFsStatus	 nsdb_posix_to_path_array(const char *pathname,

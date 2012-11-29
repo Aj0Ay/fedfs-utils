@@ -390,49 +390,6 @@ nsdb_parse_singlevalue_str(char *attr, struct berval **values,
 }
 
 /**
- * Parse the value of an attribute containing an XDR-encoded FedFsPathname
- *
- * @param attr a NUL-terminated C string containing the name of an attribute
- * @param values pointer to a berval containing value of fedfsNfsPath attribute
- * @param result OUT: dynamically allocated string array containing XDR-decoded path
- * @return a FedFsStatus code
- *
- * Caller must free "result" with nsdb_free_string_array(3)
- */
-FedFsStatus
-nsdb_parse_singlevalue_xdrpath(char *attr, struct berval **values, char ***result)
-{
-	char **tmp, *pathname;
-	FedFsStatus retval;
-
-	if (values[1] != NULL) {
-		xlog(L_ERROR, "%s: Expecting only one value for attribute %s",
-			__func__, attr);
-		return FEDFS_ERR_NSDB_RESPONSE;
-	}
-
-	retval = nsdb_xdr_to_path_array(values[0], &tmp);
-	if (retval != FEDFS_OK) {
-		xlog(L_ERROR, "%s: Bad %s value", __func__, attr);
-		return retval;
-	}
-
-	/* This is useful sanity checking while implementations
-	 * remain immature */
-	retval = nsdb_path_array_to_posix(tmp, &pathname);
-	if (retval != FEDFS_OK) {
-		xlog(L_ERROR, "%s: Reverse conversion failed", __func__);
-		return retval;
-	}
-
-	xlog(D_CALL, "%s: Attribute %s contains value \'%s\'",
-		__func__, attr, pathname);
-	free(pathname);
-	*result = tmp;
-	return FEDFS_OK;
-}
-
-/**
  * Parse the values of a multi-value string attribute
  *
  * @param attr a NUL-terminated C string containing the name of an attribute
