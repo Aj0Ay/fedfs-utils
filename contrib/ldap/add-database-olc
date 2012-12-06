@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# @file contrib/ldap/add-database-olc
+# @brief Add a database backend to an LDAP server via OLConfig
+#
+# Copyright 2012 Oracle.  All rights reserved.
+#
+# This file is part of fedfs-utils.
+#
+# fedfs-utils is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2.0 as
+# published by the Free Software Foundation.
+#
+# fedfs-utils is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License version 2.0 for more details.
+#
+# You should have received a copy of the GNU General Public License
+# version 2.0 along with fedfs-utils.  If not, see:
+#
+#	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+#
+
+#
+# This script may require some change before it is invoked to
+# create a database backend.
+#
+#   o The value of the olcDbDirectory attribute should reflect
+#     the file system location of the database on the LDAP server.
+#
+#   o The value of the olcRootDN and olcRootPW attributes may be
+#     updated depending on local policy (see slappasswd(5)).
+#
+
+
+LDAPMODIFY=`which ldapmodify`
+if [[ $? != 0 ]];
+then
+  echo "ldapmodify command not found on this system"
+  exit 1
+fi
+
+if [[ $# -lt 2 ]];
+then
+  echo "Usage: add-database-olc <LDAP server's hostname> <LDAP server's admin DN>"
+  echo " "
+  echo "  Add the FedFS schema via the OLConfig administrative interface."
+  echo " "
+  exit 1
+fi
+
+${LDAPMODIFY} -a -x -W -h $1 -D "$2" <<EOF
+dn: olcDatabase=bdb,cn=config
+objectClass: olcBdbConfig
+olcDatabase: bdb
+olcDbDirectory: /var/lib/ldap/fedfs
+olcSuffix: o=fedfs
+olcRootDN: cn=admin,o=fedfs
+olcRootPW: ChangeMe
+olcDbIndex: objectClass pres,eq
+olcDbIndex: fedFsFsnUuid pres,eq
+olcDbIndex: fedFsFslUuid pres,eq
+EOF

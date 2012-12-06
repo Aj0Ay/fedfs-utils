@@ -1,0 +1,55 @@
+#!/bin/bash
+#
+# @file contrib/ldap/add-referral-olc
+# @brief Add a referral directive to an LDAP server via OLConfig
+#
+# Copyright 2012 Oracle.  All rights reserved.
+#
+# This file is part of fedfs-utils.
+#
+# fedfs-utils is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2.0 as
+# published by the Free Software Foundation.
+#
+# fedfs-utils is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License version 2.0 for more details.
+#
+# You should have received a copy of the GNU General Public License
+# version 2.0 along with fedfs-utils.  If not, see:
+#
+#	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+#
+
+#
+# This script may require some change before it is invoked to
+# introduce a global referral directive
+#
+#   o The value of the olcReferral attribute should reflect
+#     the URI of the referred-to LDAP server
+#
+
+
+LDAPMODIFY=`which ldapmodify`
+if [[ $? != 0 ]];
+then
+  echo "ldapmodify command not found on this system"
+  exit 1
+fi
+
+if [[ $# -lt 2 ]];
+then
+  echo "Usage: add-referral-olc <LDAP server's hostname> <LDAP server's admin DN>"
+  echo " "
+  echo "  Add a referral directive via the OLConfig administrative interface."
+  echo " "
+  exit 1
+fi
+
+${LDAPMODIFY} -x -W -h $1 -D "$2" <<EOF
+dn: cn=config
+changetype: modify
+add: olcReferral
+olcReferral: ldap://ldap.example.net
+EOF

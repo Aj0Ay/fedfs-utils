@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# @file contrib/ldap/add-fedfs-entry
+# @brief Add an "o=fedfs" entry
+#
+# Copyright 2012 Oracle.  All rights reserved.
+#
+# This file is part of fedfs-utils.
+#
+# fedfs-utils is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2.0 as
+# published by the Free Software Foundation.
+#
+# fedfs-utils is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License version 2.0 for more details.
+#
+# You should have received a copy of the GNU General Public License
+# version 2.0 along with fedfs-utils.  If not, see:
+#
+#	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+#
+
+LDAPMODIFY=`which ldapmodify`
+if [[ $? != 0 ]];
+then
+  echo "ldapmodify command not found on this system"
+  exit 1
+fi
+
+if [[ $# -lt 2 ]];
+then
+  echo "Usage: add-fedfs-entry <LDAP server's hostname> <LDAP server's admin DN>"
+  echo " "
+  echo "  Add an 'o=fedfs' entry to an LDAP server."
+  echo " "
+  exit 1
+fi
+
+#
+# Note: a database has to be defined on the LDAP server for the
+#       "o=fedfs" root suffix before this modify operation will work.
+#
+
+${LDAPMODIFY} -a -x -W -h $1 -D "$2" <<EOF
+dn: o=fedfs
+objectClass: organization
+o: fedfs
+EOF

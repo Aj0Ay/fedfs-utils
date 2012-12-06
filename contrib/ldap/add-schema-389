@@ -1,0 +1,346 @@
+#!/bin/bash
+#
+# @file contrib/ldap/add-schema-389
+# @brief Add the FedFS schema to a 389-ds LDAP server via ldapmodify
+#
+# Copyright 2012 Oracle.  All rights reserved.
+#
+# This file is part of fedfs-utils.
+#
+# fedfs-utils is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2.0 as
+# published by the Free Software Foundation.
+#
+# fedfs-utils is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License version 2.0 for more details.
+#
+# You should have received a copy of the GNU General Public License
+# version 2.0 along with fedfs-utils.  If not, see:
+#
+#	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+#
+
+#
+# Updating this script should be necessary only when the FedFS
+# schema changes.  The FedFS schema LDIF below is formed by
+# copying and editing doc/ldap/fedfs-schema.ldif
+#
+#   1.  after the "dn" line add "changetype: modify"
+#   2.  move the objectClasses definitions after the attributeTypes definitions
+#   3.  before each "attributeTypes:" line, add "add: attributeTypes"
+#   4.  before each "objectClasses:" line, add "add: objectClasses"
+#   5.  after each " )" line except the last, add "-"
+#   6.  replace the EQUALITY, ORDERING, and SYNTAX lines in the fedfsUuid
+#       attribute type with " SUP nsUniqueID "
+#   7.  move the fedfsUuid record just before the objectClass definitions
+#   8.  remove any lines that begin with "#"
+#
+# Then replace the "here" document in this script with the result.
+#
+
+LDAPMODIFY=`which ldapmodify`
+if [[ $? != 0 ]];
+then
+  echo "ldapmodify command not found on this system"
+  exit 1
+fi
+
+if [[ $# -lt 2 ]];
+then
+  echo "Usage: add-fedfs-schema <LDAP server's hostname> <LDAP server's admin DN>"
+  echo " "
+  echo "  Add the FedFS schema to a 389-ds LDAP server via ldapmodify."
+  echo " "
+  exit 1
+fi
+
+${LDAPMODIFY} -x -W -h $1 -D "$2" <<EOF
+dn: cn=schema
+changetype: modify
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.4 
+ NAME 'fedfsFsnUuid' 
+ DESC 'The FSN UUID component of an FSN' 
+ SUP fedfsUuid 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.11 
+ NAME 'fedfsFsnTTL' 
+ DESC 'Time to live of an FSN tree' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.14 
+ NAME 'fedfsNceDN' 
+ DESC 'NCE Distinguished Name' 
+ EQUALITY distinguishedNameMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.8 
+ NAME 'fedfsFslUuid' 
+ DESC 'UUID of an FSL' 
+ SUP fedfsUuid 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.12 
+ NAME 'fedfsAnnotation' 
+ DESC 'Annotation of an object' 
+ SUP name 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.13 
+ NAME 'fedfsDescr' 
+ DESC 'Description of an object' 
+ SUP name 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.120 
+ NAME 'fedfsNfsURI' 
+ DESC 'Location of fileset' 
+ SUP labeledURI 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.103 
+ NAME 'fedfsNfsCurrency' 
+ DESC 'up-to-date measure of the data' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.104 
+ NAME 'fedfsNfsGenFlagWritable' 
+ DESC 'Indicates if the filesystem is writable' 
+ EQUALITY booleanMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.105 
+ NAME 'fedfsNfsGenFlagGoing' 
+ DESC 'Indicates if the filesystem is going' 
+ EQUALITY booleanMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.106 
+ NAME 'fedfsNfsGenFlagSplit' 
+ DESC 'Indicates if there are multiple filesystems' 
+ EQUALITY booleanMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.107 
+ NAME 'fedfsNfsTransFlagRdma' 
+ DESC 'Indicates if the transport supports RDMA' 
+ EQUALITY booleanMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.108 
+ NAME 'fedfsNfsClassSimul' 
+ DESC 'The simultaneous-use class of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.109 
+ NAME 'fedfsNfsClassHandle' 
+ DESC 'The handle class of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.110 
+ NAME 'fedfsNfsClassFileid' 
+ DESC 'The fileid class of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.111 
+ NAME 'fedfsNfsClassWritever' 
+ DESC 'The write-verifier class of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.112 
+ NAME 'fedfsNfsClassChange' 
+ DESC 'The change class of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.113 
+ NAME 'fedfsNfsClassReaddir' 
+ DESC 'The readdir class of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.114 
+ NAME 'fedfsNfsReadRank' 
+ DESC 'The read rank of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.115 
+ NAME 'fedfsNfsReadOrder' 
+ DESC 'The read order of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.116 
+ NAME 'fedfsNfsWriteRank' 
+ DESC 'The write rank of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.117 
+ NAME 'fedfsNfsWriteOrder' 
+ DESC 'The write order of the filesystem' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.118 
+ NAME 'fedfsNfsVarSub' 
+ DESC 'Indicates if variable substitution is present' 
+ EQUALITY booleanMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.19 
+ NAME 'fedfsNfsValidFor' 
+ DESC 'Valid for time' 
+ EQUALITY integerMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+ SINGLE-VALUE 
+ )
+-
+add: attributeTypes
+attributeTypes: (
+ 1.3.6.1.4.1.31103.1.1 
+ NAME 'fedfsUuid' 
+ DESC 'A UUID used by NSDB' 
+ SUP nsUniqueID 
+ SINGLE-VALUE 
+ )
+-
+add: objectClasses
+objectClasses: (
+ 1.3.6.1.4.1.31103.1.1001 
+ NAME 'fedfsNsdbContainerInfo' 
+ DESC 'Describes NCE location' 
+ SUP top 
+ AUXILIARY 
+ MUST ( fedfsNceDN ) 
+ MAY ( fedfsAnnotation $ fedfsDescr ) 
+ )
+-
+add: objectClasses
+objectClasses: (
+ 1.3.6.1.4.1.31103.1.1002 
+ NAME 'fedfsFsn' 
+ DESC 'Represents a fileset' 
+ SUP top 
+ STRUCTURAL 
+ MUST ( fedfsFsnUuid $ fedfsFsnTTL ) 
+ MAY ( fedfsAnnotation $ fedfsDescr ) 
+ )
+-
+add: objectClasses
+objectClasses: (
+ 1.3.6.1.4.1.31103.1.1003 
+ NAME 'fedfsFsl' 
+ DESC 'A physical location of a fileset' 
+ SUP top 
+ ABSTRACT 
+ MUST ( fedfsFslUuid $ fedfsFsnUuid ) 
+ MAY ( fedfsAnnotation $ fedfsDescr ) 
+ )
+-
+add: objectClasses
+objectClasses: (
+ 1.3.6.1.4.1.31103.1.1004 
+ NAME 'fedfsNfsFsl' 
+ DESC 'An NFS location of a fileset' 
+ SUP fedfsFsl 
+ STRUCTURAL 
+ MUST ( fedfsNfsURI $ fedfsNfsCurrency $ fedfsNfsGenFlagWritable $ fedfsNfsGenFlagGoing $ fedfsNfsGenFlagSplit $ fedfsNfsTransFlagRdma $ fedfsNfsClassSimul $ fedfsNfsClassHandle $ fedfsNfsClassFileid $ fedfsNfsClassWritever $ fedfsNfsClassChange $ fedfsNfsClassReaddir $ fedfsNfsReadRank $ fedfsNfsReadOrder $ fedfsNfsWriteRank $ fedfsNfsWriteOrder $ fedfsNfsVarSub $ fedfsNfsValidFor ) 
+ )
+EOF
