@@ -34,7 +34,7 @@ NSDB_CLIENT_CMDS	= nsdb-create-fsl.8 nsdb-create-fsn.8 \
 			  nsdb-annotate.8 nsdb-describe.8 \
 			  nsdb-list.8 nsdb-nces.8 \
 			  nsdb-update-nci.8 nsdb-remove-nci.8 \
-			  nsdb-delete-nsdb.8
+			  nsdb-delete-nsdb.8 nsdb-simple-nce.8
 
 dist_man7_MANS		= fedfs.7
 dist_man8_MANS		= rpc.fedfsd.8 mount.fedfs.8 fedfs-map-nfs4.8 nfsref.8 \

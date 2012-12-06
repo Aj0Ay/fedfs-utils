@@ -303,6 +303,12 @@ FedFsStatus	 nsdb_update_fsl_s(nsdb_t host, const char *nce,
  **/
 
 /**
+ * Create a simple "ou=fedfs" entry
+ */
+FedFsStatus	 nsdb_create_simple_nce_s(nsdb_t host, const char *parent,
+				char **dn, unsigned int *ldap_err);
+
+/**
  * Update or remove NSDB container information
  */
 FedFsStatus	 nsdb_update_nci_s(nsdb_t host, const char *nce,

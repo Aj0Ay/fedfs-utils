@@ -41,6 +41,7 @@ nsdb-describe
 nsdb-list
 nsdb-nces
 nsdb-resolve-fsn
+nsdb-simple-nce
 nsdb-update-fsl
 nsdb-update-nci
 nsdb-remove-nci

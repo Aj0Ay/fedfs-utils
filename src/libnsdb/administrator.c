@@ -1227,6 +1227,188 @@ nsdb_update_fsl_s(nsdb_t host, const char *nce, const char *fsl_uuid,
 }
 
 /**
+ * Add a new top-level o=fedfs entry
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param dn OUT: a NUL-terminated C string containing DN of new NCE
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with ber_memfree(3).
+ *
+ * LDIF equivalent:
+ *
+ * @verbatim
+
+   dn: o=fedfs
+   changeType: add
+   objectClass: organization
+   o: fedfs
+   @endverbatim
+ */
+static FedFsStatus
+nsdb_create_nce_add_top_entry(LDAP *ld, char **dn,
+		unsigned int *ldap_err)
+{
+	char *ocvals[2], *ouvals[2];
+	LDAPMod *attrs[3];
+	LDAPMod attr[2];
+	size_t len;
+	int i, rc;
+	char *nce;
+
+	for (i = 0; i < 3; i++)
+		attrs[i] = &attr[i];
+	i = 0;
+
+	nsdb_init_add_attribute(attrs[i++],
+				"objectClass", ocvals, "organization");
+	nsdb_init_add_attribute(attrs[i++],
+				"o", ouvals, "fedfs");
+	attrs[i] = NULL;
+
+	len = strlen("o=fedfs");
+	nce = ber_memalloc(len);
+	if (nce == NULL) {
+		xlog(D_GENERAL, "%s: No memory for NCE DN", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+	(void)sprintf(nce, "o=fedfs");
+
+	xlog(D_CALL, "%s: Using DN '%s'", __func__, nce);
+	rc = ldap_add_ext_s(ld, nce, attrs, NULL, NULL);
+	if (rc != LDAP_SUCCESS) {
+		ber_memfree(nce);
+		xlog(D_GENERAL, "Failed to add new blank NCE: %s",
+				ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	*dn = nce;
+	xlog(D_CALL, "%s: Successfully added blank NCE", __func__);
+	return FEDFS_OK;
+}
+
+/**
+ * Add a new ou=fedfs entry under "parent"
+ *
+ * @param ld an initialized LDAP server descriptor
+ * @param parent a NUL-terminated C string containing DN of parent
+ * @param dn OUT: a NUL-terminated C string containing DN of new NCE
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with ber_memfree(3).
+ *
+ * LDIF equivalent:
+ *
+ * @verbatim
+
+   dn: ou=fedfs,"parent"
+   changeType: add
+   objectClass: organizationalUnit
+   ou: fedfs
+   @endverbatim
+ */
+static FedFsStatus
+nsdb_create_nce_add_entry(LDAP *ld, const char *parent, char **dn,
+		unsigned int *ldap_err)
+{
+	char *ocvals[2], *ouvals[2];
+	LDAPMod *attrs[3];
+	LDAPMod attr[2];
+	size_t len;
+	int i, rc;
+	char *nce;
+
+	for (i = 0; i < 3; i++)
+		attrs[i] = &attr[i];
+	i = 0;
+
+	nsdb_init_add_attribute(attrs[i++],
+				"objectClass", ocvals, "organizationalUnit");
+	nsdb_init_add_attribute(attrs[i++],
+				"ou", ouvals, "fedfs");
+	attrs[i] = NULL;
+
+	len = strlen("ou=fedfs,") + strlen(parent) + 1;
+	nce = ber_memalloc(len);
+	if (nce == NULL) {
+		xlog(D_GENERAL, "%s: No memory for NCE DN", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+	(void)sprintf(nce, "ou=fedfs,%s", parent);
+
+	xlog(D_CALL, "%s: Using DN '%s'", __func__, nce);
+	rc = ldap_add_ext_s(ld, nce, attrs, NULL, NULL);
+	if (rc != LDAP_SUCCESS) {
+		ber_memfree(nce);
+		xlog(D_GENERAL, "%s: Failed to add new blank NCE: %s",
+				__func__, ldap_err2string(rc));
+		*ldap_err = rc;
+		return FEDFS_ERR_NSDB_LDAP_VAL;
+	}
+
+	*dn = nce;
+	xlog(D_CALL, "%s: Successfully added blank NCE", __func__);
+	return FEDFS_OK;
+}
+
+/**
+ * Create a blank NSDB container entry on a target NSDB server
+ *
+ * @param host an initialized and bound nsdb_t object
+ * @param parent a NUL-terminated C string containing DN of parent
+ * @param dn OUT: a NUL-terminated C string containing DN of new NCE
+ * @param ldap_err OUT: possibly an LDAP error code
+ * @return a FedFsStatus code
+ *
+ * Caller must free "dn" with free(3).
+ *
+ * Note: an NCE can be any entry in an LDAP DIT.  This function creates
+ * the simple case of an "ou=fedfs" entry under some other entry.
+ */
+FedFsStatus
+nsdb_create_simple_nce_s(nsdb_t host, const char *parent,
+		char **dn, unsigned int *ldap_err)
+{
+	FedFsStatus retval;
+	char *nce;
+
+	if (host->fn_ldap == NULL) {
+		xlog(L_ERROR, "%s: NSDB not open", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (parent == NULL || ldap_err == NULL) {
+		xlog(L_ERROR, "%s: Invalid parameter", __func__);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (parent[0] == '\0')
+		retval = nsdb_create_nce_add_top_entry(host->fn_ldap,
+							&nce, ldap_err);
+	else
+		retval = nsdb_create_nce_add_entry(host->fn_ldap, parent,
+							&nce, ldap_err);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = FEDFS_OK;
+	if (dn != NULL) {
+		*dn = strdup(nce);
+		if (*dn == NULL) {
+			xlog(D_GENERAL, "%s: No memory for DN",
+				__func__);
+			retval = FEDFS_ERR_SVRFAULT;
+		}
+	}
+	ber_memfree(nce);
+	return retval;
+}
+
+/**
  * Update NSDB Container Info in a namingContext entry
  *
  * @param ld an initialized LDAP server descriptor

@@ -25,7 +25,7 @@
 
 sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
 			  nsdb-update-nci nsdb-remove-nci nsdb-nces \
-			  nsdb-delete-nsdb \
+			  nsdb-delete-nsdb nsdb-simple-nce \
 			  nsdb-create-fsn nsdb-delete-fsn nsdb-resolve-fsn \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl
 LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
