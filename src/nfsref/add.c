@@ -39,12 +39,46 @@
 #include "junction.h"
 #include "nsdb.h"
 #include "xlog.h"
+#include "gpl-boiler.h"
 #include "nfsref.h"
 
 /**
  * Default cache expiration for FSN information
  */
 #define FSN_DEFAULT_TTL		(300)
+
+/**
+ * Display help message for "add" subcommand
+ *
+ * @param progname NUL-terminated C string containing name of program
+ * @return program exit status
+ */
+int
+nfsref_add_help(const char *progname)
+{
+	fprintf(stderr, " \n");
+
+	fprintf(stderr, "Usage: %s [ -t type ] add <junction path> "
+			"<server> <export> [ <server> <export> ... ]\n\n",
+		progname);
+
+	fprintf(stderr, "Add a new junction containing the specified list "
+			"of fileset locations.\n");
+	fprintf(stderr, "<junction path> is the filename of the new junction.  "
+			"<server> is the hostname\n");
+	fprintf(stderr, "or IP address of an NFS server where the fileset is "
+			"located.  <export> is the\n");
+	fprintf(stderr, "export pathname of the fileset on that server.\n\n");
+
+	fprintf(stderr, "For NFS basic junctions, the location list is stored "
+			"locally in the junction.\n");
+	fprintf(stderr, "For FedFS junctions, the location list is stored "
+			"as new FSN and FSL records\n");
+	fprintf(stderr, "on an NSDB.\n");
+
+	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
+	return EXIT_SUCCESS;
+}
 
 /**
  * Fill in default settings for NFSv4.0 fs_locations4

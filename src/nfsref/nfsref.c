@@ -97,6 +97,7 @@ main(int argc, char **argv)
 	char *progname, *subcommand, *junct_path;
 	enum nfsref_type type;
 	int arg, exit_status;
+	_Bool help;
 
 	(void)umask(S_IWGRP | S_IWOTH);
 
@@ -124,6 +125,7 @@ main(int argc, char **argv)
 		goto out;
 	}
 
+	help = false;
 	type = NFSREF_TYPE_UNSPECIFIED;
 	while ((arg = getopt_long(argc, argv, nfsref_opts,
 			nfsref_longopts, NULL)) != -1) {
@@ -144,17 +146,16 @@ main(int argc, char **argv)
 			}
 			break;
 		case '?':
-			nfsref_usage(progname);
-			exit(EXIT_SUCCESS);
+			help = true;
 		}
 	}
-	if (argc < optind + 2) {
-		fprintf(stderr, "Not enough positional parameters\n");
+
+	if (argc < optind + 1) {
 		nfsref_usage(progname);
 		goto out;
 	}
 
-	if (geteuid() != 0) {
+	if (!help && geteuid() != 0) {
 		fprintf(stderr, "Root permission is required\n");
 		goto out;
 	}
@@ -163,6 +164,10 @@ main(int argc, char **argv)
 	junct_path = argv[optind + 1];
 
 	if (strcasecmp(subcommand, "add") == 0) {
+		if (help) {
+			exit_status = nfsref_add_help(progname);
+			goto out;
+		}
 		if (argc < optind + 3) {
 			fprintf(stderr, "Not enough positional parameters\n");
 			nfsref_usage(progname);
@@ -172,12 +177,20 @@ main(int argc, char **argv)
 		if (exit_status == EXIT_SUCCESS)
 			(void)junction_flush_exports_cache();
 	} else if (strcasecmp(subcommand, "remove") == 0) {
+		if (help) {
+			exit_status = nfsref_remove_help(progname);
+			goto out;
+		}
 		exit_status = nfsref_remove(type, junct_path);
 		if (exit_status == EXIT_SUCCESS)
 			(void)junction_flush_exports_cache();
-	} else if (strcasecmp(subcommand, "lookup") == 0)
+	} else if (strcasecmp(subcommand, "lookup") == 0) {
+		if (help) {
+			exit_status = nfsref_lookup_help(progname);
+			goto out;
+		}
 		exit_status = nfsref_lookup(type, junct_path);
-	else {
+	} else {
 		xlog(L_ERROR, "Unrecognized subcommand: %s", subcommand);
 		nfsref_usage(progname);
 	}

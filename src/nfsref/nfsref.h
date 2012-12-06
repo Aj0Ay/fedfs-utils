@@ -40,4 +40,8 @@ int	 nfsref_add(enum nfsref_type type, const char *junct_path, char **argv,
 int	 nfsref_remove(enum nfsref_type type, const char *junct_path);
 int	 nfsref_lookup(enum nfsref_type type, const char *junct_path);
 
+int	 nfsref_add_help(const char *progname);
+int	 nfsref_remove_help(const char *progname);
+int	 nfsref_lookup_help(const char *progname);
+
 #endif	/* !FEDFS_NFSREF_H */

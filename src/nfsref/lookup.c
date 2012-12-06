@@ -32,7 +32,33 @@
 #include "junction.h"
 #include "nsdb.h"
 #include "xlog.h"
+#include "gpl-boiler.h"
 #include "nfsref.h"
+
+/**
+ * Display help message for "lookup" subcommand
+ *
+ * @param progname NUL-terminated C string containing name of program
+ * @return program exit status
+ */
+int
+nfsref_lookup_help(const char *progname)
+{
+	fprintf(stderr, " \n");
+
+	fprintf(stderr, "Usage: %s [ -t type ] lookup <junction path>\n\n",
+		progname);
+
+	fprintf(stderr, "Display the contents of the junction at "
+			"<junction path>.  For NFS basic\n");
+	fprintf(stderr, "junctions, the local contents of the junction "
+			"are displayed.  For FedFS\n");
+	fprintf(stderr, "junctions, FSL records are retrieved from the "
+			"NSDB and displayed.\n");
+
+	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
+	return EXIT_SUCCESS;
+}
 
 /**
  * Convert a boolean value into a displayable string constant

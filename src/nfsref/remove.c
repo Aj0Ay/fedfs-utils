@@ -34,7 +34,30 @@
 #include "fedfs.h"
 #include "junction.h"
 #include "xlog.h"
+#include "gpl-boiler.h"
 #include "nfsref.h"
+
+/**
+ * Display help message for "remove" subcommand
+ *
+ * @param progname NUL-terminated C string containing name of program
+ * @return program exit status
+ */
+int
+nfsref_remove_help(const char *progname)
+{
+	fprintf(stderr, " \n");
+
+	fprintf(stderr, "Usage: %s [ -t type ] remove <junction path>\n\n",
+		progname);
+
+	fprintf(stderr, "Remove the junction at <junction path>.  For FedFS "
+			"junctions, FSL and FSN\n");
+	fprintf(stderr, "records are removed from the NSDB.\n");
+
+	fprintf(stderr, "%s", fedfs_gpl_boilerplate);
+	return EXIT_SUCCESS;
+}
 
 /**
  * Remove any NFS junction information
