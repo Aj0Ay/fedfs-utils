@@ -470,9 +470,6 @@ again:
 			retval = nsdb_parse_delete_fsn_fsls_entry_s(ld, message,
 								ldap_err);
 			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld, message, ldap_err);
-			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
@@ -1653,9 +1650,6 @@ again:
 		case LDAP_RES_SEARCH_ENTRY:
 			retval = nsdb_parse_delete_nsdb_fsns_entry_s(ld, message,
 								ldap_err);
-			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);

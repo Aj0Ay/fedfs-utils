@@ -766,50 +766,6 @@ nsdb_delete_attribute_all_s(LDAP *ld, const char *dn,
 }
 
 /**
- * Handle an LDAP referral message
- *
- * @param ld an initialized LDAP server descriptor
- * @param reference an LDAP_RES_SEARCH_REFERENCE message
- * @param ldap_err OUT: possibly an LDAP error code
- * @return a FedFsStatus code
- *
- * @todo
- *	Implement LDAP referral handling
- */
-FedFsStatus
-nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
-		unsigned int *ldap_err)
-{
-	char **referrals = NULL;
-	int i, rc;
-
-	if (ld == NULL || reference == NULL || ldap_err == NULL) {
-		xlog(L_ERROR, "%s: Invalid parameter", __func__);
-		return FEDFS_ERR_INVAL;
-	}
-
-	xlog(L_ERROR, "%s: Received referral from NSDB", __func__);
-
-	rc = ldap_parse_reference(ld, reference, &referrals, NULL, 0);
-	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to parse result: %s",
-			__func__, ldap_err2string(rc));
-		*ldap_err = rc;
-		return FEDFS_ERR_NSDB_LDAP_VAL;
-	}
-
-	if (referrals != NULL) {
-		for (i = 0; referrals[i] != NULL; i++)
-			xlog(L_ERROR, "%s: Search reference: %s\n",
-				__func__, referrals[i]);
-		ber_memvfree((void **)referrals);
-	}
-
-	/* Haven't implemented LDAP referral support yet */
-	return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
-}
-
-/**
  * Duplicate an array of referral URIs
  *
  * @param refs an array of NUL-terminated C strings containing LDAP URIs

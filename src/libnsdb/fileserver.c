@@ -439,9 +439,6 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 		case LDAP_RES_SEARCH_ENTRY:
 			retval = nsdb_parse_ncedn_entry(ld, message, &tmp);
 			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld, message, ldap_err);
-			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
@@ -626,10 +623,6 @@ nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 		case LDAP_RES_SEARCH_ENTRY:
 			retval = nsdb_parse_naming_contexts_entry(ld,
 							message, &tmp);
-			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld,
-							message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
@@ -1087,9 +1080,6 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 			retval = nsdb_resolve_fsn_parse_entry(ld,
 							message, &tmp);
 			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld, message, ldap_err);
-			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
@@ -1400,9 +1390,6 @@ nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 		case LDAP_RES_SEARCH_ENTRY:
 			retval = nsdb_get_fsn_parse_entry(ld, message, &tmp);
 			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld, message, ldap_err);
-			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
@@ -1658,9 +1645,6 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 		switch (ldap_msgtype(message)) {
 		case LDAP_RES_SEARCH_ENTRY:
 			retval = nsdb_parse_fsn_entry(ld, message, &tmp);
-			break;
-		case LDAP_RES_SEARCH_REFERENCE:
-			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
 			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
