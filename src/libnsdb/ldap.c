@@ -491,14 +491,15 @@ nsdb_open(const char *hostname, const unsigned short port, LDAP **ld,
 	}
 
 	/*
-	 * The FedFS protocol drafts do not specify how to handle LDAP
-	 * referrals.  We probably don't want them, since our x.509 certs
-	 * will probably not be usable with a referred to LDAP server.
+	 * To authenticate a referred-to NSDB node and handle our
+	 * per-NSDB "follow referrals" setting, libnsdb wants
+	 * to handle LDAP referrals explicitly.
 	 */
 	rc = ldap_set_option(tmp, LDAP_OPT_REFERRALS, LDAP_OPT_OFF);
 	if (rc != LDAP_OPT_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to disable referrals: %s", 
-						__func__, ldap_err2string(rc));
+		xlog(D_GENERAL, "%s: Failed to disable referrals "
+			"for NSDB '%s': %s", __func__,
+			hostname, ldap_err2string(rc));
 		goto out_ldap_err;
 	}
 
