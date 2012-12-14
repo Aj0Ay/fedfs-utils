@@ -474,7 +474,7 @@ again:
 			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1658,7 +1658,7 @@ again:
 			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",

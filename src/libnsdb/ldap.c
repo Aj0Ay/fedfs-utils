@@ -810,18 +810,66 @@ nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
 }
 
 /**
+ * Duplicate an array of referral URIs
+ *
+ * @param refs an array of NUL-terminated C strings containing LDAP URIs
+ * @param referrals OUT: pointer to an array of NUL-terminated C strings
+ * @return a FedFsStatus code
+ *
+ * Caller must free "referrals" with nsdb_free_string_array().
+ */
+static FedFsStatus
+nsdb_copy_referrals_array(char **refs, char ***referrals)
+{
+	int i, count;
+	char **tmp;
+
+	for (i = 0; refs[i] != NULL; i++)
+		xlog(D_GENERAL, "%s: Referral: %s", __func__, refs[i]);
+	if (referrals == NULL)
+		return FEDFS_OK;
+	count = i;
+
+	tmp = calloc(count, sizeof(char *));
+	if (tmp == NULL) {
+		xlog(D_GENERAL, "%s: no memory for array", __func__);
+		return FEDFS_ERR_SVRFAULT;
+	}
+
+	for (i = 0; i < count; i++) {
+		tmp[i] = strdup(refs[i]);
+		if (tmp[i] == NULL) {
+			xlog(D_GENERAL, "%s: no memory for string", __func__);
+			nsdb_free_string_array(tmp);
+			return FEDFS_ERR_SVRFAULT;
+		}
+	}
+	tmp[i] = NULL;
+
+	*referrals = tmp;
+	return FEDFS_OK;
+}
+
+/**
  * Handle an LDAP search result message
  *
  * @param ld an initialized LDAP server descriptor
  * @param result an LDAP_RES_SEARCH_RESULT message
+ * @param referrals OUT: pointer to an array of NUL-terminated C strings
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
+ *
+ * If "ldap_err" contains LDAP_REFERRAL, caller must free "referrals"
+ * with nsdb_free_string_array().
  */
 FedFsStatus
-nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
+nsdb_parse_result(LDAP *ld, LDAPMessage *result, char ***referrals,
+		unsigned int *ldap_err)
 {
 	char *matched_dn = NULL, *error_msg = NULL;
 	int rc, result_code;
+	char **refs = NULL;
+	FedFsStatus retval;
 
 	if (ld == NULL || result == NULL || ldap_err == NULL) {
 		xlog(L_ERROR, "%s: Invalid parameter", __func__);
@@ -829,7 +877,7 @@ nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
 	}
 
 	rc = ldap_parse_result(ld, result, &result_code,
-					&matched_dn, &error_msg, NULL, NULL, 0);
+				&matched_dn, &error_msg, &refs, NULL, 0);
 	if (rc != LDAP_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to parse result: %s",
 			__func__, ldap_err2string(rc));
@@ -857,11 +905,17 @@ nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
 		ber_memfree(error_msg);
 	}
 
+	retval = FEDFS_OK;
+	if (refs != NULL) {
+		retval = nsdb_copy_referrals_array(refs, referrals);
+		ber_memvfree((void **)refs);
+	}
+
 	if (result_code != LDAP_SUCCESS) {
 		*ldap_err = result_code;
 		return FEDFS_ERR_NSDB_LDAP_VAL;
 	}
-	return FEDFS_OK;
+	return retval;
 }
 
 /**

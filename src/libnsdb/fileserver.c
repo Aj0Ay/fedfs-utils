@@ -443,7 +443,7 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -632,7 +632,7 @@ nsdb_get_naming_contexts_s(nsdb_t host, char ***contexts,
 							message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1091,7 +1091,7 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1404,7 +1404,7 @@ nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1663,7 +1663,7 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 			retval = nsdb_parse_reference(ld, message, ldap_err);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, ldap_err);
+			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",

@@ -102,7 +102,7 @@ FedFsStatus	 nsdb_delete_attribute_all_s(LDAP *ld, const char *dn,
 FedFsStatus	 nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
 				unsigned int *ldap_err);
 FedFsStatus	 nsdb_parse_result(LDAP *ld, LDAPMessage *result,
-				unsigned int *ldap_err);
+				char ***referrals, unsigned int *ldap_err);
 _Bool		 nsdb_compare_dns(LDAPDN dn1, LDAPDN dn2);
 _Bool		 nsdb_compare_dn_string(LDAPDN dn1, const char *dn2_in,
 				unsigned int *ldap_err);
