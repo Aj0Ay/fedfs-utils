@@ -820,7 +820,7 @@ nsdb_parse_reference(LDAP *ld, LDAPMessage *reference,
 FedFsStatus
 nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
 {
-	char *matched_msg, *error_msg;
+	char *matched_dn = NULL, *error_msg = NULL;
 	int rc, result_code;
 
 	if (ld == NULL || result == NULL || ldap_err == NULL) {
@@ -828,9 +828,8 @@ nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
 		return FEDFS_ERR_INVAL;
 	}
 
-	matched_msg = error_msg = NULL;
 	rc = ldap_parse_result(ld, result, &result_code,
-					&matched_msg, &error_msg, NULL, NULL, 0);
+					&matched_dn, &error_msg, NULL, NULL, 0);
 	if (rc != LDAP_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to parse result: %s",
 			__func__, ldap_err2string(rc));
@@ -838,20 +837,30 @@ nsdb_parse_result(LDAP *ld, LDAPMessage *result, unsigned int *ldap_err)
 		return FEDFS_ERR_NSDB_LDAP_VAL;
 	}
 
-	if (result_code != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Search result: %s",
+	if (result_code != LDAP_SUCCESS)
+		xlog(D_CALL, "%s: Search result: %s",
 			__func__, ldap_err2string(result_code));
-		if ((error_msg != NULL) && (*error_msg != '\0'))
+	else
+		xlog(D_CALL, "%s: Search completed successfully", __func__);
+
+	if (matched_dn != NULL) {
+		if (*matched_dn != '\0')
+			xlog(D_GENERAL, "%s: Matched DN: %s",
+				__func__, matched_dn);
+		ber_memfree(matched_dn);
+	}
+
+	if (error_msg != NULL) {
+		if (*error_msg != '\0')
 			xlog(D_GENERAL, "%s: Extended error: %s",
 				__func__, error_msg);
-		if ((matched_msg != NULL) && (*matched_msg != '\0'))
-			xlog(D_GENERAL, "%s: Matched DN: %s",
-				__func__, matched_msg);
+		ber_memfree(error_msg);
+	}
+
+	if (result_code != LDAP_SUCCESS) {
 		*ldap_err = result_code;
 		return FEDFS_ERR_NSDB_LDAP_VAL;
 	}
-
-	xlog(D_GENERAL, "%s: Search completed successfully", __func__);
 	return FEDFS_OK;
 }
 
