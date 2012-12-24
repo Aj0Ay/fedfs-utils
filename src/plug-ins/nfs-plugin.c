@@ -327,6 +327,52 @@ nfs_jp_convert_fedfs_fsls(struct fedfs_fsl *fsls, nfs_fsloc_set_t new)
 }
 
 /**
+ * Attempt to follow an LDAP referral to another NSDB
+ *
+ * @param host OUT: pointer to an initialized nsdb_t that may be replaced
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nfs_jp_follow_ldap_referral(nsdb_t *host)
+{
+	static unsigned int nest = 0;
+	FedFsStatus retval;
+	nsdb_t old, refer;
+
+	old = *host;
+	if (!nsdb_follow_referrals(old)) {
+		nfs_jp_debug("LDAP referrals for NSDB %s:%u disallowed\n",
+			nsdb_hostname(old), nsdb_port(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	}
+
+	if (nest++ > 10) {
+		nfs_jp_debug("Possible referral loop for NSDB %s:%u\n",
+			nsdb_hostname(old), nsdb_port(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	}
+
+	retval = nsdb_lookup_nsdb_by_uri(nsdb_referred_to(old), &refer);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_PARAMS:
+		nfs_jp_debug("Encountered referral to unrecognized NSDB %s\n",
+			nsdb_referred_to(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	default:
+		nfs_jp_debug("Problem following referral: %s\n",
+			nsdb_display_fedfsstatus(retval));
+		return retval;
+	}
+
+	nsdb_close_nsdb(old);
+	nsdb_free_nsdb(old);
+	*host = refer;
+	return FEDFS_OK;
+}
+
+/**
  * Resolve a FedFS fileset name into a set of NFS locations
  *
  * @param fsn_uuid NUL-terminated C string containing FSN UUID to resolve
@@ -348,6 +394,7 @@ nfs_jp_resolve_fsn(const char *fsn_uuid, nsdb_t host,
 	FedFsStatus retval;
 	int fsn_ttl;
 
+again:
 	if (nsdb_open_nsdb(host, NULL, NULL, &ldap_err) != FEDFS_OK)
 		return JP_NSDBLOCAL;
 
@@ -394,6 +441,12 @@ nfs_jp_resolve_fsn(const char *fsn_uuid, nsdb_t host,
 			__func__, fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
+		if (ldap_err == LDAP_REFERRAL) {
+			retval = nfs_jp_follow_ldap_referral(&host);
+			if (retval != FEDFS_OK)
+				break;
+			goto again;
+		}
 		nfs_jp_debug("%s: NSDB operation failed with %s\n",
 			__func__, ldap_err2string(ldap_err));
 		break;
