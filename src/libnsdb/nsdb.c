@@ -378,6 +378,22 @@ nsdb_follow_referrals(const nsdb_t host)
 }
 
 /**
+ * Return NSDB's default NCE
+ *
+ * @param host an instantiated nsdb_t object
+ * @return a NUL-terminated UTF-8 string containing an LDAP URI
+ *
+ * Lifetime of this string is the same as the lifetime of the
+ * nsdb_t.  Caller must not free this string, and must not use
+ * it after the nsdb_t is freed.
+ */
+const char *
+nsdb_referred_to(const nsdb_t host)
+{
+	return host->fn_referrals[0];
+}
+
+/**
  * Retrieve NSDB-related environment variables
  *
  * @param nsdbname OUT: pointer to statically allocated NUL-terminated C string containing NSDB hostname
@@ -1126,6 +1142,55 @@ nsdb_lookup_nsdb(const char *hostname, const unsigned short port,
 }
 
 /**
+ * Read NSDB info from NSDB database, using LDAP URI
+ *
+ * @param uri NUL-terminated ASCII string containing an LDAP URI
+ * @param host OUT: an initialized nsdb_t object
+ * @return a FedFsStatus code
+ *
+ * On success, FEDFS_OK is returned and a fresh nsdb_t is returned.
+ *
+ * Caller must free "host" with nsdb_free_nsdb().
+ */
+FedFsStatus
+nsdb_lookup_nsdb_by_uri(const char *uri, nsdb_t *host)
+{
+	FedFsStatus retval;
+	LDAPURLDesc *lud;
+	nsdb_t new;
+	int rc;
+
+	rc = ldap_url_parse(uri, &lud);
+	if (rc != LDAP_URL_SUCCESS) {
+		xlog(D_GENERAL, "%s: Failed to parse URI %s", __func__, uri);
+		return FEDFS_ERR_INVAL;
+	}
+
+	if (lud->lud_scheme == NULL ||
+	    strcasecmp(lud->lud_scheme, "ldap") != 0) {
+		xlog(D_GENERAL, "%s: Invalid URI %s", __func__, uri);
+		retval = FEDFS_ERR_INVAL;
+		goto out;
+	}
+
+	xlog(D_CALL, "%s: Looking up NSDB %s:%u",
+		__func__, lud->lud_host, lud->lud_port);
+	retval = nsdb_new_nsdb(lud->lud_host, lud->lud_port, &new);
+	if (retval != FEDFS_OK)
+		goto out;
+
+	retval = nsdb_read_nsdbparams(new, NULL);
+	if (retval != FEDFS_OK)
+		nsdb_free_nsdb(new);
+	else
+		*host = new;
+
+out:
+	ldap_free_urldesc(lud);
+	return retval;
+}
+
+/**
  * Update connection parameters for an NSDB
  *
  * @param host an instantiated nsdb_t object
@@ -1510,6 +1575,8 @@ nsdb_close_nsdb(nsdb_t host)
 {
 	(void)ldap_unbind_ext_s(host->fn_ldap, NULL, NULL);
 	host->fn_ldap = NULL;
+	nsdb_free_string_array(host->fn_referrals);
+	host->fn_referrals = NULL;
 }
 
 /**

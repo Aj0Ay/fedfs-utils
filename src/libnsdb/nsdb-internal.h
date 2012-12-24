@@ -45,6 +45,7 @@ struct fedfs_nsdb {
 	char *			fn_default_binddn;
 	char *			fn_default_nce;
 	_Bool			fn_follow_referrals;
+	char **			fn_referrals;
 };
 
 /**

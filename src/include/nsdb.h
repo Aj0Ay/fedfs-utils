@@ -181,6 +181,11 @@ FedFsStatus	 nsdb_lookup_nsdb(const char *hostname,
 				struct fedfs_secdata *sec);
 
 /**
+ * Instantiate an nsdb_t object based on stored connection parameters
+ */
+FedFsStatus	 nsdb_lookup_nsdb_by_uri(const char *uri, nsdb_t *host);
+
+/**
  * Update stored connection parameters for an NSDB
  */
 FedFsStatus	 nsdb_update_nsdb(const char *hostname,
@@ -240,6 +245,7 @@ unsigned short	 nsdb_port(const nsdb_t host);
 const char	*nsdb_default_binddn(const nsdb_t host);
 const char	*nsdb_default_nce(const nsdb_t host);
 _Bool		 nsdb_follow_referrals(const nsdb_t host);
+const char	*nsdb_referred_to(const nsdb_t host);
 
 /**
  * Data type helpers for nsdb_t objects

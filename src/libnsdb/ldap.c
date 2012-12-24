@@ -803,6 +803,7 @@ nsdb_copy_referrals_array(char **refs, char ***referrals)
 	}
 	tmp[i] = NULL;
 
+	nsdb_free_string_array(*referrals);
 	*referrals = tmp;
 	return FEDFS_OK;
 }

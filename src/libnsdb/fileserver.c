@@ -137,6 +137,9 @@ __nsdb_search_nsdb_attr_s(const char *func, LDAP *ld, const char *base,
 void
 nsdb_free_fedfs_fsn(struct fedfs_fsn *fsn)
 {
+	if (fsn == NULL)
+		return;
+
 	nsdb_free_string_array(fsn->fn_description);
 	nsdb_free_string_array(fsn->fn_annotations);
 	free(fsn->fn_dn);
@@ -397,6 +400,7 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 						"fedfsNceDN", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
+	case LDAP_REFERRAL:
 		break;
 	case LDAP_NO_SUCH_OBJECT:
 		xlog(D_GENERAL, "%s: %s is not an NSDB container entry",
@@ -415,20 +419,12 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 	}
 
 	rc = ldap_count_messages(ld, response);
-	switch (rc) {
-	case -1:
+	if (rc == -1) {
 		xlog(D_GENERAL, "%s: Empty LDAP response\n", __func__);
 		retval = FEDFS_ERR_NSDB_FAULT;
 		goto out;
-	case 1:
-		xlog(L_ERROR, "Naming context entry %s is inaccessible",
-			naming_context);
-		retval = FEDFS_ERR_NSDB_NONCE;
-		goto out;
-	default:
-		xlog(D_CALL, "%s: received %d messages", __func__, rc);
-		break;
 	}
+	xlog(D_CALL, "%s: received %d messages", __func__, rc);
 
 	tmp = NULL;
 	retval = FEDFS_OK;
@@ -440,7 +436,9 @@ nsdb_get_ncedn_s(nsdb_t host, const char *naming_context, char **dn,
 			retval = nsdb_parse_ncedn_entry(ld, message, &tmp);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
+			retval = nsdb_parse_result(ld, message,
+							&host->fn_referrals,
+							ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1001,7 +999,7 @@ nsdb_resolve_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
 /**
  * Retrieve and display the FSL entries associated with an FSN UUID
  *
- * @param ld an initialized LDAP server descriptor
+ * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
  * @param fsn_uuid a NUL-terminated C string containing FSN UUID
  * @param fsls OUT: a list of fedfs_fsl structures
@@ -1017,10 +1015,11 @@ nsdb_resolve_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
    @endverbatim
  */
 static FedFsStatus
-nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
+nsdb_resolve_fsn_find_entry_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		struct fedfs_fsl **fsls, unsigned int *ldap_err)
 {
 	LDAPMessage *response, *message;
+	LDAP *ld = host->fn_ldap;
 	struct fedfs_fsl *tmp;
 	FedFsStatus retval;
 	char filter[128];
@@ -1038,6 +1037,7 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 						filter, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
+	case LDAP_REFERRAL:
 		break;
 	case LDAP_NO_SUCH_OBJECT:
 		xlog(D_GENERAL, "%s: No entry for FSN UUID %s exists",
@@ -1055,20 +1055,12 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 	}
 
 	rc = ldap_count_messages(ld, response);
-	switch (rc) {
-	case -1:
+	if (rc == -1) {
 		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
 		ldap_msgfree(response);
 		return FEDFS_ERR_NSDB_FAULT;
-	case 1:
-		xlog(D_CALL, "%s: No FSL entries for FSN UUID %s",
-			__func__, fsn_uuid);
-		ldap_msgfree(response);
-		return FEDFS_ERR_NSDB_NOFSL;
-	default:
-		xlog(D_CALL, "%s: Received %d messages", __func__, rc);
-		break;
 	}
+	xlog(D_CALL, "%s: Received %d messages", __func__, rc);
 
 	tmp = NULL;
 	retval = FEDFS_OK;
@@ -1081,7 +1073,9 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 							message, &tmp);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
+			retval = nsdb_parse_result(ld, message,
+							&host->fn_referrals,
+							ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1092,8 +1086,14 @@ nsdb_resolve_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 	ldap_msgfree(response);
 
 	if (retval == FEDFS_OK) {
-		xlog(D_CALL, "%s: returning fsls", __func__);
-		*fsls = tmp;
+		if (tmp == NULL) {
+			xlog(D_CALL, "%s: No FSL entries for FSN UUID %s",
+				__func__, fsn_uuid);
+			retval = FEDFS_ERR_NSDB_NOFSL;
+		} else {
+			xlog(D_CALL, "%s: returning fsls", __func__);
+			*fsls = tmp;
+		}
 	} else
 		nsdb_free_fedfs_fsls(tmp);
 	return retval;
@@ -1132,7 +1132,7 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 	}
 
 	if (nce != NULL)
-		return nsdb_resolve_fsn_find_entry_s(host->fn_ldap, nce,
+		return nsdb_resolve_fsn_find_entry_s(host, nce,
 						fsn_uuid, fsls, ldap_err);
 
 	/*
@@ -1163,9 +1163,9 @@ nsdb_resolve_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		goto out;
 
 	for (j = 0; nce_list[j] != NULL; j++) {
-		retval = nsdb_resolve_fsn_find_entry_s(host->fn_ldap,
-							nce_list[j], fsn_uuid,
-							fsls, ldap_err);
+		retval = nsdb_resolve_fsn_find_entry_s(host, nce_list[j],
+							fsn_uuid, fsls,
+							ldap_err);
 		if (retval == FEDFS_OK)
 			break;
 	}
@@ -1310,7 +1310,7 @@ nsdb_get_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
 /**
  * Retrieve an FSN entry associated with an FSN UUID
  *
- * @param ld an initialized LDAP server descriptor
+ * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing DN of NSDB container entry
  * @param fsn_uuid a NUL-terminated C string containing FSN UUID
  * @param fsn OUT: a fedfs_fsn structures
@@ -1328,10 +1328,11 @@ nsdb_get_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
    @endverbatim
  */
 static FedFsStatus
-nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
+nsdb_get_fsn_find_entry_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		struct fedfs_fsn **fsn, unsigned int *ldap_err)
 {
 	LDAPMessage *response, *message;
+	LDAP *ld = host->fn_ldap;
 	struct fedfs_fsn *tmp;
 	FedFsStatus retval;
 	char filter[128];
@@ -1349,6 +1350,7 @@ nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 						filter, &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
+	case LDAP_REFERRAL:
 		break;
 	case LDAP_NO_SUCH_OBJECT:
 		xlog(D_GENERAL, "%s: No FSN record for FSN UUID %s exists",
@@ -1366,20 +1368,12 @@ nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 	}
 
 	rc = ldap_count_messages(ld, response);
-	switch (rc) {
-	case -1:
+	if (rc == -1) {
 		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
 		ldap_msgfree(response);
 		return FEDFS_ERR_NSDB_FAULT;
-	case 1:
-		xlog(D_GENERAL, "%s: No FSN record for FSN UUID %s exists",
-			__func__, fsn_uuid);
-		ldap_msgfree(response);
-		return FEDFS_ERR_NSDB_NOFSN;
-	default:
-		xlog(D_CALL, "%s: Received %d messages", __func__, rc);
-		break;
 	}
+	xlog(D_CALL, "%s: Received %d messages", __func__, rc);
 
 	tmp = NULL;
 	retval = FEDFS_OK;
@@ -1391,7 +1385,9 @@ nsdb_get_fsn_find_entry_s(LDAP *ld, const char *nce, const char *fsn_uuid,
 			retval = nsdb_get_fsn_parse_entry(ld, message, &tmp);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
+			retval = nsdb_parse_result(ld, message,
+							&host->fn_referrals,
+							ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1442,8 +1438,8 @@ nsdb_get_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 	}
 
 	if (nce != NULL)
-		return nsdb_get_fsn_find_entry_s(host->fn_ldap, nce,
-						fsn_uuid, fsn, ldap_err);
+		return nsdb_get_fsn_find_entry_s(host, nce, fsn_uuid,
+							fsn, ldap_err);
 
 	/*
 	 * Caller did not provide an nce.  Generate a list
@@ -1473,8 +1469,7 @@ nsdb_get_fsn_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 		goto out;
 
 	for (j = 0; nce_list[j] != NULL; j++) {
-		retval = nsdb_get_fsn_find_entry_s(host->fn_ldap,
-							nce_list[j], fsn_uuid,
+		retval = nsdb_get_fsn_find_entry_s(host, nce_list[j], fsn_uuid,
 							fsn, ldap_err);
 		if (retval == FEDFS_OK)
 			break;
@@ -1571,7 +1566,7 @@ nsdb_parse_fsn_entry(LDAP *ld, LDAPMessage *entry, char ***fsns)
 /**
  * Retrieve and display the FSN entries associated with an NSDB container
  *
- * @param ld an initialized LDAP server descriptor
+ * @param host an initialized and bound nsdb_t object
  * @param nce a NUL-terminated C string containing the DN of the NSDB container
  * @param fsns OUT: pointer to an array of NUL-terminated C strings containing FSN UUIDs
  * @param ldap_err OUT: possibly an LDAP error code
@@ -1585,10 +1580,11 @@ nsdb_parse_fsn_entry(LDAP *ld, LDAPMessage *entry, char ***fsns)
    @endverbatim
  */
 static FedFsStatus
-nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
+nsdb_list_find_entries_s(nsdb_t host, const char *nce, char ***fsns,
 		unsigned int *ldap_err)
 {
 	LDAPMessage *response, *message;
+	LDAP *ld = host->fn_ldap;
 	FedFsStatus retval;
 	char **tmp;
 	int rc;
@@ -1597,6 +1593,7 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 					"(objectClass=fedfsFsn)", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
+	case LDAP_REFERRAL:
 		break;
 	case LDAP_NO_SUCH_OBJECT:
 		xlog(D_GENERAL, "%s: No entry for %s exists",
@@ -1614,21 +1611,12 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 	}
 
 	rc = ldap_count_messages(ld, response);
-	switch (rc) {
-	case -1:
+	if (rc == -1) {
 		xlog(D_GENERAL, "%s: Empty LDAP response", __func__);
 		ldap_msgfree(response);
 		return FEDFS_ERR_NSDB_FAULT;
-	case 1:
-		xlog(D_CALL, "%s: No FSN entries under %s",
-			__func__, nce);
-		ldap_msgfree(response);
-		return FEDFS_ERR_NSDB_NOFSN;
-	default:
-		xlog(D_CALL, "%s: Received %d messages",
-			__func__, rc);
-		break;
 	}
+	xlog(D_CALL, "%s: Received %d messages", __func__, rc);
 
 	/* Assume one FSN per LDAP message, minus the RESULT message,
 	 * plus the NULL pointer on the end of the array */
@@ -1647,7 +1635,9 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 			retval = nsdb_parse_fsn_entry(ld, message, &tmp);
 			break;
 		case LDAP_RES_SEARCH_RESULT:
-			retval = nsdb_parse_result(ld, message, NULL, ldap_err);
+			retval = nsdb_parse_result(ld, message,
+							&host->fn_referrals,
+							ldap_err);
 			break;
 		default:
 			xlog(L_ERROR, "%s: Unrecognized LDAP message type",
@@ -1657,8 +1647,14 @@ nsdb_list_find_entries_s(LDAP *ld, const char *nce, char ***fsns,
 	}
 
 	if (retval == FEDFS_OK) {
-		xlog(D_CALL, "%s: returning fsn list", __func__);
-		*fsns = tmp;
+		if (tmp[0] == NULL) {
+			xlog(D_CALL, "%s: No FSN entries under %s",
+				__func__, nce);
+			retval = FEDFS_ERR_NSDB_NOFSN;
+		} else {
+			xlog(D_CALL, "%s: returning fsn list", __func__);
+			*fsns = tmp;
+		}
 	} else
 		nsdb_free_string_array(tmp);
 
@@ -1696,8 +1692,7 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 	}
 
 	if (nce != NULL)
-		return nsdb_list_find_entries_s(host->fn_ldap, nce,
-							fsns, ldap_err);
+		return nsdb_list_find_entries_s(host, nce, fsns, ldap_err);
 
 	/*
 	 * Caller did not provide an nce.  Discover the server's NSDB
@@ -1728,9 +1723,8 @@ nsdb_list_s(nsdb_t host, const char *nce, char ***fsns, unsigned int *ldap_err)
 		goto out;
 
 	for (j = 0; nce_list[j] != NULL; j++) {
-		retval = nsdb_list_find_entries_s(host->fn_ldap,
-							nce_list[j],
-							fsns, ldap_err);
+		retval = nsdb_list_find_entries_s(host, nce_list[j],
+						fsns, ldap_err);
 		if (retval == FEDFS_OK)
 			break;
 	}
