@@ -268,6 +268,52 @@ nfsref_lookup_display_fedfs_fsl(struct fedfs_fsl *fsl)
 }
 
 /**
+ * Attempt to follow an LDAP referral to another NSDB
+ *
+ * @param host OUT: pointer to an initialized nsdb_t that may be replaced
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nfsref_lookup_follow_ldap_referral(nsdb_t *host)
+{
+	static unsigned int nest = 0;
+	FedFsStatus retval;
+	nsdb_t old, refer;
+
+	old = *host;
+	if (!nsdb_follow_referrals(old)) {
+		xlog(L_ERROR, "LDAP referrals for NSDB %s:%u disallowed",
+			nsdb_hostname(old), nsdb_port(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	}
+
+	if (nest++ > 10) {
+		xlog(L_ERROR, "Possible referral loop for NSDB %s:%u",
+			nsdb_hostname(old), nsdb_port(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	}
+
+	retval = nsdb_lookup_nsdb_by_uri(nsdb_referred_to(old), &refer);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_PARAMS:
+		xlog(L_ERROR, "Encountered referral to unrecognized NSDB %s",
+			nsdb_referred_to(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	default:
+		xlog(L_ERROR, "Problem following referral: %s",
+			nsdb_display_fedfsstatus(retval));
+		return retval;
+	}
+
+	nsdb_close_nsdb(old);
+	nsdb_free_nsdb(old);
+	*host = refer;
+	return FEDFS_OK;
+}
+
+/**
  * Display a list of FedFS fileset locations
  *
  * @param fsls list of FedFS fileset locations to display
@@ -301,6 +347,7 @@ nfsref_lookup_resolve_fsn(const char *fsn_uuid, nsdb_t host)
 	xlog(D_GENERAL, "%s: resolving FSN UUID %s with NSDB %s:%u",
 		__func__, fsn_uuid, nsdb_hostname(host), nsdb_port(host));
 
+again:
 	if (nsdb_open_nsdb(host, NULL, NULL, &ldap_err) != FEDFS_OK)
 		return status;
 
@@ -345,6 +392,12 @@ nfsref_lookup_resolve_fsn(const char *fsn_uuid, nsdb_t host)
 			__func__, fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
+		if (ldap_err == LDAP_REFERRAL) {
+			retval = nfsref_lookup_follow_ldap_referral(&host);
+			if (retval != FEDFS_OK)
+				break;
+			goto again;
+		}
 		xlog(L_ERROR, "%s: NSDB operation failed with %s",
 			__func__, ldap_err2string(ldap_err));
 		break;
