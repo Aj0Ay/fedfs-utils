@@ -718,6 +718,52 @@ out_free:
 }
 
 /**
+ * Attempt to follow an LDAP referral to another NSDB
+ *
+ * @param host OUT: pointer to an initialized nsdb_t that may be replaced
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+fedfsd_follow_ldap_referral(nsdb_t *host)
+{
+	static unsigned int nest = 0;
+	FedFsStatus retval;
+	nsdb_t old, refer;
+
+	old = *host;
+	if (!nsdb_follow_referrals(old)) {
+		xlog(D_GENERAL, "LDAP referrals for NSDB %s:%u disallowed\n",
+			nsdb_hostname(old), nsdb_port(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	}
+
+	if (nest++ > 10) {
+		xlog(D_GENERAL, "Possible referral loop for NSDB %s:%u\n",
+			nsdb_hostname(old), nsdb_port(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	}
+
+	retval = nsdb_lookup_nsdb_by_uri(nsdb_referred_to(old), &refer);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_PARAMS:
+		xlog(D_GENERAL, "Encountered referral to unrecognized NSDB %s",
+			nsdb_referred_to(old));
+		return FEDFS_ERR_NSDB_LDAP_REFERRAL_NOTFOLLOWED;
+	default:
+		xlog(D_GENERAL, "Problem following referral: %s\n",
+			nsdb_display_fedfsstatus(retval));
+		return retval;
+	}
+
+	nsdb_close_nsdb(old);
+	nsdb_free_nsdb(old);
+	*host = refer;
+	return FEDFS_OK;
+}
+
+/**
  * Prepare a LOOKUP_NSDB type FEDFS_LOOKUP_JUNCTION reply 
  *
  * @param fsls a list of struct fedfs_fsl items
@@ -823,6 +869,7 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 		goto out;
 	}
 
+again:
 	result.status = fedfsd_nsdb_to_nsdbname(host, &resok->fsn.nsdbName);
 	if (result.status != FEDFS_OK)
 		goto out;
@@ -843,11 +890,17 @@ fedfsd_svc_lookup_junction_1(SVCXPRT *xprt)
 
 		result.status = nsdb_resolve_fsn_s(host, NULL, fsn_uuid,
 								&fsls, &ldap_err);
-		nsdb_close_nsdb(host);
 		if (result.status == FEDFS_ERR_NSDB_LDAP_VAL) {
-			result.FedFsLookupRes_u.ldapResultCode = ldap_err;
-			break;
+			if (ldap_err != LDAP_REFERRAL) {
+				result.FedFsLookupRes_u.ldapResultCode = ldap_err;
+				nsdb_close_nsdb(host);
+				break;
+			}
+			result.status = fedfsd_follow_ldap_referral(&host);
+			if (result.status == FEDFS_OK)
+				goto again;
 		}
+		nsdb_close_nsdb(host);
 		if (result.status != FEDFS_OK)
 			break;
 		result.status = fedfsd_prepare_fedfsfsl_array(fsls, resok);
