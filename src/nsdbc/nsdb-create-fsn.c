@@ -266,6 +266,11 @@ main(int argc, char **argv)
 			fprintf(stderr, "NCE %s does not exist\n", nce);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
+		if (ldap_err == LDAP_REFERRAL) {
+			fprintf(stderr, "Encountered LDAP referral on %s:%u\n",
+				nsdbname, nsdbport);
+			break;
+		}
 		fprintf(stderr, "Failed to create FSN: %s\n",
 			ldap_err2string(ldap_err));
 		break;

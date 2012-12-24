@@ -243,6 +243,10 @@ main(int argc, char **argv)
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
 		switch (ldap_err) {
+		case LDAP_REFERRAL:
+			fprintf(stderr, "Encountered LDAP referral on %s:%u\n",
+				nsdbname, nsdbport);
+			break;
 		case LDAP_NO_SUCH_OBJECT:
 			fprintf(stderr, "Entry \"%s\" not found\n", entry);
 			break;

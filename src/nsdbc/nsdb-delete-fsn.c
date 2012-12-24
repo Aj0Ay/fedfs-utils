@@ -261,6 +261,11 @@ main(int argc, char **argv)
 		fprintf(stderr, "FSN %s still has FSL entries\n", fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
+		if (ldap_err == LDAP_REFERRAL) {
+			fprintf(stderr, "Encountered LDAP referral on %s:%u\n",
+				nsdbname, nsdbport);
+			break;
+		}
 		/* XXX: "Operation not allowed on non-leaf" means
 		 *	this FSN still has children FSLs. */
 		fprintf(stderr, "Failed to delete FSN %s: %s\n",

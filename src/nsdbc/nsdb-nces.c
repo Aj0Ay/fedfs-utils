@@ -199,6 +199,11 @@ main(int argc, char **argv)
 	case FEDFS_OK:
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
+		if (ldap_err == LDAP_REFERRAL) {
+			fprintf(stderr, "Encountered LDAP referral on %s:%u\n",
+				nsdbname, nsdbport);
+			break;
+		}
 		fprintf(stderr, "Failed to list NCEs: %s\n",
 			ldap_err2string(ldap_err));
 		goto out_close;
