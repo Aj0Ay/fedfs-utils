@@ -573,6 +573,7 @@ FedFsStatus
 nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
 {
 	int value, rc;
+	char *uri;
 
 	/* Nothing to do if no certfile was provided */
 	if (certfile == NULL)
@@ -596,11 +597,20 @@ nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
 
 	rc = ldap_start_tls_s(ld, NULL, NULL);
 	if (rc != LDAP_SUCCESS) {
-		xlog(D_GENERAL, "%s: Failed to start TLS: %s",
-				__func__, ldap_err2string(rc));
+		char *msg = NULL;
+
+		ldap_get_option(ld, LDAP_OPT_DIAGNOSTIC_MESSAGE, (void *)&msg);
+		xlog(D_GENERAL, "%s: %s", __func__, msg);
+		ldap_memfree(msg);
 		goto out_ldap_err;
 	}
 
+	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
+		xlog(D_CALL, "%s: START_TLS succeeded for %s",
+			__func__, uri);
+		ldap_memfree(uri);
+	} else
+		xlog(D_CALL, "%s: START_TLS succeeded", __func__);
 	return FEDFS_OK;
 
 out_ldap_err:
