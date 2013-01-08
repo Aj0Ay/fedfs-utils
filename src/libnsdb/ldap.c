@@ -482,7 +482,7 @@ nsdb_open(const char *hostname, const unsigned short port, LDAP **ld,
 		rc = ldap_set_option(tmp,
 				LDAP_OPT_PROTOCOL_VERSION, &ldap_version);
 		if (rc != LDAP_OPT_SUCCESS) {
-			xlog(D_GENERAL, "%s: Failed to get connection version "
+			xlog(D_GENERAL, "%s: Failed to set connection version "
 					" for NSDB '%s': %s",
 					__func__, hostname,
 					ldap_err2string(rc));
