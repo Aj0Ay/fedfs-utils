@@ -48,7 +48,7 @@ nsdb_display_fedfsconnectionsec(const FedFsConnectionSec sectype)
 	default:
 		break;
 	}
-	return "an unrecognized error code";
+	return "unrecognized security type";
 }
 
 /**
