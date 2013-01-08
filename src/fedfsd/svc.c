@@ -1111,9 +1111,7 @@ fedfsd_svc_get_limited_nsdb_params_1(SVCXPRT *xprt)
 		xlog(L_WARNING, "Unrecognized NSDB connection security "
 			"type for %s:%u", hostname, port);
 	}
-
 	nsdb_free_nsdb(host);
-	free(hostname);
 
 out:
 	xlog(D_CALL, "%s: Replying with %s",
@@ -1126,6 +1124,8 @@ out:
 
 	if (!svc_freeargs(xprt, (xdrproc_t)xdr_FedFsNsdbName, (caddr_t)&args))
 		xlog(L_WARNING, "Failed to free GET_LIMITED_NSDB_PARAMS arguments");
+
+	free(hostname);
 }
 
 /**
