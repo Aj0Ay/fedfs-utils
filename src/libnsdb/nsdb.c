@@ -563,6 +563,13 @@ nsdb_new_certfile(const char *certdata, const unsigned int certlen,
 		goto out;
 	}
 
+	if (mkdir(fedfs_nsdbcerts_dirname, FEDFS_BASE_DIRMODE) == -1) {
+		if (errno != EEXIST) {
+			xlog(L_ERROR, "Failed to create certfile directory: %m");
+			return FEDFS_ERR_SVRFAULT;
+		}
+	}
+
 	fd = open(pathbuf, O_WRONLY | O_SYNC | O_CREAT | O_EXCL,
 						S_IRUSR | S_IWUSR | S_IRGRP);
 	if (fd == -1) {
