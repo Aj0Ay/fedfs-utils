@@ -292,6 +292,17 @@ unsigned short nsdb_port(const nsdb_t host)
 }
 
 /**
+ * Return nsdb_t's NSDB connection security type
+ *
+ * @param host pointer to initialized nsdb_t struct
+ * @return NSDB's port number
+ */
+FedFsConnectionSec nsdb_sectype(const nsdb_t host)
+{
+	return (FedFsConnectionSec)host->fn_sectype;
+}
+
+/**
  * Return filename containing nsdb_t's certificate
  *
  * @param host pointer to initialized nsdb_t
@@ -1568,7 +1579,7 @@ nsdb_open_nsdb(nsdb_t host, const char *binddn, const char *passwd,
 	if (retval != FEDFS_OK)
 		return retval;
 
-	switch (host->fn_sectype) {
+	switch (nsdb_sectype(host)) {
 	case FEDFS_SEC_NONE:
 		break;
 	case FEDFS_SEC_TLS:

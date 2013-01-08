@@ -1078,7 +1078,6 @@ static void
 fedfsd_svc_get_limited_nsdb_params_1(SVCXPRT *xprt)
 {
 	FedFsGetLimitedNsdbParamsRes result;
-	struct fedfs_secdata secdata;
 	char *hostname = NULL;
 	unsigned short port;
 	FedFsNsdbName args;
@@ -1097,10 +1096,22 @@ fedfsd_svc_get_limited_nsdb_params_1(SVCXPRT *xprt)
 	if (result.status != FEDFS_OK)
 		goto out;
 
-	result.status = nsdb_lookup_nsdb(hostname, port, &host, &secdata);
-	if (result.status == FEDFS_OK)
-		result.FedFsGetLimitedNsdbParamsRes_u.secType =
-				(FedFsConnectionSec)secdata.type;
+	result.status = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	if (result.status != FEDFS_OK)
+		goto out;
+
+	switch (nsdb_sectype(host)) {
+	case FEDFS_SEC_NONE:
+	case FEDFS_SEC_TLS:
+		result.status = FEDFS_OK;
+		result.FedFsGetLimitedNsdbParamsRes_u.secType = nsdb_sectype(host);
+		break;
+	default:
+		result.status = FEDFS_ERR_SVRFAULT;
+		xlog(L_WARNING, "Unrecognized NSDB connection security "
+			"type for %s:%u", hostname, port);
+	}
+
 	nsdb_free_nsdb(host);
 	free(hostname);
 

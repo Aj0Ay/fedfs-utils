@@ -78,6 +78,38 @@ nsdbparams_show_usage(const char *progname)
 }
 
 /**
+ * Display NSDB connection parameters for "host"
+ *
+ * @param host initialized nsdb_t
+ */
+static void
+nsdbparams_show_display(nsdb_t host)
+{
+	char *c;
+
+	printf("%s:%u:\n", nsdb_hostname(host), nsdb_port(host));
+	switch (nsdb_sectype(host)) {
+	case FEDFS_SEC_NONE:
+		printf("\tconnection security: NONE\n");
+		break;
+	case FEDFS_SEC_TLS:
+		printf("\tconnection security: TLS\n");
+		printf("\tcertificate file: %s\n", nsdb_certfile(host));
+		break;
+	default:
+		printf("\tconnection security: unrecognized\n");
+	}
+	printf("\tfollow referrals: %s\n",
+		nsdb_follow_referrals(host) ? "yes" : "no");
+	c = (char *)nsdb_default_binddn(host);
+	if (c != NULL)
+		printf("\tdefault bind DN: %s\n", c);
+	c = (char *)nsdb_default_nce(host);
+	if (c != NULL)
+		printf("\tdefault NCE: %s\n", c);
+}
+
+/**
  * Show one NSDB entry in our NSDB connection parameter database
  *
  * @param progname NUL-terminated UTF-8 string containing name of this program
@@ -89,10 +121,7 @@ int
 nsdbparams_show(const char *progname, int argc, char **argv)
 {
 	unsigned short nsdbport = LDAP_PORT;
-	struct fedfs_secdata secdata = {
-		.type		= 0,
-	};
-	char *c, *nsdbname, *endptr;
+	char *nsdbname, *endptr;
 	FedFsStatus status;
 	unsigned long tmp;
 	struct passwd *pw;
@@ -207,23 +236,11 @@ nsdbparams_show(const char *progname, int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, &secdata);
+	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
 	switch (status) {
 	case FEDFS_OK:
-		printf("%s:%u:\n", nsdbname, nsdbport);
-		printf("\tconnection security: %s\n",
-			nsdb_display_fedfsconnectionsec(secdata.type));
-		printf("\tfollow referrals: %s\n",
-			nsdb_follow_referrals(host) ? "yes" : "no");
-		c = (char *)nsdb_default_binddn(host);
-		if (c != NULL)
-			printf("\tdefault bind DN: %s\n", c);
-		c = (char *)nsdb_default_nce(host);
-		if (c != NULL)
-			printf("\tdefault NCE: %s\n", c);
+		nsdbparams_show_display(host);
 		nsdb_free_nsdb(host);
-		if (secdata.type != FEDFS_SEC_NONE)
-			printf("secdata:\n%s\n", secdata.data);
 		break;
 	case FEDFS_ERR_NSDB_PARAMS:
 		xlog(L_ERROR, "No record for %s was found", nsdbname);

@@ -242,6 +242,8 @@ void		 nsdb_free_nsdb(nsdb_t host);
 const char	*nsdb_hostname(const nsdb_t host);
 size_t		 nsdb_hostname_len(const nsdb_t host);
 unsigned short	 nsdb_port(const nsdb_t host);
+FedFsConnectionSec
+		 nsdb_sectype(const nsdb_t host);
 const char	*nsdb_certfile(const nsdb_t host);
 const char	*nsdb_default_binddn(const nsdb_t host);
 const char	*nsdb_default_nce(const nsdb_t host);
