@@ -292,6 +292,21 @@ unsigned short nsdb_port(const nsdb_t host)
 }
 
 /**
+ * Return filename containing nsdb_t's certificate
+ *
+ * @param host pointer to initialized nsdb_t
+ * @return NUL-terminated C string containing filename, or NULL
+ *
+ * Lifetime of this string is the same as the lifetime of the
+ * nsdb_t.  Caller must not free this string, and must not use
+ * it after the nsdb_t is freed.
+ */
+const char *nsdb_certfile(const nsdb_t host)
+{
+	return host->fn_certfile;
+}
+
+/**
  * Convert string form of integer into an IP port number
  *
  * @param string a NUL-terminated C string containing number to convert
@@ -617,7 +632,7 @@ static FedFsStatus
 nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 {
 	const char *domainname = host->fn_hostname;
-	char *secdata, *def_binddn, *def_nce;
+	char *certfile, *def_binddn, *def_nce;
 	unsigned int port = host->fn_port;
 	int rc, follow_referrals;
 	FedFsStatus retval;
@@ -648,8 +663,8 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 	switch (sqlite3_step(stmt)) {
 	case SQLITE_ROW:
 		xlog(D_GENERAL, "Found row for '%s:%u'", domainname, port);
-		secdata = strdup((const char *)sqlite3_column_text(stmt, 1));
-		if (secdata == NULL) {
+		certfile = strdup((const char *)sqlite3_column_text(stmt, 1));
+		if (certfile == NULL) {
 			retval = FEDFS_ERR_SVRFAULT;
 			break;
 		}
@@ -657,7 +672,7 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 		if (def_binddn != NULL) {
 			def_binddn = strdup(def_binddn);
 			if (def_binddn == NULL) {
-				free(secdata);
+				free(certfile);
 				retval = FEDFS_ERR_SVRFAULT;
 				break;
 			}
@@ -667,7 +682,7 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 			def_nce = strdup(def_nce);
 			if (def_nce == NULL) {
 				free(def_binddn);
-				free(secdata);
+				free(certfile);
 				retval = FEDFS_ERR_SVRFAULT;
 				break;
 			}
@@ -678,7 +693,7 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 		else
 			host->fn_follow_referrals = true;
 		host->fn_sectype = sqlite3_column_int(stmt, 0);
-		host->fn_secdata = secdata;
+		host->fn_certfile = certfile;
 		host->fn_default_binddn = def_binddn;
 		host->fn_default_nce = def_nce;
 		retval = FEDFS_OK;
@@ -764,14 +779,14 @@ out:
  * @param db an open sqlite3 database descriptor
  * @param host an instantiated nsdb_t object
  * @param sectype an integer value representing the security type
- * @param secdata a NUL-terminated UTF-8 C string containing the name of a file containing security data
+ * @param certfile a NUL-terminated UTF-8 C string containing the name of a file containing an x.509 certificate
  * @return a FedFsStatus code
  *
  * Information is copied from the nsdb_t object to the cert store.
  */
 static FedFsStatus
 nsdb_update_nsdbname(sqlite3 *db, const nsdb_t host,
-		unsigned int sectype, const char *secdata)
+		unsigned int sectype, const char *certfile)
 {
 	const char *domainname = host->fn_hostname;
 	const int port = host->fn_port;
@@ -792,7 +807,7 @@ nsdb_update_nsdbname(sqlite3 *db, const nsdb_t host,
 		goto out_finalize;
 	}
 
-	rc = sqlite3_bind_text(stmt, 2, secdata, -1, SQLITE_STATIC);
+	rc = sqlite3_bind_text(stmt, 2, certfile, -1, SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
 		xlog(L_ERROR, "Failed to bind security data value: %s",
 			sqlite3_errmsg(db));
@@ -1103,7 +1118,7 @@ nsdb_read_nsdbparams(nsdb_t host, struct fedfs_secdata *sec)
 
 	if (sec != NULL) {
 		if (host->fn_sectype != FEDFS_SEC_NONE) {
-			retval = nsdb_read_certfile(host->fn_secdata,
+			retval = nsdb_read_certfile(nsdb_certfile(host),
 					&sec->data, &sec->len);
 			if (retval != FEDFS_OK)
 				goto out_close;
@@ -1256,7 +1271,7 @@ nsdb_update_nsdbparams(nsdb_t host, const struct fedfs_secdata *sec)
 	}
 
 	host->fn_sectype = (unsigned int)sec->type;
-	host->fn_secdata = certfile;
+	host->fn_certfile = certfile;
 	retval = FEDFS_OK;
 
 out_close:
@@ -1556,7 +1571,7 @@ nsdb_open_nsdb(nsdb_t host, const char *binddn, const char *passwd,
 	case FEDFS_SEC_NONE:
 		break;
 	case FEDFS_SEC_TLS:
-		retval = nsdb_start_tls(ld, host->fn_secdata, ldap_err);
+		retval = nsdb_start_tls(ld, nsdb_certfile(host), ldap_err);
 		if (retval != FEDFS_OK)
 			goto out_unbind;
 		break;
@@ -1605,7 +1620,7 @@ nsdb_free_nsdb(nsdb_t host)
 		return;
 
 	free(host->fn_hostname);
-	free(host->fn_secdata);
+	free(host->fn_certfile);
 	nsdb_free_string_array(host->fn_naming_contexts);
 	free(host->fn_default_binddn);
 	free(host->fn_default_nce);

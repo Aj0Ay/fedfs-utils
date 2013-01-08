@@ -39,7 +39,7 @@ struct fedfs_nsdb {
 	char *			fn_hostname;
 	unsigned short		fn_port;
 	unsigned int		fn_sectype;
-	char *			fn_secdata;
+	char *			fn_certfile;
 	LDAP *			fn_ldap;
 	char **			fn_naming_contexts;
 	char *			fn_default_binddn;
