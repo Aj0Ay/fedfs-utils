@@ -129,6 +129,28 @@ __nsdb_modify_nsdb_s(const char *func, LDAP *ld, const char *dn, LDAPMod *mod,
 	__nsdb_modify_nsdb_s(__func__, ld, dn, mod, ldaperr)
 
 /**
+ * Enable LDAP debugging when contacting an NSDB
+ *
+ */
+void
+nsdb_enable_ldap_debugging(void)
+{
+	int rc, debug;
+
+	debug = 0xffff;		/* LDAP_DEBUG_ANY */
+
+#if 0
+	rc = ber_set_option(NULL, LBER_OPT_DEBUG_LEVEL, &debug);
+	if (rc != LBER_OPT_SUCCESS)
+		xlog(L_ERROR, "Failed to set LBER_OPT_DEBUG_LEVEL");
+#endif
+
+	rc = ldap_set_option(NULL, LDAP_OPT_DEBUG_LEVEL, &debug);
+	if (rc != LDAP_OPT_SUCCESS )
+		xlog(L_ERROR, "Failed to set LDAP_OPT_DEBUG_LEVEL");
+}
+
+/**
  * Read a password from stdin, disabling character echo
  *
  * @return a NUL-terminated C string containing the typed-in password.  Caller must free the string with free(3)

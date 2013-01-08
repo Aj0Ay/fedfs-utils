@@ -391,6 +391,11 @@ FedFsStatus	 nsdb_ping_s(const char *hostname, const unsigned short port,
 				unsigned int *ldap_err);
 
 /**
+ * Enable LDAP debugging when contacting an NSDB
+ */
+void		 nsdb_enable_ldap_debugging(void);
+
+/**
  ** Readability helpers
  **/
 const char	*nsdb_display_fedfsconnectionsec(const FedFsConnectionSec sectype);

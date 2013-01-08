@@ -142,6 +142,7 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			xlog_config(D_ALL, 1);
+			nsdb_enable_ldap_debugging();
 			break;
 		case 'D':
 			binddn = optarg;
