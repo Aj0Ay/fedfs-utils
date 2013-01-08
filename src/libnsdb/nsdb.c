@@ -515,6 +515,8 @@ nsdb_read_certfile(const char *pathname, char **certdata,
 		goto out;
 	}
 
+	xlog(D_CALL, "%s: Successfully read %s", __func__, pathname);
+
 	(void)close(fd);
 	*certdata = buf;
 	*certlen = stb.st_size;

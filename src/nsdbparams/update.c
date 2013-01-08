@@ -363,9 +363,11 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 			goto out;
 		}
 
-		if (nsdb_read_certfile(certfile, &secdata.data,
-				&secdata.len) != FEDFS_OK) {
-			xlog(L_ERROR, "Failed to read certfile");
+		retval = nsdb_read_certfile(certfile,
+						&secdata.data, &secdata.len);
+		if (retval != FEDFS_OK) {
+			xlog(L_ERROR, "Failed to read certfile: %s",
+					nsdb_display_fedfsstatus(retval));
 			goto out;
 		}
 	}
