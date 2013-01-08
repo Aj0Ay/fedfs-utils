@@ -564,10 +564,6 @@ nsdb_bind(LDAP *ld, const char *binddn, const char *passwd,
  * @param certfile NUL-terminated C string containing pathname of X.509 cert file
  * @param ldap_err OUT: possibly an LDAP error code
  * @return a FedFsStatus code
- *
- * If "certfile" is not NULL, then the certfile contents are used to
- * authenticate the server, and TLS must be started and operating
- * before this function returns true.
  */
 FedFsStatus
 nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
@@ -575,9 +571,9 @@ nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
 	int value, rc;
 	char *uri;
 
-	/* Nothing to do if no certfile was provided */
 	if (certfile == NULL)
-		return FEDFS_OK;
+		return FEDFS_ERR_INVAL;
+	xlog(D_CALL, "%s: Using certfile %s", __func__, certfile);
 
 	rc = ldap_set_option(ld, LDAP_OPT_X_TLS_CERTFILE, certfile);
 	if (rc != LDAP_OPT_SUCCESS) {
