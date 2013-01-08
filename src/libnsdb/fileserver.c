@@ -1827,7 +1827,6 @@ nsdb_ping_s(const char *hostname, const unsigned short port,
 	retval = nsdb_new_nsdb(hostname, port, &host);
 	if (retval != FEDFS_OK)
 		return retval;
-	host->fn_sectype = FEDFS_SEC_NONE;
 
 	retval = nsdb_open_nsdb(host, NULL, NULL, ldap_err);
 	if (retval != FEDFS_OK)

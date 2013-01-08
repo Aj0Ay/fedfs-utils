@@ -483,6 +483,7 @@ nsdb_new_nsdb(const char *hostname, const unsigned long port, nsdb_t *host)
 	memset(*host, 0, sizeof(**host));
 	(*host)->fn_hostname = hostname_tmp;
 	(*host)->fn_port = port_tmp;
+	(*host)->fn_sectype = FEDFS_SEC_NONE;
 	return FEDFS_OK;
 }
 
