@@ -69,6 +69,11 @@
  */
 #define NSDB_NCE_ENV		"FEDFS_NSDB_NCE"
 
+/**
+ * Permission mode to use when creating certfiles
+ */
+#define FEDFS_CERTFILE_MODE	(S_IRUSR|S_IRGRP|S_IROTH)
+
 
 /**
  * Stores pathname of directory containing FedFS persistent state
@@ -571,7 +576,7 @@ nsdb_new_certfile(const char *certdata, const unsigned int certlen,
 	}
 
 	fd = open(pathbuf, O_WRONLY | O_SYNC | O_CREAT | O_EXCL,
-						S_IRUSR | S_IWUSR | S_IRGRP);
+						FEDFS_CERTFILE_MODE);
 	if (fd == -1) {
 		xlog(D_GENERAL, "%s: Failed to open %s: %m",
 			__func__, pathbuf);
