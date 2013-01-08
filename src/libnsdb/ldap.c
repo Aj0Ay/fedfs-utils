@@ -575,7 +575,7 @@ nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
 		return FEDFS_ERR_INVAL;
 	xlog(D_CALL, "%s: Using certfile %s", __func__, certfile);
 
-	rc = ldap_set_option(ld, LDAP_OPT_X_TLS_CERTFILE, certfile);
+	rc = ldap_set_option(NULL, LDAP_OPT_X_TLS_CACERTFILE, certfile);
 	if (rc != LDAP_OPT_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to set NSDB certificate: %s",
 				__func__, ldap_err2string(rc));
@@ -583,7 +583,7 @@ nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
 	}
 
 	value = LDAP_OPT_X_TLS_HARD;
-	rc = ldap_set_option(ld, LDAP_OPT_X_TLS_REQUIRE_CERT, &value);
+	rc = ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT, &value);
 	if (rc != LDAP_OPT_SUCCESS) {
 		xlog(D_GENERAL, "%s: Failed to set "
 				"LDAP_OPT_X_TLS_REQUIRE_CERT: %s",
