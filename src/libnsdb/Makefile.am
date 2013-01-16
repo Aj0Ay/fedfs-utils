@@ -26,8 +26,8 @@
 noinst_HEADERS		= nsdb-internal.h
 
 noinst_LTLIBRARIES	= libnsdb.la
-libnsdb_la_SOURCES	= administrator.c annotation.c display.c fileserver.c \
-			  ldap.c nsdb.c path.c sqlite.c
+libnsdb_la_SOURCES	= administrator.c annotation.c connsec.c display.c \
+			  fileserver.c ldap.c nsdb.c path.c sqlite.c
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

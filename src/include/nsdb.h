@@ -186,6 +186,12 @@ FedFsStatus	 nsdb_lookup_nsdb(const char *hostname,
 FedFsStatus	 nsdb_lookup_nsdb_by_uri(const char *uri, nsdb_t *host);
 
 /**
+ * Retrieve NSDB certificate data for "host"
+ */
+FedFsStatus	 nsdb_connsec_get_cert_data(nsdb_t host,
+				char **data, unsigned int *len);
+
+/**
  * Update stored connection parameters for an NSDB
  */
 FedFsStatus	 nsdb_update_nsdb(const char *hostname,

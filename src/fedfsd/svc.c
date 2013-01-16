@@ -1021,11 +1021,12 @@ static void
 fedfsd_svc_get_nsdb_params_1(SVCXPRT *xprt)
 {
 	FedFsGetNsdbParamsRes result;
-	struct fedfs_secdata secdata;
+	FedFsNsdbParams *params = &result.FedFsGetNsdbParamsRes_u.params;
+	FedFsConnectionSec type;
 	char *hostname = NULL;
 	unsigned short port;
 	FedFsNsdbName args;
-	nsdb_t host;
+	nsdb_t host = NULL;
 
 	memset(&args, 0, sizeof(args));
 	if (!svc_getargs(xprt, (xdrproc_t)xdr_FedFsNsdbName, (caddr_t)&args)) {
@@ -1040,14 +1041,27 @@ fedfsd_svc_get_nsdb_params_1(SVCXPRT *xprt)
 	if (result.status != FEDFS_OK)
 		goto out;
 
-	result.status = nsdb_lookup_nsdb(hostname, port, &host, &secdata);
-	if (result.status == FEDFS_OK) {
-		FedFsNsdbParams *params = &result.FedFsGetNsdbParamsRes_u.params;
-		params->secType = (FedFsConnectionSec)secdata.type;
-		params->FedFsNsdbParams_u.secData.secData_len =
-							secdata.len;
-		params->FedFsNsdbParams_u.secData.secData_val =
-							secdata.data;
+	result.status = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	if (result.status != FEDFS_OK)
+		goto out;
+
+	type = nsdb_sectype(host);
+	switch (type) {
+	case FEDFS_SEC_NONE:
+		result.status = FEDFS_OK;
+		params->secType = type;
+		break;
+	case FEDFS_SEC_TLS:
+		result.status = nsdb_connsec_get_cert_data(host,
+				&params->FedFsNsdbParams_u.secData.secData_val,
+				&params->FedFsNsdbParams_u.secData.secData_len);
+		if (result.status == FEDFS_OK)
+			params->secType = type;
+		break;
+	default:
+		result.status = FEDFS_ERR_SVRFAULT;
+		xlog(L_WARNING, "Unrecognized NSDB connection security "
+			"type for %s:%u", hostname, port);
 	}
 
 out:
@@ -1062,9 +1076,9 @@ out:
 	if (!svc_freeargs(xprt, (xdrproc_t)xdr_FedFsNsdbName, (caddr_t)&args))
 		xlog(L_WARNING, "Failed to free GET_NSDB_PARAMS arguments");
 
+	free(params->FedFsNsdbParams_u.secData.secData_val);
 	nsdb_free_nsdb(host);
 	free(hostname);
-	free(secdata.data);
 }
 
 /**
