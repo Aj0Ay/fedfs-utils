@@ -32,6 +32,7 @@ sbin_PROGRAMS		= fedfs-null \
 			  fedfs-lookup-replication
 LDADD			= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBCRYPTO) $(LIBSSL) \
 			  $(top_builddir)/src/libadmin/libadmin.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \

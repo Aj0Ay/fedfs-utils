@@ -28,7 +28,7 @@ sbin_PROGRAMS		= nsdbparams
 nsdbparams_SOURCES	= delete.c list.c main.c show.c update.c
 LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
 			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
-			  $(LIBURIPARSER) \
+			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL) \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \
 			  $(top_builddir)/src/libxlog/libxlog.la

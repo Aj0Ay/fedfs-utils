@@ -1627,11 +1627,14 @@ out:
 static FedFsStatus
 nsdb_delete_nsdbparams(nsdb_t host)
 {
+	const char *old_certfile;
 	FedFsStatus retval;
 	sqlite3 *db;
 
 	xlog(D_CALL, "%s: deleting parameters for NSDB '%s'",
 			__func__, host->fn_hostname);
+
+	old_certfile = nsdb_certfile(host);
 
 	retval = FEDFS_ERR_IO;
 	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
@@ -1642,6 +1645,7 @@ nsdb_delete_nsdbparams(nsdb_t host)
 	if (retval != FEDFS_OK)
 		goto out_close;
 
+	nsdb_connsec_remove_certfile(old_certfile);
 	retval = FEDFS_OK;
 
 out_close:
@@ -1746,7 +1750,7 @@ nsdb_delete_nsdb(const char *hostname, const unsigned short port)
 	nsdb_t host;
 	FedFsStatus retval;
 
-	retval = nsdb_new_nsdb(hostname, port, &host);
+	retval = nsdb_lookup_nsdb(hostname, port, &host);
 	if (retval != FEDFS_OK)
 		return retval;
 
