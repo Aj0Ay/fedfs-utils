@@ -100,7 +100,7 @@ nsdbparams_update_usage(const char *progname)
  * @return a FedFsStatus code
  */
 static FedFsStatus
-nsdb_test_nsdb(const char *nsdbname, unsigned short nsdbport)
+nsdbparams_test_nsdb(const char *nsdbname, unsigned short nsdbport)
 {
 	unsigned int ldap_err;
 	FedFsStatus retval;
@@ -345,7 +345,7 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 		nsdb_free_nsdb(host);
 		break;
 	case FEDFS_ERR_NSDB_PARAMS:
-		retval = nsdb_test_nsdb(nsdbname, nsdbport);
+		retval = nsdbparams_test_nsdb(nsdbname, nsdbport);
 		if (retval != FEDFS_OK)
 			goto out;
 		break;
