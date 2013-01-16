@@ -984,11 +984,11 @@ fedfsd_test_nsdb(const char *hostname, unsigned short port)
 static void
 fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 {
-	struct fedfs_secdata secdata;
 	FedFsSetNsdbParamsArgs args;
 	char *hostname = NULL;
 	unsigned short port;
 	FedFsStatus result;
+	nsdb_t host;
 
 	memset(&args, 0, sizeof(args));
 	if (!svc_getargs(xprt, (xdrproc_t)xdr_FedFsSetNsdbParamsArgs, (caddr_t)&args)) {
@@ -1001,28 +1001,44 @@ fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 	if (result != FEDFS_OK)
 		goto out;
 
-	result = fedfsd_test_nsdb(hostname, port);
-	if (result != FEDFS_OK)
+	result = nsdb_lookup_nsdb(hostname, port, &host);
+	switch (result) {
+	case FEDFS_OK:
+		nsdb_free_nsdb(host);
+		break;
+	case FEDFS_ERR_NSDB_PARAMS:
+		result = fedfsd_test_nsdb(hostname, port);
+		if (result != FEDFS_OK)
+			goto out;
+		result = nsdb_create_nsdb(hostname, port);
+		if (result != FEDFS_OK) {
+			xlog(L_ERROR, "Failed to create entry for %s:%u in "
+				"local NSDB connection parameter database: %s",
+				hostname, port,
+				nsdb_display_fedfsstatus(result));
+			goto out;
+		}
+		break;
+	default:
+		xlog(L_ERROR, "Failed to access local NSDB "
+			"connection parameter dataase: %s",
+			nsdb_display_fedfsstatus(result));
 		goto out;
+	}
 
 	switch (args.params.secType) {
 	case FEDFS_SEC_NONE:
-		secdata.len = 0;
-		secdata.data = "";
+		result = nsdb_connsec_set_none(hostname, port);
 		break;
 	case FEDFS_SEC_TLS:
-		secdata.len =
-			args.params.FedFsNsdbParams_u.secData.secData_len;
-		secdata.data =
-			args.params.FedFsNsdbParams_u.secData.secData_val;
+		result = nsdb_connsec_set_tls_buf(hostname, port,
+			args.params.FedFsNsdbParams_u.secData.secData_val,
+			args.params.FedFsNsdbParams_u.secData.secData_len);
 		break;
 	default:
-		result = FEDFS_ERR_BADXDR;
+		result = FEDFS_ERR_INVAL;
 		goto out;
 	}
-	secdata.type = args.params.secType;
-
-	result = nsdb_update_nsdb(hostname, port, &secdata);
 
 out:
 	xlog(D_CALL, "%s: Replying with %s",

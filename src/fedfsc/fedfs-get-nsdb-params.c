@@ -52,12 +52,13 @@ static struct timeval fedfs_get_nsdb_params_timeout = { 25, 0 };
 /**
  * Short form command line options
  */
-static const char fedfs_get_nsdb_params_opts[] = "?dh:l:n:r:";
+static const char fedfs_get_nsdb_params_opts[] = "?df:h:l:n:r:";
 
 /**
  * Long form command line options
  */
 static const struct option fedfs_get_nsdb_params_longopts[] = {
+	{ "certfile", 1, NULL, 'f', },
 	{ "debug", 0, NULL, 'd', },
 	{ "help", 0, NULL, '?', },
 	{ "hostname", 1, NULL, 'h', },
@@ -72,10 +73,12 @@ fedfs_get_nsdb_params_usage(const char *progname)
 {
 	fprintf(stderr, "\n%s version " VERSION "\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-n nettype] [-h hostname] "
-			"[-l nsdbname] [-r nsdbport]\n\n", progname);
+			"[-f certfile] [-l nsdbname] [-r nsdbport]\n\n",
+			progname);
 
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
+	fprintf(stderr, "\t-f, --certfile       Where to write certificate\n");
 	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
 	fprintf(stderr, "\t-l, --nsdbname       NSDB hostname\n");
@@ -87,7 +90,8 @@ fedfs_get_nsdb_params_usage(const char *progname)
 }
 
 static void
-fedfs_get_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
+fedfs_get_nsdb_params_print_result(FedFsGetNsdbParamsRes result,
+		const char *certfile)
 {
 	FedFsNsdbParams *params = &result.FedFsGetNsdbParamsRes_u.params;
 
@@ -101,8 +105,10 @@ fedfs_get_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
 		break;
 	case FEDFS_SEC_TLS:
 		printf("ConnectionSec: FEDFS_SEC_TLS\n");
-		printf("X.509 cert:\n%s\n",
-			params->FedFsNsdbParams_u.secData.secData_val);
+		if (certfile != NULL)
+			(void)nsdb_connsec_write_pem_file(certfile,
+				params->FedFsNsdbParams_u.secData.secData_val,
+				params->FedFsNsdbParams_u.secData.secData_len);
 		break;
 	default:
 		printf("Unrecognized FedFsConnectionSec value: %u\n",
@@ -112,7 +118,8 @@ fedfs_get_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
 
 static FedFsStatus
 fedfs_get_nsdb_params_call(const char *hostname, const char *nettype,
-		char *nsdbname, const unsigned short nsdbport)
+		char *nsdbname, const unsigned short nsdbport,
+		const char *certfile)
 {
 	FedFsGetNsdbParamsRes result;
 	enum clnt_stat status;
@@ -141,7 +148,7 @@ fedfs_get_nsdb_params_call(const char *hostname, const char *nettype,
 		clnt_perror(client, "FEDFS_GET_NSDB_PARAMS call failed");
 		result.status = FEDFS_ERR_SVRFAULT;
 	} else {
-		fedfs_get_nsdb_params_print_result(result);
+		fedfs_get_nsdb_params_print_result(result, certfile);
 		clnt_freeres(client,
 			(xdrproc_t)xdr_FedFsGetNsdbParamsRes,
 			(caddr_t)&result);
@@ -155,7 +162,7 @@ out:
 int
 main(int argc, char **argv)
 {
-	char *progname, *hostname, *nettype, *nsdbname;
+	char *progname, *hostname, *nettype, *nsdbname, *certfile;
 	unsigned short nsdbport;
 	unsigned int seconds;
 	FedFsStatus status;
@@ -179,10 +186,14 @@ main(int argc, char **argv)
 
 	hostname = "localhost";
 	nettype = "netpath";
+	certfile = NULL;
 	while ((arg = getopt_long(argc, argv, fedfs_get_nsdb_params_opts, fedfs_get_nsdb_params_longopts, NULL)) != -1) {
 		switch (arg) {
 		case 'd':
 			xlog_config(D_ALL, 1);
+			break;
+		case 'f':
+			certfile = optarg;
 			break;
 		case 'h':
 			hostname = optarg;
@@ -220,9 +231,11 @@ main(int argc, char **argv)
 		fedfs_get_nsdb_params_usage(progname);
 	}
 
+	nsdb_connsec_crypto_startup();
+
 	for (seconds = FEDFS_DELAY_MIN_SECS;; seconds = fedfs_delay(seconds)) {
 		status = fedfs_get_nsdb_params_call(hostname, nettype,
-							nsdbname, nsdbport);
+						nsdbname, nsdbport, certfile);
 		if (status != FEDFS_ERR_DELAY)
 			break;
 
@@ -230,5 +243,7 @@ main(int argc, char **argv)
 		if (sleep(seconds) != 0)
 			break;
 	}
+
+	nsdb_connsec_crypto_shutdown();
 	return (int)status;
 }

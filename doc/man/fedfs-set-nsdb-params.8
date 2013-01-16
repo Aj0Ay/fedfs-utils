@@ -86,8 +86,11 @@ Displays
 version information and a usage message on
 .IR stderr .
 .IP "\fB-f, \-\-certfile=\fIpathname\fP"
-Specifies the pathname of a local file containing the X.509 certificate
-to use for establishing a TLS connection with the specified NSDB.
+Specifies the pathname of a local file containing an x.509 certificate
+the remote system can use to authenticate the specified NSDB node.
+The specified file may be deleted after the command succeeds.
+Details on the contents of this file can be found in
+.BR nsdb-parameters (7).
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is

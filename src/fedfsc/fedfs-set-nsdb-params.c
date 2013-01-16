@@ -77,7 +77,7 @@ fedfs_set_nsdb_params_usage(const char *progname)
 			progname);
 
 	fprintf(stderr, "\t-d, --debug          Enable debug messages\n");
-	fprintf(stderr, "\t-f, --certfile	Name of file containing X.509 cert\n");
+	fprintf(stderr, "\t-f, --certfile       Where to read certificate\n");
 	fprintf(stderr, "\t-?, --help           Print this help\n");
 	fprintf(stderr, "\t-n, --nettype        RPC transport (default: 'netpath')\n");
 	fprintf(stderr, "\t-h, --hostname       ADMIN server hostname (default: 'localhost')\n");
@@ -92,50 +92,30 @@ fedfs_set_nsdb_params_usage(const char *progname)
 static _Bool
 fedfs_set_nsdb_params_get_params(const char *certfile, FedFsNsdbParams *params)
 {
-	struct stat stb;
-	size_t size;
-	ssize_t len;
+	FedFsStatus retval;
+	unsigned int len;
 	char *buf;
-	int fd;
 
 	if (certfile == NULL) {
 		params->secType = FEDFS_SEC_NONE;
 		return true;
 	}
 
-	if (lstat(certfile, &stb) == -1) {
-		fprintf(stderr, "Failed to stat %s: %s\n",
-				certfile, strerror(errno));
+	retval = nsdb_connsec_read_pem_file(certfile, &buf, &len);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_INVAL:
+		fprintf(stderr, "Invalid certificate material\n");
 		return false;
-	}
-	size = stb.st_size;
-
-	fd = open(certfile, O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "Failed to open %s: %s\n",
-				certfile, strerror(errno));
-		return false;
-	}
-
-	buf = malloc(size);
-	if (buf == NULL) {
-		fprintf(stderr, "Failed to allocate buffer to read %s\n",
-				certfile);
-		(void)close(fd);
-		return false;
-	}
-
-	len = read(fd, buf, size);
-	if (len < 0 || (size_t)len > size) {
-		fprintf(stderr, "Failed to read %s: %s\n",
-				certfile, strerror(errno));
-		free(buf);
-		(void)close(fd);
+	default:
+		fprintf(stderr, "Failed to validate %s: %s\n",
+			certfile, nsdb_display_fedfsstatus(retval));
 		return false;
 	}
 
 	params->secType = FEDFS_SEC_TLS;
-	params->FedFsNsdbParams_u.secData.secData_len = size;
+	params->FedFsNsdbParams_u.secData.secData_len = len;
 	params->FedFsNsdbParams_u.secData.secData_val = buf;
 	return true;
 }
@@ -256,6 +236,8 @@ main(int argc, char **argv)
 		fedfs_set_nsdb_params_usage(progname);
 	}
 
+	nsdb_connsec_crypto_startup();
+
 	for (seconds = FEDFS_DELAY_MIN_SECS;; seconds = fedfs_delay(seconds)) {
 		status = fedfs_set_nsdb_params_call(hostname, nettype,
 						nsdbname, nsdbport, certfile);
@@ -266,5 +248,7 @@ main(int argc, char **argv)
 		if (sleep(seconds) != 0)
 			break;
 	}
+
+	nsdb_connsec_crypto_shutdown();
 	return (int)status;
 }

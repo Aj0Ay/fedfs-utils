@@ -232,9 +232,13 @@ int main(int argc, char **argv)
 	xlog(L_NOTICE, "Version " VERSION " (built %s at %s) starting",
 			__DATE__, __TIME__);
 
+	nsdb_connsec_crypto_startup();
+
 	/* Normally doesn't return */
 	fedfsd_svc_create("fedfs", FEDFS_PROG, FEDFS_V1,
 			fedfsd_dispatch_1, listen_port);
+
+	nsdb_connsec_crypto_shutdown();
 
 	xlog(L_WARNING, "Exiting unexpectedly");
 	exit(EXIT_FAILURE);

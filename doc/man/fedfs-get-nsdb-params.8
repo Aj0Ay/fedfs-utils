@@ -29,6 +29,8 @@ fedfs-get-nsdb-params \- send a FEDFS_GET_NSDB_PARAMS ADMIN protocol request
 .SH SYNOPSIS
 .B fedfs-get-nsdb-params
 .RB [ \-?d ]
+.RB [ \-f
+.IR certfile ]
 .RB [ \-n
 .IR nettype ]
 .RB [ \-h
@@ -80,6 +82,12 @@ Displays
 .BR fedfs-get-nsdb-params (8)
 version information and a usage message on
 .IR stderr .
+.IP "\fB-f, \-\-certfile=\fIpathname\fP"
+Specifies the pathname of a local file to write received certificate
+material into, when the specified NSDB's connection security type is
+.BR TLS .
+If no file is specified, the certificate is ignored.
+The certificate is written to the specified file in PEM format.
 .IP "\fB\-h, \-\-hostname=\fIhostname\fP"
 Specifies the hostname of a remote FedFS ADMIN service.
 If this option is not specified, the default value is
