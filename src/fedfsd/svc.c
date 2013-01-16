@@ -935,6 +935,46 @@ out:
 }
 
 /**
+ * Ping NSDB node
+ *
+ * @param hostname NUL-terminated C string containing NDS hostname of NSDB
+ * @param port NSDB node's IP port number
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+fedfsd_test_nsdb(const char *hostname, unsigned short port)
+{
+	unsigned int ldap_err;
+	FedFsStatus retval;
+
+	xlog(D_CALL, "%s: pinging %s:%u", __func__, hostname, port);
+
+	retval = nsdb_ping_s(hostname, port, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		xlog(D_GENERAL, "%s: %s:%u passed ping test",
+			__func__, hostname, port);
+		break;
+	case FEDFS_ERR_NSDB_NONCE:
+		xlog(D_GENERAL, "%s: %s:%u is up, but not an NSDB: %s",
+			__func__, hostname, port,
+			nsdb_display_fedfsstatus(retval));
+		break;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		xlog(D_GENERAL, "%s: failed to ping NSDB %s:%u: %s\n",
+			__func__, hostname, port,
+		ldap_err2string(ldap_err));
+		break;
+	default:
+		xlog(D_GENERAL, "%s: failed to ping NSDB %s:%u: %s",
+			__func__, hostname, port,
+			nsdb_display_fedfsstatus(retval));
+	}
+
+	return retval;
+}
+
+/**
  * Service a SET_NSDB_PARAMS request
  *
  * @param xprt transport on which to send reply
@@ -947,7 +987,6 @@ fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 	struct fedfs_secdata secdata;
 	FedFsSetNsdbParamsArgs args;
 	char *hostname = NULL;
-	unsigned int ldap_err;
 	unsigned short port;
 	FedFsStatus result;
 
@@ -962,19 +1001,9 @@ fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 	if (result != FEDFS_OK)
 		goto out;
 
-	result = nsdb_ping_s(hostname, port, &ldap_err);
-	switch (result) {
-	case FEDFS_OK:
-		break;
-	case FEDFS_ERR_NSDB_LDAP_VAL:
-		xlog(L_ERROR, "Failed to ping NSDB %s:%u: %s\n",
-			hostname, port, ldap_err2string(ldap_err));
+	result = fedfsd_test_nsdb(hostname, port);
+	if (result != FEDFS_OK)
 		goto out;
-	default:
-		xlog(L_ERROR, "Warning: %s:%u is not an NSDB: %s",
-			hostname, port, nsdb_display_fedfsstatus(result));
-		goto out;
-	}
 
 	switch (args.params.secType) {
 	case FEDFS_SEC_NONE:
