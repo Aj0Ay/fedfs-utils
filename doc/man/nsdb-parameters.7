@@ -1,0 +1,161 @@
+.\"@(#)nsdb-parameters.7"
+.\"
+.\" @file doc/man/nsdb-parameters.7
+.\" @brief NSDB connection parameters
+.\"
+
+.\"
+.\" Copyright 2012 Oracle.  All rights reserved.
+.\"
+.\" This file is part of fedfs-utils.
+.\"
+.\" fedfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" fedfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with fedfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH NSDB-PARAMETERS 7 "@publication-date@"
+.SH NAME
+nsdb-parameters \- NSDB connection parameters
+.SH INTRODUCTION
+RFC 5716 introduces the Federated File System (FedFS, for short).
+FedFS is an extensible standardized mechanism
+by which system administrators construct
+a coherent namespace across multiple file servers using
+.IR "file system referrals" .
+For further details, see
+.BR fedfs (7).
+.P
+The bulk of FedFS metadata is stored on one or more LDAP servers.
+These servers are known as
+.IR "namespace databases" ,
+or NSDBs, for short.
+An
+.I NSDB client
+is any system that communicates with an NSDB.
+This can be either a fileserver or an NSDB administrative client.
+.P
+On NSDB clients,
+a small local database stores information about how to connect
+to each NSDB node.  These
+.I NSDB connection parameters
+are used when a fileserver contacts an NSDB node to resolve junctions,
+or when executing NSDB administrative commands.
+.P
+The settings in this database effect only the behavior of NSDB clients
+on the local system.  They have no effect on the operation
+of NSDB nodes or other NSDB clients.
+.SH DESCRIPTION
+Before an NSDB client may communicate with an NSDB node, that client
+must know how to contact the NSDB.
+The client's local NSDB connnection parameter database contains the
+DNS hostname, IP port number, and connection security type of each
+NSDB node that can be contacted.
+Administrators must provide this information in advance.
+.SS NSDB name equality
+The local NSDB connection parameter database is indexed by each NSDB
+node's DNS hostname and IP port number.  Two NSDB node names
+are equivalent if their respective DNS hostnames and port numbers
+are an exact match.
+.P
+Before matching, the special port value "0" is always mapped to the
+standard LDAP port "389."
+Likewise, if no port is specified, "389" is assumed.
+.P
+Upper and lower case are considered equivalent.
+The IP addresses to which hostnames are bound are also not considered
+when matching.
+.P
+For example, the NSDB "nsdb.example.net:389 would share a database
+entry with "nsdb.EXAMPLE.NET:0", but not with "nsdb.example.net:636".
+If "nsdb.example.com:389" maps to 10.0.0.1 and "nsdb.example.net:389"
+also maps to that address, the database maintains separate entries for
+each, although the same connection parameters may be set for both
+entries.
+.SS Connection security
+One of two connection security types may be specified in an NSDB
+connection parameter entry:
+.IP "\fBNONE\fP"
+The local system communicates with the NSDB node in plain-text.
+The local system performs no authentication of the NSDB node.
+.IP "\fBTLS\fP"
+The local system always uses Transport Layer Security when
+communicating with the NSDB node.
+The local system authenticates the
+NSDB node before making requests.
+Integrity or encryption is used during communication.
+Requests to the NSDB node fail if a TLS session cannot be established.
+.P
+.B NONE
+is a low-overhead mode for use when the network and the NSDB are
+trusted by all NSDB clients.
+.B TLS
+is a high-security mode for use when NSDBs operate on untrusted public
+networks, but it requires the additional burden of creating and
+distributing x.509 certificates for each NSDB.
+.P
+An NSDB node can operate in one of three security modes:
+.IP "\fBBasic\fP"
+NSDB clients connect to this NSDB node using only FEDFS_SEC_NONE security.
+.IP "\fBTransitional\fP"
+NSDB clients connect to this NSDB node using either FEDFS_SEC_NONE or
+FEDFS_SEC_TLS security.
+.IP "\fBSecure\fP"
+NSDB clients connect to this NSDB node using only FEDFS_SEC_TLS security.
+.P
+An NSDB client always uses the security type specified in its local
+NSDB connection parameter database for that NSDB node.
+For greatest security, it is recommended that NSDB nodes be configured as
+.B secure
+NSDBs (see table above).
+.SS x.509 certificates
+Administrators provide the certificate material used to authenticate
+an NSDB node in a PEM format file that contains an x.509v3 certificate
+chain.
+.P
+This file may contain just the public certificate of the Certificate
+Authority (CA) which signed the NSDB's certificate.  Or it may contain
+a chain of certificates that represents the full chain of trust for
+the NSDB node.
+A self-signed CA certificate may be used to reduce the burden
+of setting up NSDBs for your FedFS domain.
+.P
+Either the
+.BR fedfs-set-nsdb-params (8)
+command is used to transfer this material to a remote fileserver running
+a FedFS ADMIN service, or the
+.BR nsdbparams (8)
+command is used to install this material in the NSDB connection parameter
+database on the local system.
+For both commands, the file containing certificates for one NSDB is
+specified on the command line with the
+.B "\-\-certfile"
+option.
+.P
+The certificate material provisioned via these commands is used for no
+other purpose on the local system than NSDB authentication.
+.SH "SEE ALSO"
+.BR fedfs (7),
+.BR nsdbparams (8),
+.BR rpc.fedfsd (8),
+.BR fedfs-set-nsdb-params (8)
+.sp
+RFC 3530 for a description of NFS version 4 referrals
+.sp
+RFC 5716 for FedFS requirements and overview
+.SH COLOPHON
+This page is part of the fedfs-utils package.
+A description of the project and information about reporting bugs
+can be found at
+.IR http://wiki.linux-nfs.org/wiki/index.php/FedFsUtilsProject .
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>

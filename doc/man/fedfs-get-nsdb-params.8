@@ -69,13 +69,9 @@ For more on the specification and use of NSDB connection parameters, see
 An NSDB hostname and port number (see below)
 are used as the primary key to identify an entry
 in the remote server's NSDB connection parameter database.
-The NSDB connection parameter database
-matches NSDB hostnames and ports by exact value.
-In other words,
-if two unique hostnames point
-to the IP address of the same physical NSDB,
-they are still considered separate entries
-in the local NSDB connection parameter database.
+Details on NSDB connection parameter database entry matching can be
+found in
+.BR nsdb-parameters (7).
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
 Enables debugging messages during operation.
@@ -223,6 +219,7 @@ and does not use TLS when querying it to resolve junctions.
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .SH "SEE ALSO"
 .BR fedfs (7),
+.BR nsdb-parameters (7),
 .BR rpc.fedfsd (8),
 .BR fedfs-get-nsdb-limited-params (8),
 .BR nsdbparams (8),

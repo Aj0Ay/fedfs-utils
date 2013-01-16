@@ -74,11 +74,9 @@ in the remote server's NSDB connection parameter database.
 .P
 The NSDB connection parameter database
 matches NSDB hostnames and ports by exact value.
-In other words,
-if two unique hostnames point
-to the IP address of the same physical NSDB,
-they are still considered separate entries
-in the local NSDB connection parameter database.
+Details on NSDB connection parameters database entry matching can be
+found in
+.BR nsdb-parameters (7).
 .SH OPTIONS
 .IP "\fB\-d, \-\-debug"
 Enables debugging messages during operation.
@@ -230,6 +228,7 @@ It will not use TLS when querying the NSDB to resolve junctions.
 RPCSEC GSSAPI authentication has not yet been implemented for this command.
 .SH "SEE ALSO"
 .BR fedfs (7),
+.BR nsdb-parameters (7),
 .BR rpc.fedfsd (8),
 .BR fedfs-get-nsdb-params (8),
 .BR nsdbparams (8),
