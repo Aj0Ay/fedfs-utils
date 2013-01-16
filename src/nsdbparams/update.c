@@ -138,7 +138,7 @@ nsdbparams_test_nsdb(const char *nsdbname, unsigned short nsdbport)
  * @return false if could not parse security type
  */
 static _Bool
-nsdbparams_sectype(const char *arg, unsigned int *type)
+nsdbparams_sectype(const char *arg, FedFsConnectionSec *type)
 {
 	unsigned long tmp;
 	char *endptr;
@@ -171,6 +171,55 @@ try_symbolic:
 }
 
 /**
+ * Update the security setting for this NSDB
+ *
+ * @param nsdbname NUL-terminated UTF-8 string containing NSDB hostname
+ * @param nsdbport NSDB's IP port number
+ * @param type connection security type for this NSDB
+ * @param certfile NUL-terminated UTF-8 string containing pathname of file
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdbparams_update_security(const char *nsdbname, unsigned short nsdbport,
+		FedFsConnectionSec type, const char *certfile)
+{
+	FedFsStatus retval;
+
+	switch (type) {
+	case FEDFS_SEC_NONE:
+		if (certfile != NULL)
+			xlog(L_ERROR, "The specified certfile was ignored");
+
+		retval = nsdb_connsec_set_none(nsdbname, nsdbport);
+		if (retval != FEDFS_OK) {
+			xlog(L_ERROR, "Failed to update security pararmeters: %s",
+				nsdb_display_fedfsstatus(retval));
+			return retval;
+		}
+		break;
+	case FEDFS_SEC_TLS:
+		if (certfile == NULL) {
+			xlog(L_ERROR, "No certfile was specified");
+			return FEDFS_ERR_INVAL;
+		}
+
+		retval = nsdb_connsec_set_tls_file(nsdbname, nsdbport,
+							certfile);
+		if (retval != FEDFS_OK) {
+			xlog(L_ERROR, "Failed to update security pararmeters: %s",
+				nsdb_display_fedfsstatus(retval));
+			return retval;
+		}
+		break;
+	default:
+		xlog(L_ERROR, "Unrecognized connection security type");
+		return FEDFS_ERR_INVAL;
+	}
+
+	return FEDFS_OK;
+}
+
+/**
  * Update an NSDB entry in our NSDB connection parameter database
  *
  * @param progname NUL-terminated UTF-8 string containing name of this program
@@ -181,12 +230,10 @@ try_symbolic:
 int
 nsdbparams_update(const char *progname, int argc, char **argv)
 {
-	char *binddn, *certfile, *nce, *nsdbname, *endptr;
+	char *binddn, *certfile, *nce, *nsdbname, *endptr, *data = NULL;
 	unsigned short nsdbport = LDAP_PORT;
-	unsigned int type = FEDFS_SEC_NONE;
-	struct fedfs_secdata secdata = {
-		.type		= type,
-	};
+	FedFsConnectionSec type = FEDFS_SEC_NONE;
+	_Bool update_security = false;
 	int arg, follow_referrals;
 	FedFsStatus retval;
 	unsigned long tmp;
@@ -227,7 +274,9 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 			nce = optarg;
 			break;
 		case 'f':
+			type = FEDFS_SEC_TLS;
 			certfile = optarg;
+			update_security = true;
 			break;
 		case 'g':
 			if (optarg == NULL || *optarg == '\0') {
@@ -287,6 +336,7 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 				nsdbparams_update_usage(progname);
 				goto out;
 			}
+			update_security = true;
 			break;
 		case 'u':
 			if (optarg == NULL || *optarg == '\0') {
@@ -348,62 +398,49 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 		retval = nsdbparams_test_nsdb(nsdbname, nsdbport);
 		if (retval != FEDFS_OK)
 			goto out;
+		retval = nsdb_create_nsdb(nsdbname, nsdbport);
+		if (retval != FEDFS_OK) {
+			xlog(L_ERROR, "Failed to create NSDB "
+				"connection parameters for %s:%d: %s",
+				nsdbname, nsdbport,
+				nsdb_display_fedfsstatus(retval));
+			goto out;
+		}
 		break;
 	default:
 		xlog(L_ERROR, "Failed to access NSDB "
 			"connection parameter database: %s",
-			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
+				nsdb_display_fedfsstatus(retval));
 		goto out;
 	}
 
-	if (type != FEDFS_SEC_NONE) {
-		if (certfile == NULL) {
-			xlog(L_ERROR, "No certfile was specified");
-			nsdbparams_update_usage(progname);
+	if (update_security) {
+		retval = nsdbparams_update_security(nsdbname, nsdbport,
+							type, certfile);
+		if (retval != FEDFS_OK)
 			goto out;
-		}
-
-		retval = nsdb_read_certfile(certfile,
-						&secdata.data, &secdata.len);
-		if (retval != FEDFS_OK) {
-			xlog(L_ERROR, "Failed to read certfile: %s",
-					nsdb_display_fedfsstatus(retval));
-			goto out;
-		}
 	}
-
-	/*
-	 * Ensure entry for this NSDB exists before trying to
-	 * update bind DN, NCE, and referral flags for it.
-	 */
-	if (nsdb_update_nsdb(nsdbname, nsdbport, &secdata) == FEDFS_OK) {
-		printf("NSDB list was updated successfully.\n");
-		rc = EXIT_SUCCESS;
-	}
-	free(secdata.data);
 
 	if (binddn != NULL)
 		if (nsdb_update_default_binddn(nsdbname, nsdbport,
-						binddn) != FEDFS_OK) {
-			rc = EXIT_FAILURE;
+							binddn) != FEDFS_OK)
 			goto out;
-		}
 
 	if (nce != NULL)
 		if (nsdb_update_default_nce(nsdbname, nsdbport,
-						nce) != FEDFS_OK) {
-			rc = EXIT_FAILURE;
+							nce) != FEDFS_OK)
 			goto out;
-		}
+
 	if (follow_referrals != 0) {
 		_Bool follow = follow_referrals == 2 ? true : false;
 		if (nsdb_update_follow_referrals(nsdbname, nsdbport,
-						follow) != FEDFS_OK) {
-			rc = EXIT_FAILURE;
+							follow) != FEDFS_OK)
 			goto out;
-		}
 	}
 
+	printf("NSDB connection parameters updated successfully.\n");
+	rc = EXIT_SUCCESS;
 out:
+	free(data);
 	return rc;
 }

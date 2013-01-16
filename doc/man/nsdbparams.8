@@ -82,16 +82,24 @@ a coherent namespace across multiple file servers using
 For further details, see
 .BR fedfs (7).
 .P
-The bulk of FedFS junction information in a FedFS domain is stored
-on one or more LDAP servers.
+The bulk of FedFS metadata is stored on one or more LDAP servers.
 These servers are known as
 .IR "namespace databases" ,
 or NSDBs, for short.
-On systems that contact NSDBs,
-a local database stores connection parameters for each NSDB.
-These connection parameters are used during file server operations
-that access NSDBs,
-and when executing NSDB administrative commands.
+An
+.I NSDB client
+is any system that communicates with an NSDB.
+This can be either a fileserver or an NSDB administrative client.
+.P
+On NSDB clients,
+a small local database stores information about how to connect
+to each NSDB node.  These
+.I NSDB connection parameters
+are used when an NSDB client contacts an NSDB node to perform file
+server operations or when executing NSDB administrative commands.
+.P
+The settings in this database effect only the behavior of the local
+NSDB client.  They have no effect on the operation of NSDBs nodes.
 .SH DESCRIPTION
 The
 .BR nsdbparams (8)
@@ -188,10 +196,9 @@ If no NSDB port number is provided on the command line, the
 command uses the default LDAP port (389).
 .P
 The database matches NSDB domain names and ports by exact value.
-If two unique domain names point
-to the IP address of the same physical NSDB,
-they are considered separate entries
-in the local NSDB connection parameter database.
+Details on NSDB connection parameters database entry matching can be
+found in
+.BR nsdb-parameters (7).
 .SS Command line options
 .IP "\fB\-d, \-\-debug"
 Enables debugging messages during subcommand operation.
@@ -209,12 +216,13 @@ This option is valid for the
 .B update
 subcommand.
 .IP "\fB-f, \-\-certfile=\fIpathname\fP"
-Specifies the pathname of a local file containing the X.509 certificate
-to establish a TLS connection with the specified NSDB.
-The
-.BR nsdbparams (8)
-command copies the specified certificate to a private directory.
-The specified file can be deleted after the subcommand succeeds.
+Specifies the pathname of a local file containing security data
+appropriate for the
+.B "\-\-sectype"
+specified on the command line.
+The specified file may be deleted after the command succeeds.
+Details on security data can be found in
+.BR nsdb-parameters (7).
 This option is valid for the
 .B update
 subcommand.
@@ -272,6 +280,19 @@ If that user doesn't exist, then the UID for
 .I nobody
 is used instead.
 This option is valid for all subcommands.
+.SH CHANGING SECURITY TYPES
+You can change connection security types used to contact an NSDB node
+using the
+.B update
+subcommand.  Simply specify the new security type with the
+.B "\-\-sectype"
+option.
+Specifying the NONE type removes existing stored certificate material
+for that NSDB node.
+Specifying the TLS type replaces existing stored certificate material
+with new material specified with the
+.B "\-\-certfile"
+option.
 .SH EXAMPLES
 If there is an NSDB called
 .IR nsdb.example.net ,
@@ -304,7 +325,7 @@ subcommand and specify the
 and
 .B \-\-certfile
 options.
-For instance, if an X.509 certificate for
+For instance, if an x.509 certificate for
 .I nsdb.example.net
 were contained in a local file called
 .IR /tmp/nsdb.pem ,
@@ -325,7 +346,7 @@ you might use:
 database of NSDB connection parameters
 .TP
 .I @statedir@/nsdbcerts
-local directory that stores X.509 certificates for NSDBs
+local directory that stores x.509 certificates for NSDBs
 .SH "SEE ALSO"
 .BR fedfs (7),
 .BR nsdb-parameters (7),

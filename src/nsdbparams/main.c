@@ -206,6 +206,8 @@ main(int argc, char **argv)
 		goto out;
 	}
 
+	nsdb_connsec_crypto_startup();
+
 	if (strcasecmp(argv[1], "delete") == 0)
 		exit_status = nsdbparams_delete(progname, argc - 1, argv + 1);
 	else if (strcasecmp(argv[1], "list") == 0)
@@ -218,6 +220,8 @@ main(int argc, char **argv)
 		xlog(L_ERROR, "Unrecognized subcommand: %s", argv[1]);
 		nsdbparams_usage(progname);
 	}
+
+	nsdb_connsec_crypto_shutdown();
 
 out:
 	exit(exit_status);
