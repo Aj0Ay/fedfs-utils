@@ -40,15 +40,6 @@ struct fedfs_nsdb;
 typedef struct fedfs_nsdb *nsdb_t;
 
 /**
- * Stored connection parameters
- */
-struct fedfs_secdata {
-	FedFsConnectionSec	 type;
-	char			*data;
-	unsigned int		 len;
-};
-
-/**
  * Object that contains FedFS Fileset Name data
  *
  * Derived from the fedfsFsn object class, defined in
@@ -157,12 +148,6 @@ _Bool		 nsdb_is_default_parentdir(void);
 _Bool		 nsdb_init_database(void);
 
 /**
- * Extract contents of a certificate file
- */
-FedFsStatus	 nsdb_read_certfile(const char *pathname,
-				char **certdata, unsigned int *certlen);
-
-/**
  * Generate list of NSDB names we know about
  */
 FedFsStatus	 nsdb_enumerate_nsdbs(char ***nsdblist);
@@ -205,13 +190,6 @@ void		 nsdb_connsec_crypto_shutdown(void);
  */
 FedFsStatus	 nsdb_connsec_get_cert_data(nsdb_t host,
 				char **data, unsigned int *len);
-
-/**
- * Update stored connection parameters for an NSDB
- */
-FedFsStatus	 nsdb_update_nsdb(const char *hostname,
-				const unsigned short port,
-				const struct fedfs_secdata *sec);
 
 /**
  * Set connection security parameters for an NSDB to "NONE"
