@@ -185,6 +185,22 @@ FedFsStatus	 nsdb_lookup_nsdb(const char *hostname,
 FedFsStatus	 nsdb_lookup_nsdb_by_uri(const char *uri, nsdb_t *host);
 
 /**
+ * Create connection parameters entry for an NSDB
+ */
+FedFsStatus	 nsdb_create_nsdb(const char *hostname,
+				const unsigned short port);
+
+/**
+ * Initialize libcrypto
+ */
+void		 nsdb_connsec_crypto_startup(void);
+
+/**
+ * Shut down libcrypto
+ */
+void		 nsdb_connsec_crypto_shutdown(void);
+
+/**
  * Retrieve NSDB certificate data for "host"
  */
 FedFsStatus	 nsdb_connsec_get_cert_data(nsdb_t host,
@@ -196,6 +212,28 @@ FedFsStatus	 nsdb_connsec_get_cert_data(nsdb_t host,
 FedFsStatus	 nsdb_update_nsdb(const char *hostname,
 				const unsigned short port,
 				const struct fedfs_secdata *sec);
+
+/**
+ * Set connection security parameters for an NSDB to "NONE"
+ */
+FedFsStatus	 nsdb_connsec_set_none(const char *hostname,
+				const unsigned short port);
+
+/**
+ * Set connection security parameters for an NSDB to "TLS"
+ * Certificate material provided in a buffer
+ */
+FedFsStatus	 nsdb_connsec_set_tls_buf(const char *hostname,
+				const unsigned short port, char *data,
+				unsigned int len);
+
+/**
+ * Set connection security parameters for an NSDB to "TLS"
+ * Certificate material provided in a local file
+ */
+FedFsStatus	 nsdb_connsec_set_tls_file(const char *hostname,
+				const unsigned short port,
+				const char *certfile);
 
 /**
  * Update stored default bind DN for an NSDB
@@ -442,5 +480,13 @@ FedFsStatus	 nsdb_path_array_to_uri_pathname(char * const *path_array,
 				UriUriA *uri);
 FedFsStatus	 nsdb_uri_pathname_to_path_array(const UriUriA *uri,
 				char ***path_array);
+
+/**
+ ** x.509 certificate utilities
+ **/
+FedFsStatus	 nsdb_connsec_read_pem_file(const char *certfile,
+				char **data, unsigned int *len);
+FedFsStatus	 nsdb_connsec_write_pem_file(const char *certfile,
+				const char *data, const unsigned int len);
 
 #endif	/* !_FEDFS_NSDB_H_ */

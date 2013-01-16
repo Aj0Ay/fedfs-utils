@@ -129,4 +129,17 @@ void		 nsdb_rollback_transaction(sqlite3 *db);
 _Bool		 nsdb_create_table(sqlite3 *db, const char *table_name,
 				const char *table_def);
 
+/**
+ ** Private security-related APIs (nsdb.c)
+ **/
+FedFsStatus	 nsdb_create_private_certfile(char **pathbuf);
+FedFsStatus	 nsdb_update_security_nsdbparams(struct fedfs_nsdb *host,
+				FedFsConnectionSec type,
+				const char *certfile);
+
+/**
+ ** Private security-related APIs (connsec.c)
+ **/
+void		 nsdb_connsec_remove_certfile(const char *certfile);
+
 #endif	/* !_FEDFS_NSDB_INTERNAL_H_ */

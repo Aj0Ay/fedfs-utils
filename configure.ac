@@ -128,6 +128,16 @@ AC_CHECK_LIB([uriparser], [uriParseUriA],
 		 AC_DEFINE([HAVE_LIBURIPARSER], [1],
 			   [Define if you have liburiparser])],
 		[AC_MSG_ERROR([liburiparser not found.])])
+AC_CHECK_LIB([crypto], [X509_LOOKUP_file],
+		[AC_SUBST([LIBCRYPTO], ["-lcrypto"])
+		 AC_DEFINE([HAVE_LIBCRYPTO], [1],
+			   [Define if you have libcrypto])],
+		[AC_MSG_ERROR([libcrypto not found.])])
+AC_CHECK_LIB([ssl], [SSL_CTX_new],
+		[AC_SUBST([LIBSSL], ["-lssl"])
+		 AC_DEFINE([HAVE_LIBSSL], [1],
+			   [Define if you have libssl])],
+		[AC_MSG_ERROR([libssl not found.])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h langinfo.h locale.h memory.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h syslog.h termios.h unistd.h wchar.h])

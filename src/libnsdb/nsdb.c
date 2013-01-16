@@ -174,6 +174,67 @@ nsdb_is_default_parentdir(void)
 }
 
 /**
+ * Create a new file in our private certificate directory
+ *
+ * @param pathbuf OUT: NUL-terminated C string containing pathname of new file
+ * @return a FedFsStatus code
+ *
+ * Caller must free "pathbuf" with free(3).
+ */
+FedFsStatus
+nsdb_create_private_certfile(char **pathbuf)
+{
+	FedFsStatus retval;
+	char *tmp = NULL;
+	int len;
+
+	retval = FEDFS_ERR_SVRFAULT;
+	if (mkdir(fedfs_nsdbcerts_dirname, FEDFS_BASE_DIRMODE) == -1) {
+		if (errno != EEXIST) {
+			xlog(L_ERROR, "Failed to create certfile directory: %m");
+			goto out;
+		}
+	}
+
+	tmp = malloc(PATH_MAX);
+	if (tmp == NULL) {
+		xlog(D_GENERAL, "%s: failed to allocate pathname buffer",
+			__func__);
+		goto out;
+	}
+
+	len = snprintf(tmp, PATH_MAX, "%s/nsdbXXXXXX.pem",
+				fedfs_nsdbcerts_dirname);
+	if (len > PATH_MAX) {
+		xlog(D_GENERAL, "%s: NSDB certificate directory pathname is "
+			"too long", __func__);
+		free(tmp);
+		goto out;
+	}
+
+	if (mkstemps(tmp, 4) == -1) {
+		xlog(D_GENERAL, "%s: failed to create NSDB certificate file %s: %m",
+			__func__, pathbuf);
+		free(tmp);
+		goto out;
+	}
+
+	if (chmod(tmp, FEDFS_CERTFILE_MODE) == -1) {
+		xlog(D_GENERAL, "%s: failed to chmod NSDB certificate file %s: %m",
+			__func__, pathbuf);
+		(void)unlink(tmp);
+		free(tmp);
+		goto out;
+	}
+
+	*pathbuf = tmp;
+	retval = FEDFS_OK;
+
+out:
+	return retval;
+}
+
+/**
  * Create database table for tracking NSDB data
  *
  * @param db an open sqlite3 database descriptor
@@ -744,8 +805,9 @@ nsdb_new_nsdbname(sqlite3 *db, const nsdb_t host)
 	int rc;
 
 	retval = FEDFS_ERR_IO;
-	if (!nsdb_prepare_stmt(db, &stmt, "INSERT INTO nsdbs"
-			" (nsdbName,nsdbPort) VALUES(?,?);"))
+	if (!nsdb_prepare_stmt(db, &stmt, "INSERT INTO nsdbs "
+			"(nsdbName,nsdbPort,securityType,securityFilename) "
+			"VALUES(?,?,0,\"\");"))
 		goto out;
 
 	rc = sqlite3_bind_text(stmt, 1, domainname, -1, SQLITE_STATIC);
@@ -798,6 +860,79 @@ out:
  */
 static FedFsStatus
 nsdb_update_nsdbname(sqlite3 *db, const nsdb_t host,
+		unsigned int sectype, const char *certfile)
+{
+	const char *domainname = host->fn_hostname;
+	const int port = host->fn_port;
+	sqlite3_stmt *stmt;
+	FedFsStatus retval;
+	int rc;
+
+	retval = FEDFS_ERR_IO;
+	if (!nsdb_prepare_stmt(db, &stmt, "UPDATE nsdbs "
+			" SET securityType=?,securityFilename=?"
+			"WHERE nsdbName=? and nsdbPort=?;"))
+		goto out;
+
+	rc = sqlite3_bind_int(stmt, 1, sectype);
+	if (rc != SQLITE_OK) {
+		xlog(L_ERROR, "Failed to bind connection security value: %s",
+			sqlite3_errmsg(db));
+		goto out_finalize;
+	}
+
+	rc = sqlite3_bind_text(stmt, 2, certfile, -1, SQLITE_STATIC);
+	if (rc != SQLITE_OK) {
+		xlog(L_ERROR, "Failed to bind security data value: %s",
+			sqlite3_errmsg(db));
+		goto out_finalize;
+	}
+
+	rc = sqlite3_bind_text(stmt, 3, domainname, -1, SQLITE_STATIC);
+	if (rc != SQLITE_OK) {
+		xlog(L_ERROR, "Failed to bind NSDB hostname %s: %s",
+			domainname, sqlite3_errmsg(db));
+		goto out_finalize;
+	}
+
+	rc = sqlite3_bind_int(stmt, 4, port);
+	if (rc != SQLITE_OK) {
+		xlog(L_ERROR, "Failed to bind port number: %s",
+			sqlite3_errmsg(db));
+		goto out_finalize;
+	}
+
+	rc = sqlite3_step(stmt);
+	switch (rc) {
+	case SQLITE_DONE:
+		xlog(D_CALL, "%s: Updated NSDB info record for '%s:%u' "
+			"to nsdbs table", __func__, domainname, port);
+		retval = FEDFS_OK;
+		break;
+	default:
+		xlog(L_ERROR, "Failed to update NSDB info record for '%s:%u': %s",
+			domainname, port, sqlite3_errmsg(db));
+	}
+
+out_finalize:
+	nsdb_finalize_stmt(stmt);
+out:
+	return retval;
+}
+
+/**
+ * Update security information about an NSDB in our NSDB database
+ *
+ * @param db an open sqlite3 database descriptor
+ * @param host an instantiated nsdb_t object
+ * @param sectype an integer value representing the security type
+ * @param certfile a NUL-terminated UTF-8 C string containing the name of a file containing an x.509 certificate
+ * @return a FedFsStatus code
+ *
+ * Information is copied from the nsdb_t object to the cert store.
+ */
+static FedFsStatus
+nsdb_update_security_nsdbname(sqlite3 *db, const nsdb_t host,
 		unsigned int sectype, const char *certfile)
 {
 	const char *domainname = host->fn_hostname;
@@ -1210,6 +1345,56 @@ out:
 }
 
 /**
+ * Create connection parameters row for an NSDB
+ *
+ * @param host an instantiated nsdb_t object
+ * @return a FedFsStatus code
+ */
+static FedFsStatus
+nsdb_create_nsdbparams(nsdb_t host)
+{
+	FedFsStatus retval;
+	sqlite3 *db;
+
+	xlog(D_CALL, "%s: creating row for NSDB '%s'",
+			__func__, host->fn_hostname);
+
+	retval = FEDFS_ERR_IO;
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	if (db == NULL)
+		goto out;
+
+	retval = nsdb_new_nsdbname(db, host);
+
+	nsdb_close_db(db);
+out:
+	return retval;
+}
+
+/**
+ * Create connection parameters entry for an NSDB
+ *
+ * @param hostname NUL-terminated UTF-8 string containing NSDB hostname
+ * @param port integer port number of NSDB
+ * @return a FedFsStatus code
+ */
+FedFsStatus
+nsdb_create_nsdb(const char *hostname, const unsigned short port)
+{
+	nsdb_t host;
+	FedFsStatus retval;
+
+	retval = nsdb_new_nsdb(hostname, port, &host);
+	if (retval != FEDFS_OK)
+		return retval;
+
+	retval = nsdb_create_nsdbparams(host);
+
+	nsdb_free_nsdb(host);
+	return retval;
+}
+
+/**
  * Update connection parameters for an NSDB
  *
  * @param host an instantiated nsdb_t object
@@ -1292,6 +1477,45 @@ nsdb_update_nsdb(const char *hostname, const unsigned short port,
 	retval = nsdb_update_nsdbparams(host, sec);
 
 	nsdb_free_nsdb(host);
+	return retval;
+}
+
+/**
+ * Update connection security parameters for an NSDB
+ *
+ * @param host an instantiated nsdb_t object
+ * @param type connection security type for "host"
+ * @param certfile NUL-terminated UTF-8 string containing pathname of file
+ * @return a FedFsStatus code
+ */
+FedFsStatus
+nsdb_update_security_nsdbparams(nsdb_t host, FedFsConnectionSec type,
+		const char *certfile)
+{
+	FedFsStatus retval;
+	sqlite3 *db;
+
+	xlog(D_CALL, "%s: writing parameters for NSDB '%s'",
+			__func__, host->fn_hostname);
+
+	retval = FEDFS_ERR_IO;
+	db = nsdb_open_db(fedfs_db_filename, SQLITE_OPEN_READWRITE);
+	if (db == NULL)
+		goto out;
+
+	retval = nsdb_new_nsdbname(db, host);
+	if (retval != FEDFS_OK)
+		goto out_close;
+
+	retval = nsdb_update_security_nsdbname(db, host, type, certfile);
+	if (retval != FEDFS_OK)
+		goto out_close;
+
+	retval = FEDFS_OK;
+
+out_close:
+	nsdb_close_db(db);
+out:
 	return retval;
 }
 
