@@ -1106,15 +1106,12 @@ out:
  * Read NSDB info for "host" from NSDB database
  *
  * @param host an instantiated nsdb_t object
- * @param sec buffer for returned connection data
  * @return a FedFsStatus code
  *
- * On success, FEDFS_OK is returned, a fresh nsdb_t is returned, and
- * the sectype and secdata fields in the passed-in fedfs_secdata object
- * are filled in.
+ * On success, FEDFS_OK is returned and "host" is initialized.
  */
 static FedFsStatus
-nsdb_read_nsdbparams(nsdb_t host, struct fedfs_secdata *sec)
+nsdb_read_nsdbparams(nsdb_t host)
 {
 	FedFsStatus retval;
 	sqlite3 *db;
@@ -1125,25 +1122,7 @@ nsdb_read_nsdbparams(nsdb_t host, struct fedfs_secdata *sec)
 		goto out;
 
 	retval = nsdb_read_nsdbname(db, host);
-	if (retval != FEDFS_OK)
-		goto out_close;
 
-	if (sec != NULL) {
-		if (host->fn_sectype != FEDFS_SEC_NONE) {
-			retval = nsdb_read_certfile(nsdb_certfile(host),
-					&sec->data, &sec->len);
-			if (retval != FEDFS_OK)
-				goto out_close;
-		} else {
-			sec->data = NULL;
-			sec->len = 0;
-		}
-		sec->type = host->fn_sectype;
-	}
-
-	retval = FEDFS_OK;
-
-out_close:
 	nsdb_close_db(db);
 out:
 	return retval;
@@ -1155,16 +1134,15 @@ out:
  * @param hostname NUL-terminated UTF-8 string containing NSDB hostname
  * @param port integer port number of NSDB
  * @param host OUT: an initialized nsdb_t object
- * @param sec buffer for returned connection data
  * @return a FedFsStatus code
  *
- * On success, FEDFS_OK is returned, a fresh nsdb_t is returned, and
- * the sectype and secdata fields in the passed-in fedfs_secdata object
- * are filled in.
+ * On success, FEDFS_OK is returned and a fresh nsdb_t is returned.
+ *
+ * "host" must be freed with nsdb_free_nsdb().
  */
 FedFsStatus
 nsdb_lookup_nsdb(const char *hostname, const unsigned short port,
-		nsdb_t *host, struct fedfs_secdata *sec)
+		nsdb_t *host)
 {
 	FedFsStatus retval;
 	nsdb_t new;
@@ -1173,7 +1151,7 @@ nsdb_lookup_nsdb(const char *hostname, const unsigned short port,
 	if (retval != FEDFS_OK)
 		return retval;
 
-	retval = nsdb_read_nsdbparams(new, sec);
+	retval = nsdb_read_nsdbparams(new);
 	if (retval != FEDFS_OK)
 		nsdb_free_nsdb(new);
 	else
@@ -1220,7 +1198,7 @@ nsdb_lookup_nsdb_by_uri(const char *uri, nsdb_t *host)
 	if (retval != FEDFS_OK)
 		goto out;
 
-	retval = nsdb_read_nsdbparams(new, NULL);
+	retval = nsdb_read_nsdbparams(new);
 	if (retval != FEDFS_OK)
 		nsdb_free_nsdb(new);
 	else
@@ -1333,7 +1311,7 @@ nsdb_update_default_binddn(const char *hostname, const unsigned short port,
 	nsdb_t host;
 	sqlite3 *db;
 
-	retval = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	retval = nsdb_lookup_nsdb(hostname, port, &host);
 	if (retval != FEDFS_OK)
 		return retval;
 
@@ -1366,7 +1344,7 @@ nsdb_update_default_nce(const char *hostname, const unsigned short port,
 	nsdb_t host;
 	sqlite3 *db;
 
-	retval = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	retval = nsdb_lookup_nsdb(hostname, port, &host);
 	if (retval != FEDFS_OK)
 		return retval;
 
@@ -1399,7 +1377,7 @@ nsdb_update_follow_referrals(const char *hostname, const unsigned short port,
 	nsdb_t host;
 	sqlite3 *db;
 
-	retval = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	retval = nsdb_lookup_nsdb(hostname, port, &host);
 	if (retval != FEDFS_OK)
 		return retval;
 

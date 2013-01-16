@@ -510,7 +510,7 @@ fedfsd_svc_create_junction_1(SVCXPRT *xprt)
 	if (result != FEDFS_OK)
 		goto out;
 
-	result = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	result = nsdb_lookup_nsdb(hostname, port, &host);
 	if (result != FEDFS_OK)
 		goto out;
 
@@ -1041,7 +1041,7 @@ fedfsd_svc_get_nsdb_params_1(SVCXPRT *xprt)
 	if (result.status != FEDFS_OK)
 		goto out;
 
-	result.status = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	result.status = nsdb_lookup_nsdb(hostname, port, &host);
 	if (result.status != FEDFS_OK)
 		goto out;
 
@@ -1110,7 +1110,7 @@ fedfsd_svc_get_limited_nsdb_params_1(SVCXPRT *xprt)
 	if (result.status != FEDFS_OK)
 		goto out;
 
-	result.status = nsdb_lookup_nsdb(hostname, port, &host, NULL);
+	result.status = nsdb_lookup_nsdb(hostname, port, &host);
 	if (result.status != FEDFS_OK)
 		goto out;
 

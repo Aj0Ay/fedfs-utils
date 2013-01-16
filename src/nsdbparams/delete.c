@@ -205,7 +205,7 @@ nsdbparams_delete(const char *progname, int argc, char **argv)
 	if (!nsdb_init_database())
 		return EXIT_FAILURE;
 
-	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
+	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host);
 	switch (status) {
 	case FEDFS_OK:
 		nsdb_free_nsdb(host);

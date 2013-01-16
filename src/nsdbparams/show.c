@@ -236,7 +236,7 @@ nsdbparams_show(const char *progname, int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
+	status = nsdb_lookup_nsdb(nsdbname, nsdbport, &host);
 	switch (status) {
 	case FEDFS_OK:
 		nsdbparams_show_display(host);

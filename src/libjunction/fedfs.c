@@ -409,7 +409,7 @@ fedfs_parse_node(const char *pathname, xmlNodePtr node,
 
 	retval = FEDFS_ERR_NSDB_PARAMS;
 	if (nsdb_lookup_nsdb((const char *)nsdb_name_tmp, (unsigned short)port,
-					&host_tmp, NULL) != FEDFS_OK) {
+					&host_tmp) != FEDFS_OK) {
 		xlog(D_GENERAL, "%s: No NSDB params for %s\n",
 			__func__, nsdb_name_tmp);
 		free(tmp);

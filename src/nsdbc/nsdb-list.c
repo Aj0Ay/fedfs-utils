@@ -264,7 +264,7 @@ main(int argc, char **argv)
 		nsdb_list_usage(progname);
 	}
 
-	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
+	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

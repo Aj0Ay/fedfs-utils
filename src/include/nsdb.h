@@ -177,8 +177,7 @@ FedFsStatus	 nsdb_new_nsdb(const char *hostname, const unsigned long port,
  * Instantiate an nsdb_t object based on stored connection parameters
  */
 FedFsStatus	 nsdb_lookup_nsdb(const char *hostname,
-				const unsigned short port, nsdb_t *host,
-				struct fedfs_secdata *sec);
+				const unsigned short port, nsdb_t *host);
 
 /**
  * Instantiate an nsdb_t object based on stored connection parameters

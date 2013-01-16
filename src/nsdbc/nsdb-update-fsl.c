@@ -199,7 +199,7 @@ main(int argc, char **argv)
 		value = (char *)path_array;
 	}
 
-	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
+	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host);
 	switch (retval) {
 	case FEDFS_OK:
 		break;

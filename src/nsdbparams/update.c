@@ -339,7 +339,7 @@ nsdbparams_update(const char *progname, int argc, char **argv)
 	if (!nsdb_init_database())
 		goto out;
 
-	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host, NULL);
+	retval = nsdb_lookup_nsdb(nsdbname, nsdbport, &host);
 	switch (retval) {
 	case FEDFS_OK:
 		nsdb_free_nsdb(host);
