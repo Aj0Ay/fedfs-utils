@@ -191,9 +191,16 @@ nfsref_remove_delete_fsn(const char *junct_path)
 			nsdb_hostname(host), nsdb_port(host));
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		xlog(L_ERROR, "Failed to authenticate to NSDB %s:%u: %s",
-			nsdb_hostname(host), nsdb_port(host),
-			ldap_err2string(ldap_err));
+		switch (ldap_err) {
+		case LDAP_INVALID_CREDENTIALS:
+			xlog(L_ERROR, "Incorrect password for DN %s",
+				binddn);
+			break;
+		default:
+			xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",
+				nsdb_hostname(host), nsdb_port(host),
+				ldap_err2string(ldap_err));
+		}
 		goto out_free;
 	default:
 		xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",

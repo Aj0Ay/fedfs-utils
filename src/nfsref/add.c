@@ -616,8 +616,16 @@ nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 			nsdbname, nsdbport);
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		xlog(L_ERROR, "Failed to authenticate to NSDB %s:%u: %s",
-			nsdbname, nsdbport, ldap_err2string(ldap_err));
+		switch (ldap_err) {
+		case LDAP_INVALID_CREDENTIALS:
+			xlog(L_ERROR, "Incorrect password for DN %s",
+				binddn);
+			break;
+		default:
+			xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",
+				nsdbname, nsdbport,
+				ldap_err2string(ldap_err));
+		}
 		goto out_free;
 	default:
 		xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",

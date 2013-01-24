@@ -223,8 +223,15 @@ main(int argc, char **argv)
 			nsdbname, nsdbport);
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		fprintf(stderr, "Failed to authenticate to NSDB %s:%u: %s\n",
-			nsdbname, nsdbport, ldap_err2string(ldap_err));
+		switch (ldap_err) {
+		case LDAP_INVALID_CREDENTIALS:
+			fprintf(stderr, "Incorrect password for DN %s\n",
+				binddn);
+			break;
+		default:
+			fprintf(stderr, "Failed to bind to NSDB %s:%u: %s\n",
+				nsdbname, nsdbport, ldap_err2string(ldap_err));
+		}
 		goto out_free;
 	default:
 		fprintf(stderr, "Failed to bind to NSDB %s:%u: %s\n",
