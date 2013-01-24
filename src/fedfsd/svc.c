@@ -955,6 +955,10 @@ fedfsd_test_nsdb(const char *hostname, unsigned short port)
 		xlog(D_GENERAL, "%s: %s:%u passed ping test",
 			__func__, hostname, port);
 		break;
+	case FEDFS_ERR_NSDB_AUTH:
+		xlog(D_GENERAL, "%s: TLS is required for NSDB %s:%u",
+			__func__, hostname, port);
+		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		xlog(D_GENERAL, "%s: %s:%u is up, but not an NSDB: %s",
 			__func__, hostname, port,
@@ -1008,8 +1012,18 @@ fedfsd_svc_set_nsdb_params_1(SVCXPRT *xprt)
 		break;
 	case FEDFS_ERR_NSDB_PARAMS:
 		result = fedfsd_test_nsdb(hostname, port);
-		if (result != FEDFS_OK)
+		switch (result) {
+		case FEDFS_OK:
+			break;
+		case FEDFS_ERR_NSDB_AUTH:
+			if (args.params.secType == FEDFS_SEC_NONE)
+				goto out;
+			result = FEDFS_OK;
+			break;
+		default:
 			goto out;
+		}
+
 		result = nsdb_create_nsdb(hostname, port);
 		if (result != FEDFS_OK) {
 			xlog(L_ERROR, "Failed to create entry for %s:%u in "

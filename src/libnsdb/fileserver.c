@@ -1749,17 +1749,27 @@ out:
 static FedFsStatus
 nsdb_ping_contexts_s(nsdb_t host, char **contexts, unsigned int *ldap_err)
 {
+	unsigned int ldap_result;
 	FedFsStatus retval;
 	char *dn;
 	int i;
 
+	retval = FEDFS_ERR_NSDB_RESPONSE;
 	for (i = 0; contexts[i] != NULL; i++) {
-		retval = nsdb_get_ncedn_s(host, contexts[i], &dn, ldap_err);
-		if (retval == FEDFS_OK) {
+		retval = nsdb_get_ncedn_s(host, contexts[i], &dn, &ldap_result);
+		switch (retval) {
+		case FEDFS_OK:
 			free(dn);
 			break;
-		} else
+		case FEDFS_ERR_NSDB_LDAP_VAL:
+			if (ldap_result == LDAP_CONFIDENTIALITY_REQUIRED)
+				retval = FEDFS_ERR_NSDB_AUTH;
+			else
+				*ldap_err = ldap_result;
+			break;
+		default:
 			retval = FEDFS_ERR_NSDB_NONCE;
+		}
 	}
 	return retval;
 }

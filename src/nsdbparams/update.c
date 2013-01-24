@@ -118,6 +118,11 @@ nsdbparams_test_nsdb(const char *nsdbname, unsigned short nsdbport)
 			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
 		retval = FEDFS_OK;
 		break;
+	case FEDFS_ERR_NSDB_AUTH:
+		xlog(L_WARNING, "Warning: TLS is required for NSDB %s:%u",
+			nsdbname, nsdbport);
+		retval = FEDFS_OK;
+		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
 		xlog(L_WARNING, "Failed to ping NSDB %s:%u: %s",
 			nsdbname, nsdbport, ldap_err2string(ldap_err));
