@@ -187,8 +187,8 @@ nfsref_remove_delete_fsn(const char *junct_path)
 			nsdb_hostname(host), nsdb_port(host));
 		goto out_free;
 	case FEDFS_ERR_NSDB_AUTH:
-		xlog(L_ERROR, "Failed to authenticate to NSDB %s:%u",
-			nsdb_hostname(host), nsdb_port(host));
+		xlog(L_ERROR, "Failed to establish secure connection "
+			"to NSDB %s:%u", nsdb_hostname(host), nsdb_port(host));
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
 		switch (ldap_err) {

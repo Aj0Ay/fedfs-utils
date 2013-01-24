@@ -620,6 +620,9 @@ nsdb_start_tls(LDAP *ld, const char *certfile, unsigned int *ldap_err)
 		ldap_get_option(ld, LDAP_OPT_DIAGNOSTIC_MESSAGE, (void *)&msg);
 		xlog(D_GENERAL, "%s: %s", __func__, msg);
 		ldap_memfree(msg);
+
+		if (rc == LDAP_CONNECT_ERROR)
+			return FEDFS_ERR_NSDB_AUTH;
 		goto out_ldap_err;
 	}
 

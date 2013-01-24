@@ -612,8 +612,8 @@ nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 			nsdbname, nsdbport);
 		goto out_free;
 	case FEDFS_ERR_NSDB_AUTH:
-		xlog(L_ERROR, "Failed to authenticate to NSDB %s:%u",
-			nsdbname, nsdbport);
+		xlog(L_ERROR, "Failed to establish secure connection to "
+			"NSDB %s:%u", nsdbname, nsdbport);
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
 		switch (ldap_err) {

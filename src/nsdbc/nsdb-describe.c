@@ -219,8 +219,8 @@ main(int argc, char **argv)
 			nsdbname, nsdbport);
 		goto out_free;
 	case FEDFS_ERR_NSDB_AUTH:
-		fprintf(stderr, "Failed to authenticate to NSDB %s:%u\n",
-			nsdbname, nsdbport);
+		fprintf(stderr, "Failed to establish secure connection "
+			"to NSDB %s:%u\n", nsdbname, nsdbport);
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
 		switch (ldap_err) {
