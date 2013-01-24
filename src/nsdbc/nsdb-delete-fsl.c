@@ -239,7 +239,7 @@ main(int argc, char **argv)
 		}
 		goto out_free;
 	default:
-		fprintf(stderr, "Failed to bind to NSDB %s:%u: %s\n",
+		fprintf(stderr, "Failed to open NSDB %s:%u: %s\n",
 			nsdbname, nsdbport,
 			nsdb_display_fedfsstatus(retval));
 		goto out_free;

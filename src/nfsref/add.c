@@ -628,7 +628,7 @@ nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 		}
 		goto out_free;
 	default:
-		xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",
+		xlog(L_ERROR, "Failed to open NSDB %s:%u: %s",
 			nsdbname, nsdbport, nsdb_display_fedfsstatus(retval));
 		goto out_free;
 	}

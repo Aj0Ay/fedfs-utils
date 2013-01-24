@@ -203,7 +203,7 @@ nfsref_remove_delete_fsn(const char *junct_path)
 		}
 		goto out_free;
 	default:
-		xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",
+		xlog(L_ERROR, "Failed to open NSDB %s:%u: %s",
 			nsdb_hostname(host), nsdb_port(host),
 			nsdb_display_fedfsstatus(retval));
 		goto out_free;
