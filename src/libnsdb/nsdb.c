@@ -1505,7 +1505,7 @@ nsdb_open_nsdb(nsdb_t host, const char *binddn, const char *passwd,
 	default:
 		xlog(D_GENERAL, "%s: Host contains invalid sectype",
 			__func__);
-		retval = FEDFS_ERR_NSDB_AUTH;
+		retval = FEDFS_ERR_NSDB_PARAMS;
 		goto out_unbind;
 	}
 
