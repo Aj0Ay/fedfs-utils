@@ -562,7 +562,7 @@ nsdb_bind(LDAP *ld, const char *binddn, const char *passwd,
 		secret = nsdb_get_pw();
 		if (secret == NULL) {
 			xlog(D_GENERAL, "No password provided");
-			return FEDFS_ERR_NSDB_AUTH;
+			return FEDFS_ERR_INVAL;
 		}
 	}
 

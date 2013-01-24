@@ -604,6 +604,9 @@ nfsref_add_nfs_fedfs(const char *junct_path, char **argv, int optind)
 	switch (retval) {
 	case FEDFS_OK:
 		break;
+	case FEDFS_ERR_INVAL:
+		xlog(L_ERROR, "Missing or invalid password");
+		goto out_free;
 	case FEDFS_ERR_NSDB_CONN:
 		xlog(L_ERROR, "Failed to connect to NSDB %s:%u",
 			nsdbname, nsdbport);

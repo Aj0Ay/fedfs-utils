@@ -227,6 +227,9 @@ main(int argc, char **argv)
 	switch (retval) {
 	case FEDFS_OK:
 		break;
+	case FEDFS_ERR_INVAL:
+		fprintf(stderr, "Missing or invalid password\n");
+		goto out_free;
 	case FEDFS_ERR_NSDB_CONN:
 		fprintf(stderr, "Failed to connect to NSDB %s:%u\n",
 			nsdbname, nsdbport);
