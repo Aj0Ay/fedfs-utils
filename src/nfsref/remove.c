@@ -230,10 +230,23 @@ nfsref_remove_delete_fsn(const char *junct_path)
 		xlog(L_ERROR, "FSN %s still has FSL entries", fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		/* XXX: "Operation not allowed on non-leaf" means
-		 *	this FSN still has children FSLs. */
-		xlog(L_ERROR, "Failed to delete FSN %s: %s",
-			fsn_uuid, ldap_err2string(ldap_err));
+		switch (ldap_err) {
+		case LDAP_REFERRAL:
+			xlog(L_ERROR, "Encountered LDAP referral on %s:%u",
+				nsdb_hostname(host), nsdb_port(host));
+			break;
+		case LDAP_CONFIDENTIALITY_REQUIRED:
+			xlog(L_ERROR, "TLS security required for %s:%u",
+				nsdb_hostname(host), nsdb_port(host));
+			break;
+		case LDAP_NOT_ALLOWED_ON_NONLEAF:
+			xlog(L_ERROR, "Failed to delete: "
+				"this FSN may have children");
+			break;
+		default:
+			xlog(L_ERROR, "Failed to delete FSN %s: %s",
+				fsn_uuid, ldap_err2string(ldap_err));
+		}
 		break;
 	default:
 		xlog(L_ERROR, "Failed to delete FSN %s: %s",

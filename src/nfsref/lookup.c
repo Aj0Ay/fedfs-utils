@@ -392,14 +392,20 @@ again:
 			__func__, fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		if (ldap_err == LDAP_REFERRAL) {
+		switch (ldap_err) {
+		case LDAP_REFERRAL:
 			retval = nfsref_lookup_follow_ldap_referral(&host);
-			if (retval != FEDFS_OK)
-				break;
-			goto again;
+			if (retval == FEDFS_OK)
+				goto again;
+			break;
+		case LDAP_CONFIDENTIALITY_REQUIRED:
+			xlog(L_ERROR, "TLS security required for %s:%u",
+				nsdb_hostname(host), nsdb_port(host));
+			break;
+		default:
+			xlog(L_ERROR, "%s: NSDB operation failed with %s",
+				__func__, ldap_err2string(ldap_err));
 		}
-		xlog(L_ERROR, "%s: NSDB operation failed with %s",
-			__func__, ldap_err2string(ldap_err));
 		break;
 	default:
 		xlog(L_ERROR, "%s: Failed to resolve FSN %s: %s",

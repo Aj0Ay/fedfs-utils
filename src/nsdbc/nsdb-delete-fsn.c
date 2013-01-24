@@ -272,15 +272,23 @@ main(int argc, char **argv)
 		fprintf(stderr, "FSN %s still has FSL entries\n", fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		if (ldap_err == LDAP_REFERRAL) {
+		switch (ldap_err) {
+		case LDAP_REFERRAL:
 			fprintf(stderr, "Encountered LDAP referral on %s:%u\n",
 				nsdbname, nsdbport);
 			break;
+		case LDAP_CONFIDENTIALITY_REQUIRED:
+			fprintf(stderr, "TLS security required for %s:%u\n",
+				nsdbname, nsdbport);
+			break;
+		case LDAP_NOT_ALLOWED_ON_NONLEAF:
+			fprintf(stderr, "Failed to delete: "
+				"this FSN may have children\n");
+			break;
+		default:
+			fprintf(stderr, "Failed to delete FSN %s: %s\n",
+				fsn_uuid, ldap_err2string(ldap_err));
 		}
-		/* XXX: "Operation not allowed on non-leaf" means
-		 *	this FSN still has children FSLs. */
-		fprintf(stderr, "Failed to delete FSN %s: %s\n",
-			fsn_uuid, ldap_err2string(ldap_err));
 		break;
 	default:
 		fprintf(stderr, "Failed to delete FSN %s: %s\n",

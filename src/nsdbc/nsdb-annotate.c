@@ -315,6 +315,10 @@ main(int argc, char **argv)
 			fprintf(stderr, "Encountered LDAP referral on %s:%u\n",
 				nsdbname, nsdbport);
 			break;
+		case LDAP_CONFIDENTIALITY_REQUIRED:
+			fprintf(stderr, "TLS security required for %s:%u\n",
+				nsdbname, nsdbport);
+			break;
 		case LDAP_NO_SUCH_ATTRIBUTE:
 			fprintf(stderr, "Annotation \"%s\" = \"%s\" not found\n",
 				keyword, value);

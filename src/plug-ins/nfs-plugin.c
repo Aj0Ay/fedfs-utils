@@ -413,8 +413,20 @@ again:
 			__func__, fsn_uuid);
 		goto out_close;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		nfs_jp_debug("%s: NSDB operation failed with %s\n",
-			__func__, ldap_err2string(ldap_err));
+		switch (ldap_err) {
+		case LDAP_REFERRAL:
+			retval = nfs_jp_follow_ldap_referral(&host);
+			if (retval == FEDFS_OK)
+				goto again;
+			break;
+		case LDAP_CONFIDENTIALITY_REQUIRED:
+			nfs_jp_debug("TLS security required for %s:%u\n",
+				nsdb_hostname(host), nsdb_port(host));
+			break;
+		default:
+			nfs_jp_debug("%s: NSDB operation failed with %s\n",
+				__func__, ldap_err2string(ldap_err));
+		}
 		goto out_close;
 	default:
 		nfs_jp_debug("%s: Failed to resolve FSN %s: %s\n",
@@ -441,12 +453,6 @@ again:
 			__func__, fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		if (ldap_err == LDAP_REFERRAL) {
-			retval = nfs_jp_follow_ldap_referral(&host);
-			if (retval != FEDFS_OK)
-				break;
-			goto again;
-		}
 		nfs_jp_debug("%s: NSDB operation failed with %s\n",
 			__func__, ldap_err2string(ldap_err));
 		break;

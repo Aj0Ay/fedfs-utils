@@ -380,14 +380,20 @@ again:
 		fprintf(stderr, "Failed to find FSN %s\n", fsn_uuid);
 		goto out_close;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		if (ldap_err == LDAP_REFERRAL) {
+		switch (ldap_err) {
+		case LDAP_REFERRAL:
 			retval = nsdb_resolve_fsn_follow_ldap_referral(&host);
-			if (retval != FEDFS_OK)
-				goto out_close;
-			goto again;
+			if (retval == FEDFS_OK)
+				goto again;
+			break;
+		case LDAP_CONFIDENTIALITY_REQUIRED:
+			fprintf(stderr, "TLS security required for %s:%u\n",
+				nsdbname, nsdbport);
+			break;
+		default:
+			fprintf(stderr, "NSDB LDAP error: %s\n",
+				ldap_err2string(ldap_err));
 		}
-		fprintf(stderr, "NSDB LDAP error: %s\n",
-			ldap_err2string(ldap_err));
 		goto out_close;
 	default:
 		fprintf(stderr, "FedFsStatus code "
