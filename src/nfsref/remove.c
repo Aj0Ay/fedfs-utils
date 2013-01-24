@@ -165,13 +165,13 @@ nfsref_remove_delete_fsn(const char *junct_path)
 	if (binddn == NULL)
 		binddn = (char *)nsdb_default_binddn(host);
 	if (binddn == NULL) {
-		fprintf(stderr, "No NDSB bind DN was specified\n");
+		xlog(L_ERROR, "No NDSB bind DN was specified");
 		goto out_free;
 	}
 	if (nce == NULL)
 		nce = (char *)nsdb_default_nce(host);
 	if (nce == NULL) {
-		fprintf(stderr, "No NCE was specified\n");
+		xlog(L_ERROR, "No NCE was specified");
 		goto out_free;
 	}
 
@@ -180,20 +180,20 @@ nfsref_remove_delete_fsn(const char *junct_path)
 	case FEDFS_OK:
 		break;
 	case FEDFS_ERR_NSDB_CONN:
-		fprintf(stderr, "Failed to connect to NSDB %s:%u\n",
+		xlog(L_ERROR, "Failed to connect to NSDB %s:%u",
 			nsdb_hostname(host), nsdb_port(host));
 		goto out_free;
 	case FEDFS_ERR_NSDB_AUTH:
-		fprintf(stderr, "Failed to authenticate to NSDB %s:%u\n",
+		xlog(L_ERROR, "Failed to authenticate to NSDB %s:%u",
 			nsdb_hostname(host), nsdb_port(host));
 		goto out_free;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		fprintf(stderr, "Failed to authenticate to NSDB %s:%u: %s\n",
+		xlog(L_ERROR, "Failed to authenticate to NSDB %s:%u: %s",
 			nsdb_hostname(host), nsdb_port(host),
 			ldap_err2string(ldap_err));
 		goto out_free;
 	default:
-		fprintf(stderr, "Failed to bind to NSDB %s:%u: %s\n",
+		xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",
 			nsdb_hostname(host), nsdb_port(host),
 			nsdb_display_fedfsstatus(retval));
 		goto out_free;
@@ -207,26 +207,26 @@ nfsref_remove_delete_fsn(const char *junct_path)
 		break;
 	case FEDFS_ERR_NSDB_NONCE:
 		if (nce == NULL)
-			fprintf(stderr, "NSDB %s:%u has no NCE\n",
+			xlog(L_ERROR, "NSDB %s:%u has no NCE",
 				nsdb_hostname(host), nsdb_port(host));
 		else
-			fprintf(stderr, "NCE %s does not exist\n", nce);
+			xlog(L_ERROR, "NCE %s does not exist", nce);
 		break;
 	case FEDFS_ERR_NSDB_NOFSN:
-		fprintf(stderr, "NSDB %s:%u has no such FSN %s\n",
+		xlog(L_ERROR, "NSDB %s:%u has no such FSN %s",
 			nsdb_hostname(host), nsdb_port(host), fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_NOFSL:
-		fprintf(stderr, "FSN %s still has FSL entries\n", fsn_uuid);
+		xlog(L_ERROR, "FSN %s still has FSL entries", fsn_uuid);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
 		/* XXX: "Operation not allowed on non-leaf" means
 		 *	this FSN still has children FSLs. */
-		fprintf(stderr, "Failed to delete FSN %s: %s\n",
+		xlog(L_ERROR, "Failed to delete FSN %s: %s",
 			fsn_uuid, ldap_err2string(ldap_err));
 		break;
 	default:
-		fprintf(stderr, "Failed to delete FSN %s: %s\n",
+		xlog(L_ERROR, "Failed to delete FSN %s: %s",
 			fsn_uuid, nsdb_display_fedfsstatus(retval));
 	}
 

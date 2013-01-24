@@ -139,7 +139,7 @@ main(int argc, char **argv)
 			else if (strcmp(optarg, "nfs-fedfs") == 0)
 				type = NFSREF_TYPE_NFS_FEDFS;
 			else {
-				fprintf(stderr,
+				xlog(L_ERROR,
 					"Unrecognized junction type: %s",
 					optarg);
 				exit(EXIT_FAILURE);
@@ -156,7 +156,7 @@ main(int argc, char **argv)
 	}
 
 	if (!help && geteuid() != 0) {
-		fprintf(stderr, "Root permission is required\n");
+		xlog(L_ERROR, "Root permission is required");
 		goto out;
 	}
 
@@ -169,7 +169,7 @@ main(int argc, char **argv)
 			goto out;
 		}
 		if (argc < optind + 3) {
-			fprintf(stderr, "Not enough positional parameters\n");
+			xlog(L_ERROR, "Not enough positional parameters");
 			nfsref_usage(progname);
 			goto out;
 		}
