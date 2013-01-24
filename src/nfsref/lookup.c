@@ -348,8 +348,30 @@ nfsref_lookup_resolve_fsn(const char *fsn_uuid, nsdb_t host)
 		__func__, fsn_uuid, nsdb_hostname(host), nsdb_port(host));
 
 again:
-	if (nsdb_open_nsdb(host, NULL, NULL, &ldap_err) != FEDFS_OK)
+	retval = nsdb_open_nsdb(host, NULL, NULL, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_CONN:
+		xlog(L_ERROR, "Failed to connect to NSDB %s:%u",
+			nsdb_hostname(host), nsdb_port(host));
 		return status;
+	case FEDFS_ERR_NSDB_AUTH:
+		xlog(L_ERROR, "Failed to establish secure connection to "
+			"NSDB %s:%u", nsdb_hostname(host), nsdb_port(host));
+		return status;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		xlog(L_ERROR, "Failed to bind to NSDB %s:%u: %s",
+			nsdb_hostname(host), nsdb_port(host),
+			ldap_err2string(ldap_err));
+		return status;
+	default:
+		xlog(L_ERROR, "Failed to open NSDB %s:%u: %s",
+			nsdb_hostname(host), nsdb_port(host),
+			nsdb_display_fedfsstatus(retval));
+		return status;
+	}
+
 
 	retval = nsdb_get_fsn_s(host, NULL, fsn_uuid, &fsn, &ldap_err);
 	switch (retval) {

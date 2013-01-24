@@ -395,8 +395,29 @@ nfs_jp_resolve_fsn(const char *fsn_uuid, nsdb_t host,
 	int fsn_ttl;
 
 again:
-	if (nsdb_open_nsdb(host, NULL, NULL, &ldap_err) != FEDFS_OK)
+	retval = nsdb_open_nsdb(host, NULL, NULL, &ldap_err);
+	switch (retval) {
+	case FEDFS_OK:
+		break;
+	case FEDFS_ERR_NSDB_CONN:
+		nfs_jp_debug("%s: Failed to connect to NSDB %s:%u\n",
+			nsdb_hostname(host), nsdb_port(host));
+		return JP_NSDBREMOTE;
+	case FEDFS_ERR_NSDB_AUTH:
+		nfs_jp_debug("%s: Failed to establish secure connection to "
+			"NSDB %s:%u\n", nsdb_hostname(host), nsdb_port(host));
 		return JP_NSDBLOCAL;
+	case FEDFS_ERR_NSDB_LDAP_VAL:
+		nfs_jp_debug("%s: Failed to bind to NSDB %s:%u: %s\n",
+			nsdb_hostname(host), nsdb_port(host),
+			ldap_err2string(ldap_err));
+		return JP_NSDBLOCAL;
+	default:
+		nfs_jp_debug("%s: Failed to open NSDB %s:%u: %s\n",
+			nsdb_hostname(host), nsdb_port(host),
+			nsdb_display_fedfsstatus(retval));
+		return JP_NSDBLOCAL;
+	}
 
 	retval = nsdb_get_fsn_s(host, NULL, fsn_uuid, &fsn, &ldap_err);
 	switch (retval) {
