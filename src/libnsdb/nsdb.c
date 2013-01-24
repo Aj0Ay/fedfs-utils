@@ -528,10 +528,12 @@ nsdb_new_nsdb(const char *hostname, const unsigned long port, nsdb_t *host)
 	char *hostname_tmp;
 	unsigned short port_tmp;
 
-	if (!nsdb_is_hostname_utf8(hostname))
-		return FEDFS_ERR_BADCHAR;
+	if (hostname == NULL || host == NULL)
+		return FEDFS_ERR_INVAL;
 	if (port > UINT16_MAX)
 		return FEDFS_ERR_INVAL;
+	if (!nsdb_is_hostname_utf8(hostname))
+		return FEDFS_ERR_BADCHAR;
 
 	port_tmp = LDAP_PORT;
 	if (port != 0)
