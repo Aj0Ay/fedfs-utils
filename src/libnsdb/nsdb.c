@@ -603,10 +603,16 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 
 	switch (sqlite3_step(stmt)) {
 	case SQLITE_ROW:
+		retval = FEDFS_ERR_SVRFAULT;
 		xlog(D_GENERAL, "Found row for '%s:%u'", domainname, port);
-		certfile = strdup((const char *)sqlite3_column_text(stmt, 1));
-		if (certfile == NULL) {
-			retval = FEDFS_ERR_SVRFAULT;
+		certfile = (char *)sqlite3_column_text(stmt, 1);
+		if (certfile != NULL) {
+			certfile = strdup(certfile);
+			if (certfile == NULL)
+				break;
+		} else {
+			xlog(D_GENERAL, "%s: Uninitialized securityFile field "
+				"for NSDB %s:%u", __func__, domainname, port);
 			break;
 		}
 		def_binddn = (char *)sqlite3_column_text(stmt, 2);
@@ -614,7 +620,6 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 			def_binddn = strdup(def_binddn);
 			if (def_binddn == NULL) {
 				free(certfile);
-				retval = FEDFS_ERR_SVRFAULT;
 				break;
 			}
 		}
@@ -624,7 +629,6 @@ nsdb_read_nsdbname(sqlite3 *db, nsdb_t host)
 			if (def_nce == NULL) {
 				free(def_binddn);
 				free(certfile);
-				retval = FEDFS_ERR_SVRFAULT;
 				break;
 			}
 		}
