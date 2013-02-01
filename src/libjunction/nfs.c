@@ -802,6 +802,10 @@ nfs_delete_junction(const char *pathname)
 	if (retval != FEDFS_OK)
 		return retval;
 
+	retval = junction_restore_mode(pathname);
+	if (retval != FEDFS_OK)
+		return retval;
+
 	return nfs_remove_locations(pathname);
 }
 
