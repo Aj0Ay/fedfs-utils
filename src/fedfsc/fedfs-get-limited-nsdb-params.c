@@ -91,6 +91,11 @@ fedfs_get_limited_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
 {
 	FedFsNsdbParams *params = &result.FedFsGetNsdbParamsRes_u.params;
 
+	if (result.status == FEDFS_ERR_NSDB_PARAMS) {
+		printf("No connection parameters found\n");
+		return;
+	}
+
 	nsdb_print_fedfsstatus(result.status);
 	if (result.status != FEDFS_OK)
 		return;
