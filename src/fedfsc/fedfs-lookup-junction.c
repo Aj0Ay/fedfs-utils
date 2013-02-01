@@ -201,19 +201,24 @@ fedfs_lookup_junction_print_resok(FedFsLookupResOk result)
 }
 
 static void
+fedfs_lookup_junction_print_ldapresultcode(FedFsLookupRes result)
+{
+	int ldap_err = result.FedFsLookupRes_u.ldapResultCode;
+
+	fprintf(stderr, "LDAP result code (%d): %s\n",
+		ldap_err, ldap_err2string(ldap_err));
+}
+
+static void
 fedfs_lookup_junction_print_result(FedFsLookupRes result)
 {
-	int ldap_err;
-
 	nsdb_print_fedfsstatus(result.status);
 	switch (result.status) {
 	case FEDFS_OK:
 		fedfs_lookup_junction_print_resok(result.FedFsLookupRes_u.resok);
 		break;
 	case FEDFS_ERR_NSDB_LDAP_VAL:
-		ldap_err = result.FedFsLookupRes_u.ldapResultCode;
-		fprintf(stderr, "LDAP result code (%d): %s\n",
-			ldap_err, ldap_err2string(ldap_err));
+		fedfs_lookup_junction_print_ldapresultcode(result);
 		break;
 	default:
 		break;

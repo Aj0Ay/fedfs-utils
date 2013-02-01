@@ -204,9 +204,10 @@ fedfs_lookup_replication_print_resok(FedFsLookupResOk result)
 static void
 fedfs_lookup_replication_print_ldapresultcode(FedFsLookupRes result)
 {
-	int ldap_result = result.FedFsLookupRes_u.ldapResultCode;
-	printf("LDAP result code (%d): %s\n",
-				ldap_result, ldap_err2string(ldap_result));
+	int ldap_err = result.FedFsLookupRes_u.ldapResultCode;
+
+	fprintf(stderr, "LDAP result code (%d): %s\n",
+		ldap_err, ldap_err2string(ldap_err));
 }
 
 static void
