@@ -255,7 +255,7 @@ fedfsd_pathwalk_check_term(const char *pathname)
 			__func__);
 		return FEDFS_ERR_EXIST;
 	case FEDFS_ERR_INVAL:
-		xlog(D_CALL, "%s: Pathname ends with a non-existant object",
+		xlog(D_CALL, "%s: Pathname does not end with a directory",
 			__func__);
 		return FEDFS_OK;
 	case FEDFS_ERR_NOTJUNCT:
