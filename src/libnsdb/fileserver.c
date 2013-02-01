@@ -67,7 +67,7 @@ __nsdb_search_nsdb_all_s(const char *func, LDAP *ld, const char *base,
 	char *uri;
 
 	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
-		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s %s  '%s' *",
+		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s %s '%s' *",
 			func, uri, base, nsdb_printable_scope(scope), filter);
 		ldap_memfree(uri);
 	} else {
@@ -1010,8 +1010,7 @@ nsdb_resolve_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
  *
  * @verbatim
 
-   ldapsearch -b "nce" -s sub
-		(&(objectClass=fedfsFsl)(fedfsFsnUuid="fsn_uuid"))
+   ldapsearch -b fedfsFsnUuid="fsn_uuid","nce" -s one (objectClass=fedfsFsl)
    @endverbatim
  */
 static FedFsStatus
@@ -1022,19 +1021,19 @@ nsdb_resolve_fsn_find_entry_s(nsdb_t host, const char *nce, const char *fsn_uuid
 	LDAP *ld = host->fn_ldap;
 	struct fedfs_fsl *tmp;
 	FedFsStatus retval;
-	char filter[128];
+	char base[256];
 	int len, rc;
 
 	/* watch out for buffer overflow */
-	len = snprintf(filter, sizeof(filter),
-			"(&(objectClass=fedfsFsl)(fedfsFsnUuid=%s))", fsn_uuid);
-	if (len < 0 || (size_t)len > sizeof(filter)) {
-		xlog(D_GENERAL, "%s: filter is too long", __func__);
+	len = snprintf(base, sizeof(base),
+			"fedfsFsnUuid=%s,%s", fsn_uuid,nce);
+	if (len < 0 || (size_t)len > sizeof(base)) {
+		xlog(D_GENERAL, "%s: base DN is too long", __func__);
 		return FEDFS_ERR_INVAL;
 	}
 
-	rc = nsdb_search_nsdb_all_s(ld, nce, LDAP_SCOPE_SUBTREE,
-						filter, &response);
+	rc = nsdb_search_nsdb_all_s(ld, base, LDAP_SCOPE_ONE,
+					"(objectClass=fedfsFsl)", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 	case LDAP_REFERRAL:
@@ -1323,8 +1322,7 @@ nsdb_get_fsn_parse_entry(LDAP *ld, LDAPMessage *entry,
  *
  * @verbatim
 
-   ldapsearch -b "nce" -s one
-		(&(objectClass=fedfsFsn)(fedfsFsnUuid="fsn_uuid"))
+   ldapsearch -b fedfsFsnUuid="fsn_uuid","nce" -s one (objectClass=fedfsFsn)
    @endverbatim
  */
 static FedFsStatus
@@ -1335,19 +1333,18 @@ nsdb_get_fsn_find_entry_s(nsdb_t host, const char *nce, const char *fsn_uuid,
 	LDAP *ld = host->fn_ldap;
 	struct fedfs_fsn *tmp;
 	FedFsStatus retval;
-	char filter[128];
+	char base[256];
 	int len, rc;
 
 	/* watch out for buffer overflow */
-	len = snprintf(filter, sizeof(filter),
-			"(&(objectClass=fedfsFsn)(fedfsFsnUuid=%s))", fsn_uuid);
-	if (len < 0 || (size_t)len > sizeof(filter)) {
-		xlog(D_GENERAL, "%s: filter is too long", __func__);
+	len = snprintf(base, sizeof(base), "fedfsFsnUuid=%s,%s", fsn_uuid, nce);
+	if (len < 0 || (size_t)len > sizeof(base)) {
+		xlog(D_GENERAL, "%s: base DN is too long", __func__);
 		return FEDFS_ERR_INVAL;
 	}
 
-	rc = nsdb_search_nsdb_all_s(ld, nce, LDAP_SCOPE_ONE,
-						filter, &response);
+	rc = nsdb_search_nsdb_all_s(ld, base, LDAP_SCOPE_ONE,
+					"(objectClass=fedfsFsn)", &response);
 	switch (rc) {
 	case LDAP_SUCCESS:
 	case LDAP_REFERRAL:
