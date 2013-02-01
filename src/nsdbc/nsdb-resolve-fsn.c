@@ -40,6 +40,7 @@
 #include <netdb.h>
 #include <langinfo.h>
 
+#include <rpcsvc/nfs_prot.h>
 #include <uuid/uuid.h>
 
 #include "fedfs.h"
@@ -115,7 +116,7 @@ nsdb_resolve_fsn_display_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 	if (status != FEDFS_OK)
 		return;
 
-	if (nfsl->fn_fslport == 0)
+	if (nfsl->fn_fslport == 0 || nfsl->fn_fslport == NFS_PORT)
 		printf(" NFS fls_server:\t\t%s\n", nfsl->fn_fslhost);
 	else
 		printf(" NFS fls_server:\t\t%s:%u\n", nfsl->fn_fslhost,

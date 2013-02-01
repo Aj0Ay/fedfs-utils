@@ -40,6 +40,7 @@
 #include <netdb.h>
 #include <langinfo.h>
 
+#include <rpcsvc/nfs_prot.h>
 #include <uuid/uuid.h>
 
 #include "fedfs.h"
@@ -135,7 +136,7 @@ main(int argc, char **argv)
 
 	nsdb_env(&nsdbname, &nsdbport, &binddn, &nce);
 
-	serverport = 0;
+	serverport = NFS_PORT;
 	while ((arg = getopt_long(argc, argv, nsdb_create_fsl_opts,
 			nsdb_create_fsl_longopts, NULL)) != -1) {
 		switch (arg) {

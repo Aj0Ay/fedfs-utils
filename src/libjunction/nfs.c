@@ -77,15 +77,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <rpcsvc/nfs_prot.h>
+
 #include "fedfs.h"
 #include "nsdb.h"
 #include "junction.h"
 #include "junction-internal.h"
 #include "xlog.h"
-
-#ifndef NFS_PORT
-#define NFS_PORT	(2049)
-#endif
 
 /**
  * Tag name of NFS location element of a junction XML document

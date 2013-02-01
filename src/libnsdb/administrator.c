@@ -41,6 +41,8 @@
 #include <netdb.h>
 #include <errno.h>
 
+#include <rpcsvc/nfs_prot.h>
+
 #include "nsdb.h"
 #include "junction.h"
 #include "nsdb-internal.h"
@@ -627,7 +629,7 @@ nsdb_nfsfsl_to_uri(const struct fedfs_nfs_fsl *nfsfsl, UriUriA *uri)
 
 	nsdb_assign_textrange(&uri->scheme, "nfs");
 	nsdb_assign_textrange(&uri->hostText, nfsfsl->fn_fslhost);
-	if (nfsfsl->fn_fslport != 2049 && nfsfsl->fn_fslport != 0) {
+	if (nfsfsl->fn_fslport != NFS_PORT && nfsfsl->fn_fslport != 0) {
 		char portbuf[8];
 		sprintf(portbuf, "%u", nfsfsl->fn_fslport);
 		nsdb_assign_textrange(&uri->portText, portbuf);
