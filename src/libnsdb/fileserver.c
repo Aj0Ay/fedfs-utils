@@ -111,11 +111,11 @@ __nsdb_search_nsdb_attr_s(const char *func, LDAP *ld, const char *base,
 
 	if (ldap_get_option(ld, LDAP_OPT_URI, &uri) == LDAP_OPT_SUCCESS) {
 		xlog(D_CALL, "%s:\n  ldapsearch -H %s -b \"%s\" -s base '%s' %s",
-			func, uri, filter, attr);
+			func, uri, base, filter, attr);
 		ldap_memfree(uri);
 	} else {
 		xlog(D_CALL, "%s:\n  ldapsearch -b \"%s\" -s base '%s' %s",
-			func, filter, attr);
+			func, base, filter, attr);
 	}
 
 	return ldap_search_ext_s(ld, (char *)base, LDAP_SCOPE_BASE, filter,
