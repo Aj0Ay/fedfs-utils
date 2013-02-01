@@ -209,7 +209,7 @@ nfsref_remove_delete_fsn(const char *junct_path)
 		goto out_free;
 	}
 
-	retval = nsdb_delete_fsn_s(host, nce, fsn_uuid, true, &ldap_err);
+	retval = nsdb_delete_fsn_s(host, nce, fsn_uuid, false, &ldap_err);
 	switch (retval) {
 	case FEDFS_OK:
 		printf("Successfully deleted FSL records for FSN %s under %s\n",
