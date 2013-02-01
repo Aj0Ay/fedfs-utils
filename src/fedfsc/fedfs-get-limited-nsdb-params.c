@@ -67,6 +67,11 @@ static const struct option fedfs_get_limited_nsdb_params_longopts[] = {
 	{ NULL, 0, NULL, 0, },
 };
 
+/**
+ * Display program synopsis
+ *
+ * @param progname NUL-terminated C string containing name of program
+ */
 static void
 fedfs_get_limited_nsdb_params_usage(const char *progname)
 {
@@ -86,6 +91,11 @@ fedfs_get_limited_nsdb_params_usage(const char *progname)
 	exit((int)FEDFS_ERR_INVAL);
 }
 
+/**
+ * Display NSDB information
+ *
+ * @param result NSDB information to display
+ */
 static void
 fedfs_get_limited_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
 {
@@ -113,6 +123,15 @@ fedfs_get_limited_nsdb_params_print_result(FedFsGetNsdbParamsRes result)
 	}
 }
 
+/**
+ * Retrieve limited NSDB information from a remote fileserver
+ *
+ * @param hostname NUL-terminated UTF-8 string containing ADMIN server's hostname
+ * @param nettype NUL-terminated C string containing nettype to use for connection
+ * @param nsdbname NUL-terminated UTF-8 string containing name of NSDB node to retrieve
+ * @param nsdbport port number of NSDB node to retrieve
+ * @return a FedFsStatus code
+ */
 static FedFsStatus
 fedfs_get_limited_nsdb_params_call(const char *hostname, const char *nettype,
 		char *nsdbname, const unsigned short nsdbport)
@@ -155,6 +174,13 @@ out:
 	return result.status;
 }
 
+/**
+ * Program entry point
+ *
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
+ */
 int
 main(int argc, char **argv)
 {

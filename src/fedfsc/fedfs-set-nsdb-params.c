@@ -68,6 +68,11 @@ static const struct option fedfs_set_nsdb_params_longopts[] = {
 	{ NULL, 0, NULL, 0, },
 };
 
+/**
+ * Display program synopsis
+ *
+ * @param progname NUL-terminated C string containing name of program
+ */
 static void
 fedfs_set_nsdb_params_usage(const char *progname)
 {
@@ -89,6 +94,13 @@ fedfs_set_nsdb_params_usage(const char *progname)
 	exit((int)FEDFS_ERR_INVAL);
 }
 
+/**
+ * Construct connection parameters argument
+ *
+ * @param certfile NUL-terminated UTF-8 string containing pathname of file containing security data to send
+ * @param params OUT: filled-in NSDB connection parameters to send
+ * @result true if construction was successful
+ */
 static _Bool
 fedfs_set_nsdb_params_get_params(const char *certfile, FedFsNsdbParams *params)
 {
@@ -120,6 +132,16 @@ fedfs_set_nsdb_params_get_params(const char *certfile, FedFsNsdbParams *params)
 	return true;
 }
 
+/**
+ * Set NSDB connection parameters on a remote fileserver
+ *
+ * @param hostname NUL-terminated UTF-8 string containing ADMIN server's hostname
+ * @param nettype NUL-terminated C string containing nettype to use for connection
+ * @param nsdbname NUL-terminated UTF-8 string containing name of NSDB node to set
+ * @param nsdbport port number of NSDB node to set
+ * @param certfile NUL-terminated UTF-8 string containing pathname of file containing security data to send
+ * @return a FedFsStatus code
+ */
 static FedFsStatus
 fedfs_set_nsdb_params_call(const char *hostname, const char *nettype,
 		char *nsdbname, const unsigned short nsdbport,
@@ -163,6 +185,13 @@ out:
 	return result;
 }
 
+/**
+ * Program entry point
+ *
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
+ */
 int
 main(int argc, char **argv)
 {

@@ -63,6 +63,11 @@ static const struct option fedfs_delete_junction_longopts[] = {
 	{ NULL, 0, NULL, 0, },
 };
 
+/**
+ * Display program synopsis
+ *
+ * @param progname NUL-terminated C string containing name of program
+ */
 static void
 fedfs_delete_junction_usage(const char *progname)
 {
@@ -80,6 +85,14 @@ fedfs_delete_junction_usage(const char *progname)
 	exit((int)FEDFS_ERR_INVAL);
 }
 
+/**
+ * Delete a junction on a remote fileserver
+ *
+ * @param hostname NUL-terminated UTF-8 string containing ADMIN server's hostname
+ * @param nettype NUL-terminated C string containing nettype to use for connection
+ * @param path NUL-terminated C string containing remote pathname of junction to delete
+ * @return a FedFsStatus code
+ */
 static FedFsStatus
 fedfs_delete_junction_call(const char *hostname, const char *nettype,
 		const char *path)
@@ -132,6 +145,13 @@ out:
 	return result;
 }
 
+/**
+ * Program entry point
+ *
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
+ */
 int
 main(int argc, char **argv)
 {

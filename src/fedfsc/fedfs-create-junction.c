@@ -96,15 +96,15 @@ fedfs_create_junction_usage(const char *progname)
 }
 
 /**
- * Create a junction on a remote server
+ * Create a junction on a remote fileserver
  *
  * @param hostname NUL-terminated UTF-8 string containing ADMIN server's hostname
  * @param nettype NUL-terminated C string containing nettype to use for connection
  * @param path NUL-terminated C string containing remote pathname of new junction
  * @param uuid NUL-terminated C string containing FSN UUID for new junction
- * @param nsdbname NUL-terminated UTF-8 string containing name of NSDB service for this junction
- * @param nsdbport port number of NSDB service for this junction
- * @return an exit status value
+ * @param nsdbname NUL-terminated UTF-8 string containing name of NSDB node for this junction
+ * @param nsdbport port number of NSDB node for this junction
+ * @return a FedFsStatus code
  */
 static FedFsStatus
 fedfs_create_junction_call(const char *hostname, const char *nettype,

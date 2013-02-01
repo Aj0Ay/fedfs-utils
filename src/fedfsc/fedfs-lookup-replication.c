@@ -66,6 +66,11 @@ static const struct option fedfs_lookup_replication_longopts[] = {
 	{ NULL, 0, NULL, 0, },
 };
 
+/**
+ * Display program synopsis
+ *
+ * @param progname NUL-terminated C string containing name of program
+ */
 static void
 fedfs_lookup_replication_usage(const char *progname)
 {
@@ -84,6 +89,13 @@ fedfs_lookup_replication_usage(const char *progname)
 	exit((int)FEDFS_ERR_INVAL);
 }
 
+/**
+ * Parse name of resolvetype to resolvetype number
+ *
+ * @param resolvetype NUL-terminated C string containing name of requested resolvetype
+ * @param resolve OUT: resolvetype number
+ * @return true if "resolvetype" is a valid resolvetype
+ */
 static _Bool
 fedfs_lookup_replication_get_resolvetype(const char *resolvetype, FedFsResolveType *resolve)
 {
@@ -108,6 +120,12 @@ fedfs_lookup_replication_get_resolvetype(const char *resolvetype, FedFsResolveTy
 	return false;
 }
 
+/**
+ * Display FSN UUID information in a FEDFS_LOOKUP_REPLICATION result
+ *
+ * @param pre_text NUL-terminated C string containing prefix to display
+ * @param uuid UUID to display
+ */
 static void
 fedfs_lookup_replication_print_uuid(const char *pre_text, const FedFsUuid uuid)
 {
@@ -119,6 +137,12 @@ fedfs_lookup_replication_print_uuid(const char *pre_text, const FedFsUuid uuid)
 	printf("%s: %s\n", pre_text, buf);
 }
 
+/**
+ * Display FSN NSDB information in a FEDFS_LOOKUP_REPLICATION result
+ *
+ * @param pre_text NUL-terminated C string containing prefix to display
+ * @param nsdbname NSDB information to display
+ */
 static void
 fedfs_lookup_replication_print_nsdbname(const char *pre_text,
 		const FedFsNsdbName nsdbname)
@@ -133,6 +157,11 @@ fedfs_lookup_replication_print_nsdbname(const char *pre_text,
 		nsdbname.port);
 }
 
+/**
+ * Display FSN information in a FEDFS_LOOKUP_REPLICATION result
+ *
+ * @param fsn FSN information to display
+ */
 static void
 fedfs_lookup_replication_print_fsn(const FedFsFsn fsn)
 {
@@ -140,6 +169,11 @@ fedfs_lookup_replication_print_fsn(const FedFsFsn fsn)
 	fedfs_lookup_replication_print_nsdbname("Fsn NSDB name", fsn.nsdbName);
 }
 
+/**
+ * Display one NFS FSL in a FEDFS_LOOKUP_REPLICATION result
+ *
+ * @param fsl FSL record to display
+ */
 static void
 fedfs_lookup_replication_print_nfs_fsl(FedFsNfsFsl fsl)
 {
@@ -173,6 +207,11 @@ fedfs_lookup_replication_print_nfs_fsl(FedFsNfsFsl fsl)
 	}
 }
 
+/**
+ * Display one FSL in a FEDFS_LOOKUP_REPLICATION result
+ *
+ * @param fsl FSL record to display
+ */
 static void
 fedfs_lookup_replication_print_fsl(FedFsFsl fsl)
 {
@@ -185,6 +224,11 @@ fedfs_lookup_replication_print_fsl(FedFsFsl fsl)
 	}
 }
 
+/**
+ * Display results of a successful FEDFS_LOOKUP_REPLICATION request
+ *
+ * @param result results to display
+ */
 static void
 fedfs_lookup_replication_print_resok(FedFsLookupResOk result)
 {
@@ -201,6 +245,11 @@ fedfs_lookup_replication_print_resok(FedFsLookupResOk result)
 		fedfs_lookup_replication_print_fsl(result.fsl.fsl_val[i]);
 }
 
+/**
+ * Display results of FEDFS_LOOKUP_REPLICATION when an LDAP/NSDB failure is reported
+ *
+ * @param result results to display
+ */
 static void
 fedfs_lookup_replication_print_ldapresultcode(FedFsLookupRes result)
 {
@@ -210,6 +259,11 @@ fedfs_lookup_replication_print_ldapresultcode(FedFsLookupRes result)
 		ldap_err, ldap_err2string(ldap_err));
 }
 
+/**
+ * Display results of FEDFS_LOOKUP_JUNCTION request
+ *
+ * @param result results to display
+ */
 static void
 fedfs_lookup_replication_print_result(FedFsLookupRes result)
 {
@@ -226,6 +280,15 @@ fedfs_lookup_replication_print_result(FedFsLookupRes result)
 	}
 }
 
+/**
+ * Request a remote fileserver to resolve a replication
+ *
+ * @param hostname NUL-terminated UTF-8 string containing ADMIN server's hostname
+ * @param nettype NUL-terminated C string containing nettype to use for connection
+ * @param path NUL-terminated C string containing remote pathname of replication to resolve
+ * @param resolvetype NUL-terminated C string containing name of requested resolvetype
+ * @return a FedFsStatus code
+ */
 static int
 fedfs_lookup_replication_call(const char *hostname, const char *nettype,
 		const char *path, const char *resolvetype)
@@ -285,6 +348,13 @@ out:
 	return result.status;
 }
 
+/**
+ * Program entry point
+ *
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
+ */
 int
 main(int argc, char **argv)
 {

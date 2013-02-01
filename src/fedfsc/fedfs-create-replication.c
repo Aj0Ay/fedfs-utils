@@ -66,6 +66,11 @@ static const struct option fedfs_create_replication_longopts[] = {
 	{ NULL, 0, NULL, 0, },
 };
 
+/**
+ * Display program synopsis
+ *
+ * @param progname NUL-terminated C string containing name of program
+ */
 static void
 fedfs_create_replication_usage(const char *progname)
 {
@@ -87,6 +92,17 @@ fedfs_create_replication_usage(const char *progname)
 	exit((int)FEDFS_ERR_INVAL);
 }
 
+/**
+ * Create a replication on a remote fileserver
+ *
+ * @param hostname NUL-terminated UTF-8 string containing ADMIN server's hostname
+ * @param nettype NUL-terminated C string containing nettype to use for connection
+ * @param path NUL-terminated C string containing remote pathname of new replication
+ * @param uuid NUL-terminated C string containing FSN UUID for new replication
+ * @param nsdbname NUL-terminated UTF-8 string containing name of NSDB node for this replication
+ * @param nsdbport port number of NSDB node for this replication
+ * @return a FedFsStatus code
+ */
 static FedFsStatus
 fedfs_create_replication_call(const char *hostname, const char *nettype,
 		const char *path, const char *uuid, char *nsdbname,
@@ -155,6 +171,13 @@ out:
 	return result;
 }
 
+/**
+ * Program entry point
+ *
+ * @param argc count of command line arguments
+ * @param argv array of NUL-terminated C strings containing command line arguments
+ * @return program exit status
+ */
 int
 main(int argc, char **argv)
 {
