@@ -195,8 +195,8 @@ nfsref_lookup_display_fedfs_nfs_fsl(struct fedfs_nfs_fsl *nfsl)
 {
 	char *rootpath;
 
-	printf("\tFileserver name:\t\t\t%s\n", nfsl->fn_fslhost);
-	printf("\tFileserver port:\t\t\t%u\n", nfsl->fn_fslport);
+	printf("\tFileserver name:\t\t%s\n", nfsl->fn_fslhost);
+	printf("\tFileserver port:\t\t%u\n", nfsl->fn_fslport);
 
 	if (nsdb_path_array_to_posix(nfsl->fn_nfspath, &rootpath) == FEDFS_OK) {
 		printf("\tExport path:\t\t\t%s\n", rootpath);
