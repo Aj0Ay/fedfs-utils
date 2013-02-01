@@ -60,45 +60,6 @@ nfsref_remove_help(const char *progname)
 }
 
 /**
- * Remove any NFS junction information
- *
- *
- * @param junct_path NUL-terminated C string containing pathname of junction
- * @return program exit status
- */
-static int
-nfsref_remove_unspecified(const char *junct_path)
-{
-	FedFsStatus retval;
-
-	xlog(D_GENERAL, "%s: Removing junction from %s",
-		__func__, junct_path);
-
-	retval = nfs_delete_junction(junct_path);
-	if (retval != FEDFS_OK) {
-		if (retval != FEDFS_ERR_NOTJUNCT)
-			goto out_err;
-		retval = fedfs_delete_junction(junct_path);
-		if (retval != FEDFS_OK)
-			goto out_err;
-	}
-
-	printf("Removed junction from %s\n", junct_path);
-	return EXIT_SUCCESS;
-
-out_err:
-	switch (retval) {
-	case FEDFS_ERR_NOTJUNCT:
-		xlog(L_ERROR, "No junction information found in %s", junct_path);
-		break;
-	default:
-		xlog(L_ERROR, "Failed to delete %s: %s",
-			junct_path, nsdb_display_fedfsstatus(retval));
-	}
-	return EXIT_FAILURE;
-}
-
-/**
  * Remove an NFS locations-style junction
  *
  * @param junct_path NUL-terminated C string containing pathname of junction
@@ -293,6 +254,45 @@ nfsref_remove_nfs_fedfs(const char *junct_path)
 	}
 
 	return status;
+}
+
+/**
+ * Remove any NFS junction information
+ *
+ * @param junct_path NUL-terminated C string containing pathname of junction
+ * @return program exit status
+ */
+static int
+nfsref_remove_unspecified(const char *junct_path)
+{
+	FedFsStatus retval;
+
+	xlog(D_GENERAL, "%s: Removing junction from %s",
+		__func__, junct_path);
+
+	retval = nfs_delete_junction(junct_path);
+	if (retval != FEDFS_OK) {
+		if (retval != FEDFS_ERR_NOTJUNCT)
+			goto out_err;
+		nfsref_remove_delete_fsn(junct_path);
+		retval = fedfs_delete_junction(junct_path);
+		if (retval != FEDFS_OK)
+			goto out_err;
+	}
+
+	printf("Removed junction from %s\n", junct_path);
+	return EXIT_SUCCESS;
+
+out_err:
+	switch (retval) {
+	case FEDFS_ERR_NOTJUNCT:
+		xlog(L_ERROR, "No junction information found in %s", junct_path);
+		break;
+	default:
+		xlog(L_ERROR, "Failed to delete %s: %s",
+			junct_path, nsdb_display_fedfsstatus(retval));
+	}
+	return EXIT_FAILURE;
 }
 
 /**
