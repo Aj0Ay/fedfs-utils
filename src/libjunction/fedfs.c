@@ -140,10 +140,10 @@ fedfs_name_xml(const char *pathname, xmlNodePtr fileset,
 
 	xmlSetProp(new, FEDFS_XML_FSN_UUID_ATTR, (const xmlChar *)fsn_uuid);
 	xmlSetProp(new, FEDFS_XML_FSN_NSDBNAME_ATTR, (const xmlChar *)nsdb_name);
-	if (nsdb_port != LDAP_PORT)
-		junction_xml_set_int_attribute(new,
-						FEDFS_XML_FSN_NSDBPORT_ATTR,
-						nsdb_port);
+	if (nsdb_port == 0)
+		nsdb_port = LDAP_PORT;
+	junction_xml_set_int_attribute(new, FEDFS_XML_FSN_NSDBPORT_ATTR,
+								nsdb_port);
 
 	return FEDFS_OK;
 }
