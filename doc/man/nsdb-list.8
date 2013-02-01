@@ -202,17 +202,19 @@ is an NSDB.  Use:
 .sp
 $ nsdb-list -l ldap.example.net -e o=fedfs
 .br
-NSDB: ldap.example.net:389, o=fedfs
+NSDB: ldap.example.net:389
+.sp
+  NCE: o=fedfs
+.sp
+    FSN UUID: c1c21720-1fcd-4ad6-a837-f57af4cf2972
 .br
-  FSN UUID: dc25a644-06e4-11e0-ae55-000c29dc7f8a
+      FSL UUID: 4c887035-ad2f-4ba8-ab75-7118df9714cd
 .br
-    FSL UUID: f4e88676-06f6-11e0-96ca-000c29dc7f8a
-.br
-    FSL UUID: 4d2da352-06f2-11e0-a4c7-000c29dc7f8a
+      FSL UUID: 84445758-b5fb-4acc-814b-cc121b3bafe9
 .sp
 .RE
 There is a single file set name, with two file set location records,
-registered on this NSDB.
+registered under "o=fedfs" on this NSDB.
 To resolve the listed FSN UUID, use the
 .BR nsdb-resolve-junction (8)
 command.
