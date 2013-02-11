@@ -31,38 +31,36 @@ fedfs \- The Linux Federated File System implementation
 RFC 5716 introduces the Federated File System (FedFS, for short).
 FedFS is an extensible standardized mechanism
 by which system administrators construct
-a coherent namespace across multiple file servers using
+a coherent namespace across multiple fileservers using
 .IR "file system referrals" .
 .P
 A file system referral is like a symbolic link
 to another file system share,
 but it is not visible to applications.
-It behaves like an automounted directory where a new file system 
-mount is done when an application first accesses that directory.
+It behaves like an automounted directory where a mount operation
+is performed when an application first accesses that directory.
+.P
 Today, file system referral mechanisms exist
 in several standard network file system protocols.
+Because FedFS uses a mechanism already built in to standard network protocols,
+using it does not require any change
+to file system protocols or file-access client implementations.
 .P
-Thus FedFS does not require any change
-to file system protocols or client implementations.
-FedFS provides its namespace features using referral mechanisms
-already built in to network file system protocols.
-.P
-As a result, FedFS provides a network file system namespace
-via the network file system protocols themselves,
-rather than via side-band protocols like NIS.
-Clients automatically share a common view of the network file system namespace
-with no need for individual configuration on each client.
+A sideband protocol, such as NIS, is also unnecessary.
+File-access clients automatically share a common view
+of the network file system namespace with no need for
+individual configuration on each client.
 .P
 Currently, the Linux FedFS implementation supports only
 NFS version 4 referrals.
-More on NFS version 4 referrals can be found in RFC 3530.
+More on NFS version 4 referrals can be found in RFC 5661.
 FedFS may support other network file system protocols in the future.
 .SH FEDFS DOMAIN OPERATION
-A file system referral that is managed by FedFS is called a
+A file system referral whose target is managed by FedFS is called a
 .IR "FedFS junction" .
-Junctions join separate file server shares into a single coherent
+Junctions join separate fileserver shares into a single coherent
 FedFS namespace.
-On FedFS-enabled Linux file servers, the
+On FedFS-enabled Linux fileservers, the
 .BR rpc.fedfsd (8)
 daemon and the
 .BR nfsref (5)
@@ -72,8 +70,8 @@ An independently administered FedFS namespace is referred to as a
 .IR "FedFS domain" .
 FedFS domains are file namespaces only.
 They do not represent authentication or ID-mapping realms, for example.
-FedFS-enabled file system clients and servers are not members
-of any FedFS domain and do not have
+FedFS-enabled file-access clients and fileservers are not members
+of a particular FedFS domain and do not have
 .I "a priori"
 knowledge of what FedFS domains exist.
 .P
@@ -82,10 +80,10 @@ The top-level directory of a FedFS domain is referred to as its
 Domain roots typically contain nothing but FedFS junctions
 and a few other directories.
 Useful data is contained in other shares
-which clients discover by following the FedFS junctions
+which file-access clients discover by following FedFS junctions
 in the domain root directory.
 .P
-Although FedFS junctions are stored on file servers,
+Although FedFS junctions are stored on fileservers,
 they are lightweight objects that contain little actual data.
 The bulk of FedFS junction information in a FedFS domain
 is stored on an LDAP server.
@@ -94,26 +92,28 @@ LDAP servers that store FedFS information are known as
 or NSDBs, for short.
 Any standard LDAP server can become an NSDB if it knows the FedFS schema
 (the definitions of FedFS record types).
-.P
+.SS Filesets
 FedFS groups a set of directories in a server's physical file system namespace
 into a single administrative unit called a
 .IR fileset .
 For NFS, a whole share might be considered a fileset.
 A FedFS domain consists of one or more filesets,
 a domain root,
-and junction information stored on an NSDB.
+and junction information stored on an NSDB node.
 .P
 To function as a FedFS fileset,
 a set of directories must have a name unique in a FedFS domain,
 and a set of locations where the file data is stored.
+.P
 A FedFS
 .I fileset name
 is a UUID and an NSDB domainname and port.
-This information is also maintained in an LDAP record on the NSDB.
+This information is also maintained in an LDAP record on the NSDB node.
+.P
 A FedFS
 .I fileset location
 is an LDAP record that describes the location
-(the file server where it resides, and its export path)
+(the fileserver where it resides, and its export path)
 of a copy of a fileset's data.
 These records are children of the fileset name record for this fileset.
 .P
@@ -122,30 +122,32 @@ Such a fileset has one FedFS fileset name,
 and each replica of the fileset has an individual FedFS fileset location record.
 .P
 A FedFS junction contains only a FedFS fileset name.
-A file server resolves a FedFS junction by performing an LDAP
-query against the NSDB named in the junction using the UUID named in the junction.
-The NSDB returns location information stored in FedFS fileset location records
+A fileserver resolves a FedFS junction by performing an LDAP
+query on the NSDB node named in the junction,
+using the UUID named in the junction.
+The NSDB node returns location information stored
+in FedFS fileset location records
 for that FedFS fileset name.
-The file server returns this location information to its clients
-via a file system referral.
+The fileserver returns this location information to file-access clients
+it servers via a file system referral.
 .P
-On Linux NFS file servers,
+On Linux NFS fileservers,
 .BR rpc.mountd (8)
 is the gateway through which the in-kernel NFS server performs
 FedFS junction resolution.
 .SS Discovering domain roots
 As with other FedFS filesets,
-copies of a domain root can exist on multiple file servers.
+copies of a domain root can exist on multiple fileservers.
 These copies are known as
 .IR "domain root replicas" .
 .P
-Rather than using junctions and information in an NSDB,
-FedFS-enabled clients locate a domain's root by looking for
-DNS SRV records that advertise file servers exporting domain root replicas.
+Rather than using junctions and information in an NSDB node,
+FedFS-enabled file-access clients locate a domain's root by looking for
+DNS SRV records that advertise fileservers exporting domain root replicas.
 .P
-Clients typically mount FedFS domain roots in a standard place so that
+Such clients typically mount FedFS domain roots in a standard place so that
 files residing in a FedFS domain appear at the same location in the
-file namespace on all clients.
+file namespace on all file-access clients.
 By convention, the top of the global FedFS namespace looks like this:
 .RS
 .sp
@@ -161,30 +163,30 @@ Currently, the Linux FedFS implementation recognizes only
 .B nfs4
 as a valid fstype.
 .SS Globally Useful Names
-On FedFS-enabled Linux clients,
+On FedFS-enabled Linux file-access clients,
 the automounter (via a program map) or the
 .BR mount.fedfs (8)
 command find and mount the root of a FedFS domain.
 .P
-Typically, FedFS clients mount the FedFS namespace so that FedFS
+Typically, file-access clients mount the FedFS namespace so that FedFS
 pathnames appear the same on all clients.
 Such pathnames are referred to as
 .IR "globally useful names" ,
 since a globally useful name refers to exactly the same file object
-on every client in a FedFS domain.
+on every file-access client in a FedFS domain.
 .P
 For example, the FedFS globally useful name
 .I /nfs4/example.net
-would be mounted on a local directory on the client called
+would be mounted on a local directory called
 .I /nfs4/example.net
-so that applications have the same view of the
+on all file-access clients, so that applications have the same view of the
 .I example.net
-domain namespace on all FedFS clients.
+domain namespace on all FedFS-enabled file-access clients.
 .P
 The Linux
 .BR mount.fedfs (8)
-command can attach anywhere in the client's local file namespace
-any directory in the FedFS namespace the client
+command can attach anywhere in a file-access client's local file namespace
+any directory in the FedFS namespace that client
 has permission to access.
 This can be useful to ensure local namespace compatibility in some cases,
 or hide parts of the FedFS namespace for security purposes.
@@ -195,7 +197,7 @@ Therefore it should be avoided.
 .SS Mount option inheritance
 The Linux NFS client treats an NFS referral
 as a server-initiated mount request.
-The referring file server provides only a list of server names and export paths.
+The referring fileserver provides only a list of server names and export paths.
 The mount options for this new mount are inherited from the new mount
 point’s parent directory on the client.
 .P
@@ -203,31 +205,27 @@ As applications proceed deeper into a domain's namespace,
 they can encounter both file sets to which they have
 read-only access, and file sets to which they have read-write
 access.
-To allow the server to provide proper access to both types of file sets,
-typically the domain root is mounted read-write on FedFS clients. 
-All submounts of the domain root are then mounted read-write as well.
+To allow applications proper access to both types of file sets,
+typically domain root directory's are mounted read-write on file-access clients.
+All submounts of the domain root are then mounted read-write as well, and
+write access is controlled by the fileservers.
 .P
 For example, a domain root may contain an NFS version 4 referral to an
 export containing user home directories.
-The domain root may be exported read-only so normal clients cannot update it,
+The domain root may be exported read-only so file-access clients cannot update it,
 but user home directories would not be very useful if they could not be
-written to.
-The file server continues to employ user credentials to limit access
+written to by their owners.
+The fileserver continues to employ user credentials to limit access
 as appropriate.
 .P
-File system clients follow file system referrals
+Network file system clients follow file system referrals
 as applications encounter them,
 which is similar to how an automounter works.
 Consider the initial mount of the domain root
 as if you are mounting a single whole file system,
 even though underneath, additional NFS mounts come and go as needed.
 .SS Creating domain roots
-For now, only NFS domain roots are considered.
-FedFS domain roots contain very little data,
-so it is safe to create them in the root file system
-on your FedFS-enabled Linux NFS file servers.
-.P
-FedFS domain roots are mounted via a standard export pathname.
+NFSv4 FedFS domain roots are mounted via a standard export pathname.
 The first component of the domain root's export pathname is always
 .IR /.domainroot .
 The second component is a FedFS domain name.
@@ -237,7 +235,7 @@ FedFS domain would be
 .IR /.domainroot/example.net .
 .P
 After creating this directory on a FedFS-enabled
-file server and making it world readable,
+fileserver and making it world readable,
 an entry in /etc/exports for this export might look like:
 .RS
 .sp
@@ -247,13 +245,13 @@ an entry in /etc/exports for this export might look like:
 At this point, FedFS junctions can be created in the domain's root directory
 using FedFS administrative tools.
 You can also add other objects that might be useful
-at the top of a FedFS domain namespace, such as standard NFS referrals
-or files like a terms-of-use document.
+at the top of a FedFS domain namespace, such as standard NFS referrals,
+or files, like a terms-of-use document.
 .P
 To enable discovery of this domain root
-by FedFS-enabled file system clients,
-add a DNS SRV record to an appropriate authoritative DNS server.
-If you created your domain root on the file server named
+by FedFS-enabled file-access clients,
+a DNS SRV record is added to an appropriate authoritative DNS server.
+If you created your domain root on the fileserver named
 .IR foo.example.net ,
 a record for the above domain root should be added to the DNS
 server authoritative for the
@@ -267,38 +265,36 @@ Such a record might look like
 .SH SECURITY
 Each host in a FedFS domain plays one or more of the following roles,
 each of which have different security requirements.
-.IP "\fINSDB server\fP"
+.IP "\fINSDB node\fP"
 LDAP server that contains FedFS domain information
-.IP "\fIFedFS file server\fP"
+.IP "\fIFedFS fileserver\fP"
 stores data accessible via a FedFS domain name space
-.IP "\fIFedFS client\fP"
+.IP "\fIFedFS file-access client\fP"
 accesses data in FedFS domain name spaces
 .IP "\fIFedFS admin client\fP"
 manages FedFS domain information
 .P
 The Linux FedFS implementation provides administrative tools
-to manage FedFS fileset name and location records in an NSDB.
+to manage FedFS fileset name and location records on an NSDB node.
 Junction resolution uses anonymous LDAP search requests, and
 administration takes place via authenticated LDAP modification requests.
 .P
-File servers and administrative clients use clear-text or TLS encrypted
+Fileservers and administrative clients use plaintext or TLS-secured
 transports to perform junction lookups and administrative requests.
-The Linux FedFS implementation provides tools for managing X.509
+The Linux FedFS implementation provides tools for managing x.509
 certificates required for LDAP over TLS.
-Junction lookups are performed anonymously, but administrative
-requests require LDAP authentication.
 .P
-FedFS junction objects are created on file servers
+FedFS junction objects are created on fileservers
 by a side-band RPC protocol called the
-.IR "FedFS admin protocol" .
-This protocol is separate from network file system protocols to allow
-FedFS to work without any modification to network file system protocols.
-The protocol uses RPCSEC GSS to authenticate or encrypt administrative requests.
+.IR "FedFS ADMIN protocol" .
+This protocol is separate from network file system protocols.
+This allows FedFS to operate without modification to network file system protocols.
+The protocol uses RPCSEC GSS to secure administrative requests.
 .P
 Since two separate protocols are involved
 when administering junctions and filesets,
-junctions are created on file servers and
-registered with the domain's NSDB in two separate steps.
+junctions are created on fileservers and
+registered with the domain's NSDB node in two separate steps.
 .SH SEE ALSO
 .BR nsdb-parameters (7),
 .BR nsdbparams (8),
@@ -316,6 +312,7 @@ registered with the domain's NSDB in two separate steps.
 .BR fedfs-lookup-replication (8),
 .BR fedfs-null (8),
 .BR fedfs-set-nsdb-params (8),
+.BR nsdb-simple-nce (8),
 .BR nsdb-annotate (8),
 .BR nsdb-create-fsl (8),
 .BR nsdb-create-fsn (8),
@@ -329,11 +326,11 @@ registered with the domain's NSDB in two separate steps.
 .BR nsdb-resolve-fsn (8),
 .BR nsdb-update-fsl (8)
 .sp
-RFC 5716 for FedFS requirements and overview
-.sp
-RFC 3530 for a description of NFS version 4 referrals
-.sp
 RFC 4510 for an introduction to LDAP
+.sp
+RFC 5661 for a description of NFS version 4 referrals
+.sp
+RFC 5716 for FedFS requirements and overview
 .SH COLOPHON
 This page is part of the fedfs-utils package.
 A description of the project and information about reporting bugs
