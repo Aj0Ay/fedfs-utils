@@ -99,16 +99,10 @@ main(int argc, char **argv)
 	int arg, exit_status;
 	_Bool help;
 
+	(void)setlocale(LC_ALL, "");
 	(void)umask(S_IWGRP | S_IWOTH);
 
 	exit_status = EXIT_FAILURE;
-
-	/* Ensure UTF-8 strings can be handled transparently */
-	if (setlocale(LC_CTYPE, "") == NULL ||
-	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
-		fprintf(stderr, "Failed to set locale and langinfo\n");
-		goto out;
-	}
 
 	/* Set the basename */
 	if ((progname = strrchr(argv[0], '/')) != NULL)

@@ -106,12 +106,7 @@ int main(int argc, char **argv)
 	gid_t gid;
 	int arg;
 
-	/* Ensure UTF-8 strings can be handled transparently */
-	if (setlocale(LC_CTYPE, "") == NULL ||
-	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
-		fprintf(stderr, "Failed to set locale and langinfo\n");
-		exit(EXIT_FAILURE);
-	}
+	(void)setlocale(LC_ALL, "");
 
 	xlog_stderr(0);
 	xlog_syslog(1);

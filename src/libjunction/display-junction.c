@@ -55,12 +55,7 @@ main(int argc, char **argv)
 	FedFsStatus retval;
 	int fd;
 
-	/* Ensure UTF-8 strings can be handled transparently */
-	if (setlocale(LC_CTYPE, "") == NULL ||
-	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
-		fprintf(stderr, "Failed to set locale and langinfo\n");
-		exit(EXIT_FAILURE);
-	}
+	(void)setlocale(LC_ALL, "");
 
 	/* For the libraries */
 	if ((progname = strrchr(argv[0], '/')) != NULL)

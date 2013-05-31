@@ -405,12 +405,7 @@ int main(int argc, char *argv[])
 	char *source, *target, *text_options;
 	int c, mnt_err;
 
-	/* Ensure UTF-8 strings can be handled transparently */
-	if (setlocale(LC_CTYPE, "") == NULL ||
-	    strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
-		fprintf(stderr, _("Failed to set locale and langinfo\n"));
-		return 1;
-	}
+	(void)setlocale(LC_ALL, "");
 
 	progname = basename(argv[0]);
 

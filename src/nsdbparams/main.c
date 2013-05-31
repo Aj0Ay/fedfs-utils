@@ -184,11 +184,7 @@ main(int argc, char **argv)
 
 	exit_status = EXIT_FAILURE;
 
-	/* Ensure UTF-8 strings can be handled transparently */
-	if (setlocale(LC_CTYPE, "") == NULL)
-		goto out;
-	if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
-		goto out;
+	(void)setlocale(LC_ALL, "");
 
 	/* Set the basename */
 	if ((progname = strrchr(argv[0], '/')) != NULL)
