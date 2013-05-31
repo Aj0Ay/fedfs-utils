@@ -28,7 +28,7 @@ RM=/bin/rm
 FIND=/bin/find
 XARGS=/usr/bin/xargs
 
-REMOVE="aclocal.m4 configure compile config.* depcomp install-sh ltmain.sh missing mkinstalldirs libtool stamp-h1"
+REMOVE="aclocal.m4 configure compile config.* depcomp install-sh ltmain.sh missing mkinstalldirs libtool stamp-h1 ar-lib"
 
 echo -n cleaning up.
 

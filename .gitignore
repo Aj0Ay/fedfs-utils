@@ -67,6 +67,7 @@ m4/
 missing
 libtool
 stamp-h1
+ar-lib
 depcomp
 .deps/
 .libs/
