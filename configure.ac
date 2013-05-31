@@ -139,6 +139,11 @@ AC_CHECK_LIB([ssl], [SSL_CTX_new],
 		 AC_DEFINE([HAVE_LIBSSL], [1],
 			   [Define if you have libssl])],
 		[AC_MSG_ERROR([libssl not found.])])
+AC_CHECK_LIB([attr], [fgetxattr],
+		[AC_SUBST([LIBATTR], ["-lattr"])
+		 AC_DEFINE([HAVE_LIBATTR], [1],
+			   [Define if you have libattr])],
+		[AC_MSG_ERROR([libattr not found.])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h langinfo.h locale.h memory.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h syslog.h termios.h unistd.h wchar.h])
