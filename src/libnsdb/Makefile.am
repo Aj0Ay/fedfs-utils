@@ -32,7 +32,7 @@ libnsdb_la_SOURCES	= administrator.c annotation.c connsec.c display.c \
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC \
+AM_CFLAGS		= -ggdb -fstrict-aliasing \
 			  -Wall -Wextra -pedantic -Wformat=2 \
 			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include

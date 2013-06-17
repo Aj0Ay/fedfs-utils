@@ -30,5 +30,5 @@ CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
 
 # Squelch compiler warnings for rpcgen-produced source code
-AM_CFLAGS		= -ggdb -fstrict-aliasing -fPIC
+AM_CFLAGS		= -ggdb -fstrict-aliasing
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include -I/usr/include/tirpc
