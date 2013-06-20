@@ -24,3 +24,5 @@ rpcfedfsd		Sample SysV start-up script for rpc.fedfsd; typically
 rpcfedfsd.service	Sample systemd service file for rpc.fedfsd; see
 			http://0pointer.de/blog/projects/systemd-for-admins-3.html
 			for further details
+
+fedfs.autofs		Copy into /etc/auto.master.d to enable /nfs4 program map
