@@ -26,12 +26,12 @@
 noinst_HEADERS		= nsdbparams.h
 sbin_PROGRAMS		= nsdbparams
 nsdbparams_SOURCES	= delete.c list.c main.c show.c update.c
-LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
-			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL) \
-			  $(top_builddir)/src/libnsdb/libnsdb.la \
+LDADD			= $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \
-			  $(top_builddir)/src/libxlog/libxlog.la
+			  $(top_builddir)/src/libxlog/libxlog.la \
+			  $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
+			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL)
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

@@ -28,12 +28,12 @@ sbin_PROGRAMS		= nsdb-annotate nsdb-describe nsdb-list \
 			  nsdb-delete-nsdb nsdb-simple-nce \
 			  nsdb-create-fsn nsdb-delete-fsn nsdb-resolve-fsn \
 			  nsdb-create-fsl nsdb-delete-fsl nsdb-update-fsl
-LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
-			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL) \
-			  $(top_builddir)/src/libnsdb/libnsdb.la \
+LDADD			= $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libxlog/libxlog.la \
-			  $(top_builddir)/src/libjunction/libjunction.la
+			  $(top_builddir)/src/libjunction/libjunction.la \
+			  $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL)
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

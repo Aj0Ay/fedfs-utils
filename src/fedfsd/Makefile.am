@@ -27,13 +27,13 @@ noinst_HEADERS		= fedfsd.h
 RPCPREFIX		= rpc.
 sbin_PROGRAMS		= fedfsd
 fedfsd_SOURCES		= listen.c main.c privilege.c svc.c
-fedfsd_LDADD		= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
-			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL) \
-			  $(top_builddir)/src/libadmin/libadmin.la \
+fedfsd_LDADD		= $(top_builddir)/src/libadmin/libadmin.la \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \
-			  $(top_builddir)/src/libxlog/libxlog.la
+			  $(top_builddir)/src/libxlog/libxlog.la \
+			  $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) $(LIBCAP) \
+			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL)
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

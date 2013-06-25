@@ -30,13 +30,13 @@ sbin_PROGRAMS		= fedfs-null \
 			  fedfs-lookup-junction \
 			  fedfs-create-replication fedfs-delete-replication \
 			  fedfs-lookup-replication
-LDADD			= $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
-			  $(LIBCRYPTO) $(LIBSSL) \
-			  $(top_builddir)/src/libadmin/libadmin.la \
+LDADD			= $(top_builddir)/src/libadmin/libadmin.la \
 			  $(top_builddir)/src/libjunction/libjunction.la \
 			  $(top_builddir)/src/libnsdb/libnsdb.la \
-			  $(top_builddir)/src/libxlog/libxlog.la
+			  $(top_builddir)/src/libxlog/libxlog.la \
+			  $(LIBTIRPC) $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBCRYPTO) $(LIBSSL)
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in

@@ -26,12 +26,12 @@
 noinst_HEADERS		= nfsref.h
 sbin_PROGRAMS		= nfsref
 nfsref_SOURCES		= add.c lookup.c nfsref.c remove.c
-LDADD			= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
-			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL) \
-			  $(top_builddir)/src/libnsdb/libnsdb.la \
+LDADD			= $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libxlog/libxlog.la \
-			  $(top_builddir)/src/libjunction/libjunction.la
+			  $(top_builddir)/src/libjunction/libjunction.la \
+			  $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
+			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
+			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL)
 
 CLEANFILES		= cscope.in.out cscope.out cscope.po.out *~
 DISTCLEANFILES		= Makefile.in
