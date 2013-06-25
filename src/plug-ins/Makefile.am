@@ -25,10 +25,7 @@
 
 lib_LTLIBRARIES		= libnfsjunct.la
 libnfsjunct_la_SOURCES	= nfs-plugin.c
-libnfsjunct_la_LIBADD	= $(LIBLDAP) $(LIBLBER) $(LIBXML2) \
-			  $(LIBSQLITE3) $(LIBIDN) $(LIBUUID) \
-			  $(LIBURIPARSER) $(LIBCRYPTO) $(LIBSSL) \
-			  $(top_builddir)/src/libnsdb/libnsdb.la \
+libnfsjunct_la_LIBADD	= $(top_builddir)/src/libnsdb/libnsdb.la \
 			  $(top_builddir)/src/libxlog/libxlog.la \
 			  $(top_builddir)/src/libjunction/libjunction.la
 
