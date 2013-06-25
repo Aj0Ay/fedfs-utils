@@ -40,3 +40,4 @@ AM_CFLAGS		= -ggdb -fstrict-aliasing \
 			  -Wall -Wextra -pedantic -Wformat=2 \
 			  -Wstrict-aliasing=2 -Wp,-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS		= -I. -I$(top_srcdir)/src/include
+AM_LDFLAGS		= -Wl,--as-needed
