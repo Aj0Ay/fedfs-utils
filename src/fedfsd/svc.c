@@ -195,7 +195,7 @@ fedfsd_strnchr(const char *haystack, char needle, size_t size)
  * "pathname" refers to a non-terminal component
  *
  * If it does not exist, return FEDFS_ERR_INVAL
- * If it is not a directory, return FEDFS_ERR_INVAL
+ * If it is not a directory or regular file, return FEDFS_ERR_INVAL
  * If we don't have access, return FEDFS_ERR_ACCESS
  * If it is a junction, return FEDFS_ERR_NOTLOCAL
  *
@@ -255,7 +255,7 @@ fedfsd_pathwalk_check_term(const char *pathname)
 			__func__);
 		return FEDFS_ERR_EXIST;
 	case FEDFS_ERR_INVAL:
-		xlog(D_CALL, "%s: Pathname does not end with a directory",
+		xlog(D_CALL, "%s: Pathname does not end with a directory or a regular file",
 			__func__);
 		return FEDFS_OK;
 	case FEDFS_ERR_NOTJUNCT:
