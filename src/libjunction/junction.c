@@ -61,7 +61,17 @@ junction_open_path(const char *pathname, int *fd)
 	if (pathname == NULL || fd == NULL)
 		return FEDFS_ERR_INVAL;
 
-	tmp = open(pathname, O_DIRECTORY);
+	// @Aj0Ay: Another change to support file level junctions
+	// We need to pass the right option depending on if it is a file or directory	
+	struct stat stb;
+	if (stat(pathname, &stb) == -1) {
+		xlog(D_GENERAL, "%s: failed to stat %s: %m",
+				__func__, pathname);
+		return FEDFS_ERR_ACCESS;
+	}
+
+	tmp = S_ISREG(stb.st_mode) ? open(pathname) : open(pathname, O_DIRECTORY);
+
 	if (tmp == -1) {
 		switch (errno) {
 		case EPERM:
@@ -80,14 +90,14 @@ junction_open_path(const char *pathname, int *fd)
 }
 
 /**
- * Predicate: is object a directory?
+ * Predicate: is object a directory or a file?
  *
  * @param fd an open file descriptor
- * @param path NUL-terminated C string containing pathname of a directory
+ * @param path NUL-terminated C string containing pathname of a directory or file
  * @return a FedFsStatus code
  */
 FedFsStatus
-junction_is_directory(int fd, const char *path)
+junction_is_file_or_directory(int fd, const char *path)
 {
 	struct stat stb;
 
@@ -97,13 +107,15 @@ junction_is_directory(int fd, const char *path)
 		return FEDFS_ERR_ACCESS;
 	}
 
-	if (!S_ISDIR(stb.st_mode)) {
-		xlog(D_CALL, "%s: %s is not a directory",
+	// @Aj0Ay: We support file level junctions so need to check
+	// if this fd corresponds to a regular file or not
+	if (!S_ISDIR(stb.st_mode) && !S_ISREG(stb.st_mode)) {
+		xlog(D_CALL, "%s: %s is not a directory or a regular file",
 				__func__, path);
 		return FEDFS_ERR_INVAL;
 	}
 
-	xlog(D_CALL, "%s: %s is a directory", __func__, path);
+	xlog(D_CALL, "%s: %s is a directory or a regular file", __func__, path);
 	return FEDFS_OK;
 }
 
