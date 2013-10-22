@@ -73,7 +73,7 @@
  **/
 
 FedFsStatus	 junction_open_path(const char *pathname, int *fd);
-FedFsStatus	 junction_is_directory(int fd, const char *path);
+FedFsStatus	 junction_is_file_or_directory(int fd, const char *path);
 FedFsStatus	 junction_is_sticky_bit_set(int fd, const char *path);
 FedFsStatus	 junction_set_sticky_bit(int fd, const char *path);
 FedFsStatus	 junction_is_xattr_present(int fd, const char *path,

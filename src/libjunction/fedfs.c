@@ -579,7 +579,7 @@ fedfs_is_prejunction(const char *pathname)
 	if (retval != FEDFS_OK)
 		return retval;
 
-	retval = junction_is_directory(fd, pathname);
+	retval = junction_is_file_or_directory(fd, pathname);
 	if (retval != FEDFS_OK)
 		goto out_close;
 
@@ -676,7 +676,7 @@ fedfs_is_junction(const char *pathname)
 	if (retval != FEDFS_OK)
 		return retval;
 
-	retval = junction_is_directory(fd, pathname);
+	retval = junction_is_file_or_directory(fd, pathname);
 	if (retval != FEDFS_OK)
 		goto out_close;
 
